@@ -1,5 +1,5 @@
-Zakres:
--------
+Modele liniowe z efektami stałymi, losowymi i mieszanymi
+--------------------------------------------------------
 
 # Motto
 
