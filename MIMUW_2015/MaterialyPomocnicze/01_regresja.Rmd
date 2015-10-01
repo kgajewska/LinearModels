@@ -35,22 +35,24 @@ Osoby, które otrzymają ocenę dobrą mogą napisać dodatkowy sprawdzian weryf
 Zaliczenie jest tak skonstruowane by premiować systematyczną pracę.
 
 
-## Po co modele liniowe
+## Po co są nam modele liniowe?
 
 Wiele zastosowań, jak chociażby:
 
-* Prognozowanie popytu na energię elektryczną
-* Prognozowanie liczby biletów wykupionych na film
-* Identyfikacja genów związanych z nowotworem
-* Weryfikacja czy lit uszkadza procesy poznawcze
-* Szacowanie efektu szkoły w nauczaniu
-* innych wiele
+* Prognozowanie popytu na energię elektryczną.
+* Prognozowanie liczby biletów wykupionych na film.
+* Identyfikacja genów związanych z nowotworem.
+* Weryfikacja czy lit uszkadza procesy poznawcze.
+* Szacowanie efektu szkoły w nauczaniu.
+* wiele, wiele innych.
 
-## Jakie modele będziemy omawiać
+## Jakie modele będziemy omawiać?
 
 <center><img width=500 src="fig/rys1.png"/></center>
 
 ## Odrobina historii
+
+Skąd się wzieła nazwa regresja, co to jest midparent oraz czy synowie wyższych rodziców są wyżsi niż śrenia.
 
 <center><img width=500 src="fig/rys2.png"/></center>
 
@@ -62,10 +64,44 @@ library(PogromcyDanych)
 head(galton)
 
 ggplot(galton, aes(x=rodzic, y=syn)) +
+  geom_point() +
+  coord_fixed()
+
+ggplot(galton, aes(x=rodzic, y=syn)) +
+  geom_jitter() +
+  coord_fixed()
+
+ggplot(galton, aes(x=factor(rodzic), y=syn)) +
+  geom_boxplot() +
+  geom_jitter(alpha=0.5) 
+
+ggplot(galton, aes(x=rodzic, y=syn)) +
   geom_jitter() + 
   geom_smooth(method="lm", formula=y~x) +
   coord_fixed()
 ```
+
+## Bonus: dane Pearsona
+
+Mniej znany, ale zebrany w podobnym czasie z podobnych pobudek zbiór danych przygotował Karl Pearson. 
+
+```{r, warning=FALSE, message=FALSE}
+head(pearson)
+```
+
+## Trochę terminologii
+
+<center><img width=500 src="fig/rys3.png"/></center>
+
+## Zróbmy z tego zadanienie optymalizacyjne
+
+Nie nakładamy żadnych założeń co do rozkładu, licząc się z możliwymi przykrymi konsekwencjami.
+
+Metoda najmniejszych kwadratów, minimalizujemy funkcję
+
+$$
+RSS = \sum_i(y_i - \hat y_i)^2 =  \sum_i(y - \hat \beta_0 - \hat \beta_1 x_i)^2 
+$$
 
 ## Model regresji liniowej
 
@@ -82,10 +118,6 @@ str(model)
 (wsp2 <- lm(rodzic~syn, data=galton)$coefficients)
 (wsp3 <- c(1/wsp1[2], -wsp1[1]/wsp1[2]))
 ```
-
-## Trochę terminologii
-
-<center><img width=500 src="fig/rys3.png"/></center>
 
 ## Było dobrze, ale Francis Anscombe to zepsuł...
 
@@ -110,7 +142,7 @@ Wyliczamy p-wartości obliczeniowo.
 Jak wyglądałby rozkład współczynników gdyby nie było zależności pomiędzy wzrostem syna a rodzica.
 
 ```{r, warning=FALSE, message=FALSE}
-N <- 1000
+N <- 5000
 nwsp <- replicate(N, {
   model <- lm(syn~sample(rodzic), data=galton)
   model$coefficients
@@ -126,7 +158,7 @@ Wyliczamy przedziały ufności obliczeniowo.
 Zaburzamy model permutując reszty i sprawdzamy co dzieje się ze współczynnikiem. Więcej o tej metodzie [bootstrap resztowy] powiemy w przyszłości.
 
 ```{r, warning=FALSE, message=FALSE}
-N <- 1000
+N <- 5000
 model <- lm(syn~rodzic, data=galton)
 nwsp <- replicate(N, {
   ndf <- data.frame(x = galton$rodzic,
