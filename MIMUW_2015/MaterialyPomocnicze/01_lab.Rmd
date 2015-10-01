@@ -19,4 +19,5 @@ W pakiecie PBImisc znajduje się zbiór danych genomes.
 
 5. Wyznacz przedziały ufności (używając metody boostrap resztowy) dla obu współczynników regresji. 
 
+6. Wykorzystaj rmarkdown do zbudowania dokumentu html, z opisem powyższych analiz.
 
