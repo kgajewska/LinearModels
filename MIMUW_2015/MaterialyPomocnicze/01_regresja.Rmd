@@ -105,7 +105,9 @@ summary(lm(y4~x4,anscombe))$coef
 
 ## Jak możemy badać współczynniki regresji?
 
-Wyliczamy p-wartości obliczeniowo
+Wyliczamy p-wartości obliczeniowo.
+
+Jak wyglądałby rozkład współczynników gdyby nie było zależności pomiędzy wzrostem syna a rodzica.
 
 ```{r, warning=FALSE, message=FALSE}
 N <- 1000
@@ -115,11 +117,13 @@ nwsp <- replicate(N, {
 })
 df <- data.frame(intercept = nwsp[1,], slope = nwsp[2,])
 par(mfrow=c(1,1))
-hist(df$intercept, 100)
-hist(df$slope, 100)
+hist(df$intercept, 100, col="grey")
+hist(df$slope, 100, col="grey")
 ```
 
-Wyliczamy przedziały ufności obliczeniowo
+Wyliczamy przedziały ufności obliczeniowo.
+
+Zaburzamy model permutując reszty i sprawdzamy co dzieje się ze współczynnikiem. Więcej o tej metodzie [bootstrap resztowy] powiemy w przyszłości.
 
 ```{r, warning=FALSE, message=FALSE}
 N <- 1000
@@ -132,8 +136,8 @@ nwsp <- replicate(N, {
 })
 df <- data.frame(intercept = nwsp[1,], slope = nwsp[2,])
 par(mfrow=c(1,1))
-hist(df$intercept, 100)
-hist(df$slope, 100)
+hist(df$intercept, 100, col="grey")
+hist(df$slope, 100, col="grey")
 ```
 
 Wykonujemy graficzną diagnostykę
@@ -145,7 +149,13 @@ plot(lm(syn~sample(rodzic), data=galton), which = 1:6)
 
 ## Praca domowa
 
+1. Na zbiorze danych `heights{PBImisc}` oszacuj zależność liniową pomiędzy wzrostem żony a męża.
 
+2. Wyznacz obliczeniowo przedział ufności dla współczynnika nachylenia.
+
+3. Raport w formacie html z przedziałem ufności wyślij w GitHubie na adres
+
+https://github.com/pbiecek/ModeleLiniowe/tree/master/MIMUW_2015
 
 
 
