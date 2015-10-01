@@ -3,6 +3,8 @@ Zakres:
 
 # Motto
 
+> Essentially, all models are wrong, but some are useful.
+> George Box
 
 # Sylabus
 
@@ -59,7 +61,19 @@ Projekty będą przedstawiane na zajęciach (terminy wypisane powyżej). Należy
 
 Ocena:
 ------
-Ocena ko&#324;cowa zale&#380;e&#263; b&#281;dzie od sumy ocen cz&#261;stkowych z dwóch projektów (2*(10+20+30) = 120 pkt).
+Zaliczenie jest dwuetapowe.
+
+Pierwszy etap oparty jest o punkty.
+
+Po większości wykładów zostanie zadana praca domowa. Poprawne rozwiązanie każdej pracy domowej to 3 punkty. Prace należy wykonywać samodzielnie. 
+
+Podczas kursy będziemy realizować dwa projekty. Projekty realizowane są w grupach od 2 do 4 osób. Każdy projekt składa się z trzech etapów ocenianych odpowiednio na 15, 20 i 25 punktów. Każdy etap jest przedstawiany przez zespół. 
+
+Na bazie punktów z projektów i prac domowych otrzymać można maksymalnie ocenę dobrą.
+
+Osoby, które otrzymają ocenę dobrą mogą napisać dodatkowy sprawdzian weryfikujący również znajomość zagadnień teoretycznych. Jeżeli napiszą ten sprawdzian dobrze, otrzymają ocenę bardzo dobrą.
+
+Zaliczenie jest tak skonstruowane by premiować systematyczną pracę.
 
 Prace domowe:
 -------------
