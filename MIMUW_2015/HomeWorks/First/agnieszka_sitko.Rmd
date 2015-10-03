@@ -1,0 +1,53 @@
+---
+title: "Praca domowa 1"
+author: "Agnieszka Sitko"
+date: 'null'
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+
+<b>1. Na zbiorze danych `heights{PBImisc}` oszacuj zale¿noœæ liniow¹ pomiêdzy wzrostem ¿ony a mê¿a.</b>
+```{r, warning= FALSE, message= FALSE}
+library(PBImisc)
+library(ggplot2)
+heights -> heights
+head(heights)
+```
+SprawdŸmy, czy graficznie widaæ jak¹œ zale¿noœæ pomiêdzy wzrostem ¿ony a mê¿a.
+
+```{r, warning= FALSE, message= FALSE}
+ggplot(heights, aes(x = Wife, y = Husband)) + geom_point() + geom_smooth(method = lm, se = FALSE)
+```
+<br/>
+Wyznaczmy równanie prostej regresji.
+```{r, warning= FALSE, message= FALSE}
+lm(Husband ~ Wife, data = heights) -> model
+```
+W poni¿szej tabeli znajduj¹ siê kolejne parametry równania: sta³a oraz wspó³czynnik nachylenia.
+```{r, warning = FALSE, message= FALSE}
+model$coefficients
+```
+
+<b> 2. Wyznacz obliczeniowo przedzia³ ufnoœci dla wspó³czynnika nachylenia. </b>
+<br/>
+
+Skorzystamy z metody bootstrap resztowy:
+```{r, warning= FALSE, message= FALSE}
+N <- 5000
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+
+```
+Otrzymujemy przedzia³ ufnoœci dla parametru nachylenia:
+```{r, warning= FALSE, message= FALSE}
+quantile(nwsp[2,], c(0.025,0.975))
+```
+
