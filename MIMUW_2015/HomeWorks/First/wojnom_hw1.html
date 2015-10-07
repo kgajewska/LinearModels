@@ -1,0 +1,34 @@
+---
+title: "Homework - 1st"
+author: "Wojno Marcin"
+date: "October 7th"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+Popatrzmy jak rozkładają się nasze dane:
+```{r}
+library(PBImisc)
+library(ggplot2)
+
+ggplot(heights, aes(x=Husband, y=Wife)) +
+  geom_point() +
+  geom_smooth(method="lm", se=FALSE, formula=y~x)
+```
+Sprawdźmy zależność liniową:
+```{r}
+linear_model <- lm(Wife~Husband, data=heights)
+linear_model$coefficients
+```
+I przedziały ufności:
+```{r}
+N <- 1000
+nwsp <- replicate(N, {
+    ndf <- data.frame(x = heights$Husband, y = linear_model$fitted.values + sample(linear_model$residuals))
+    bstrap_model <- lm(y~x, data=ndf)
+    bstrap_model$coefficients
+                    })
+quantile(nwsp[2,], c(0.025, 0.975))
+
+```
