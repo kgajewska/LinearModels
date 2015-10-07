@@ -1,0 +1,38 @@
+---
+title: "rafal_cylwa_hmw1"
+author: "Rafał Cylwa"
+date: "October 7, 2015"
+output: html_document
+---
+
+
+```
+library("PBImisc")
+```
+
+1. Na zbiorze danych heights{PBImisc} oszacuj zależność liniową pomiędzy wzrostem żony a męża.
+
+
+Model regresji liniowej:
+```
+model <- lm(Wife~Husband, data=heights)
+model$coefficients
+```
+2. Wyznacz obliczeniowo przedział ufności dla współczynnika nachylenia.
+
+Korzystamy z przykładowego skryptu podanego na wykładzie dla metody "boostrap resztowy".
+
+```
+N <- 5000
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Husband,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+```
+3. Wyznaczamy przedział ufności:
+
+```
+quantile(nwsp[2,], c(0.025, 0.975))
+```
