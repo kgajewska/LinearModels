@@ -1,0 +1,73 @@
+---
+title: "Wzrost zony a wzrost meza"
+author: "Emilia Pompe"
+date: "Tuesday, October 06, 2015"
+output: html_document:
+ toc: TRUE
+---
+
+Otwieram biblioteki PBImisc oraz ggplot2, a nastepnie ogladam fragment ramki danych heights.
+
+
+```{r, warning = FALSE}
+library(PBImisc)
+library(ggplot2)
+head(heights)
+```
+
+Ogladam  wykres zaleznosci wzrostu meza od wzrostu zony.
+```{r, warning = FALSE}
+ggplot(heights, aes(x=Wife, y=Husband)) + geom_point() + geom_smooth(method="lm") + 
+  ggtitle("Zaleznosc wzrostu meza od wzrostu zony")
+```
+
+Na wykresie mozna zauwazyc pewna liniowa zaleznosc. Korelacja miedzy tymi wielkosciami jest równa
+```{r, warning = FALSE}
+cor(heights$Husband, heights$Wife)
+```
+Buduje model zaleznosci wzrostu meza od wzrostu zony
+```{r, warning = FALSE}
+model1 <- lm(Husband~Wife, data=heights)
+summary(model1)
+```
+Stosuje bootstrap resztowy, by znalezc przedzial ufnosci dla wspólczynnika nachylenia.
+```{r, warning = FALSE}
+set.seed(7)
+N <- 5000
+coefficients.data <- replicate(N, {
+  new.df <- data.frame(x = heights$Wife,
+                    y = model1$fitted.values + sample(model1$residuals))
+  model <- lm(y~x, data=new.df)
+  model$coefficients
+})
+
+df1 <- data.frame(intercept = coefficients.data[1,], slope = coefficients.data[2,])
+```
+Na ponizszym histogramie czerwona linia zaznaczono wynik dla nachylenia z modelu
+```{r, warning = FALSE}
+ggplot(aes(x = slope), data = df1 ) + geom_histogram(colour = "darkgreen", fill = "white") +  
+  geom_vline(xintercept = model1$coefficients[2], colour="red")
+```
+Przedzial ufnosci dla nachylenia (95%) to :
+```{r, warning = FALSE}
+quantile(df1$slope, probs=c(0.025, 0.975))
+```
+Porównajmy to z modelem "losowym". Czerwona linia zaznaczono nachylenie z "prawdziwego" modelu.
+
+```{r, warning = FALSE}
+N <- 5000
+random.model.results <- replicate(N, {
+  new.df <- data.frame(x = sample(heights$Wife),
+                   y = heights$Husband)
+ model <- lm(y~x, data=new.df)
+model$coefficients
+})
+
+df2 <- data.frame(intercept = random.model.results[1,], slope = random.model.results[2,])
+ggplot(aes(x = slope), data = df2 ) + geom_histogram(colour = "darkgreen", fill = "white") + 
+  geom_vline(xintercept = model1$coefficients[2], colour="red")
+```
+
+
+
+
