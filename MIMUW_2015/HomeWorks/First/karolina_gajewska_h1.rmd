@@ -1,0 +1,66 @@
+---
+title: "Praca domowa 1"
+author: "Karolina Gajewska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+1. Na zbiorze danych heights{PBImisc} oszacuj zależność liniową pomiędzy wzrostem żony a męża.
+
+```{r, message=FALSE}
+#install.packages("PBImisc")
+library("PBImisc")
+#install.packages("ggplot2")
+library("ggplot2")
+```
+
+Modelowanie rozpoczynam od graficznej analizy badanej zależności. Do wykresu została dodata prosta trendu liniowego oraz przedział ufności dla średniego wzrostu męża.
+
+```{r}
+ggplot(heights, aes(x = Wife, y = Husband)) + geom_point() + 
+  geom_smooth(method = lm)
+```
+
+Pomimo występowania dość dużej zmienności na wykresie możemy dostrzec trend liniowy, a mianowicie im wyższa żona tym wyższy mąż. Zależność pomiędzy wzrostem żony a męża opisać można następującym modelem liniowym: 
+$$ Husband = b_0 + Wife * b_1$$
+Nieznane wartości parametrów wyznaczam funkcją estymującą postaci:
+
+```{r}
+model<-lm(Husband ~ 1 + Wife, data = heights)
+coef(model)
+```
+
+Otrzymałam model:
+$$Housband = 37.81 + Wife*0.83$$
+
+2. Wyznacz obliczeniowo przedział ufności dla współczynnika nachylenia.
+
+Korzystając z metody bootsrap resztwy spermutuję reszty i sprawdzę co się dzieje z wpółczynnikiem nachylenia.
+
+```{r}
+N <- 5000
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+```
+
+Uzyskane wyniki przedstawia poniższy histogram:
+
+```{r}
+df <- data.frame(intercept = nwsp[1,], slope = nwsp[2,])
+par(mfrow=c(1,1))
+hist(df$slope, 100, col="grey")
+```
+
+Przyjmując współczynnik ufności 0.95 wyznaczam przedziały ufności dla  współczynnika nachylenia:
+
+```{r}
+quantile(df$slope, c(0.025, 0.975))
+```
+
+Na podstawie powyższych wyików wnioskujemy, że 95% przedział ufności to (0.69;0.97)
