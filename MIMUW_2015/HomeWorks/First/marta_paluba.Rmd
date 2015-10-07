@@ -1,0 +1,59 @@
+---
+title: "PD1"
+author: "Marta Pa³uba"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+1. Na zbiorze danych heights{PBImisc} oszacuj zale¿noœæ liniow¹ pomiêdzy wzrostem ¿ony a mê¿a.
+
+```{r}
+library(PBImisc)
+library(ggplot2)
+```
+
+Spójrzmy najpierw na dane:
+```{r}
+head(heights)
+summary(heights)
+```
+
+Przedstawiê je graficznie.
+
+Same dane:
+```{r}
+plot(heights)
+```
+
+Dane z prost¹ regresji:
+```{r}
+ggplot(heights, aes(x=Husband, y=Wife)) + geom_point() + geom_smooth(method="lm", formula=y~x)
+
+model1<-lm(Wife~Husband, data=heights)
+```
+
+Wspó³czynniki regresji liniowej:
+```{r}
+model1$coefficients
+```
+
+2. Wyznacz obliczeniowo przedzia³ ufnoœci dla wspó³czynnika nachylenia.
+
+Korzystaj¹c z metody boostrap resztowy wyznaczê przedzia³ ufnoœci:
+
+```{r}
+N <- 5000
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Husband,
+                    y = model1$fitted.values + sample(model1$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+```
+
+Przedzia³ ufnoœci:
+```{r}
+quantile(nwsp[2,], c(0.025, 0.975))
+```
