@@ -32,30 +32,32 @@ Plan spotka&#324; MIM UW:
 * 1 X - 
 * 8 X - 
 * 15 X - 
-* 22 X - [Prezentacja 1 - Projekt 1]
+* 22 X - [Phase 1 - Project 1]
 * 29 X - 
-* 5 XI - [Prezentacja 2 - Projekt 1]
+* 5 XI - [Phase 2 - Project 1]
 * 12 XI - 
-* 19 XI - [Prezentacja 3 - Projekt 1]
+* 19 XI - [Phase 3 - Project 1]
 
 * 26 XI - 
 * 3 XII - 
-* 10 XII - [Prezentacja 1 - Projekt 2]
+* 10 XII - [Phase 1 - Project 2]
 * 17 XII - 
-* 7 I - [Prezentacja 2 - Projekt 2]
+* 7 I - [Phase 2 - Project 2]
 * 14 I - 
-* 21 I - [Prezentacja 3 - Projekt 2]
+* 21 I - [Phase 3 - Project 2]
 
-Projekty:
+Projects:
 ---------
 
 Projekty mogą być realizowane w grupach od 2 do 4 osób. Te same osoby nie mogą razem uczestniczyć w obu projektach.
 Projekty będą przedstawiane na zajęciach (terminy wypisane powyżej). Należy je zgłosić przez GitHuba przed prezentacją. Projekty, które nie będą zaprezentowane nie zostaną ocenione.
 
-1. Projekt - modele liniowe
+1. Project - linear models
+
+See here: https://github.com/pbiecek/LinearModels/tree/master/MIMUW_2015/Project1
 
 
-2. Projekt - modele mieszane
+2. Project - mixed models
 
 
 
