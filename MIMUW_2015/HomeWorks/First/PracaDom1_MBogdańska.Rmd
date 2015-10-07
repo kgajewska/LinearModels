@@ -1,0 +1,49 @@
+---
+title: "Regresja prosta - Praca domowa"
+author: "Magdalena Bogdańska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+
+Zadanie:
+
+Na zbiorze danych heights{PBImisc} oszacuj zależność liniową pomiędzy wzrostem żony a męża.
+Wyznacz obliczeniowo przedział ufności dla współczynnika nachylenia.
+
+-------------------------------------------------------------------------------------------
+Wczytuję odpowiednią bibliotekę i wyświetlam początkowe dane.
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+head(heights)
+attach(heights)
+```
+Ilustruję zależność wzrostu męża od wzrostu żony graficznie.
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+ggplot(heights, aes(x=Wife, y=Husband)) + geom_point() #+ geom_smooth(method="lm", formula=y~x)
+```
+
+Wyznaczam model regresji liniowej opisującej zależność wzrostu męża od wzrostu żony i wypisuję współczynniki.
+```{r, warning=FALSE, message=FALSE}
+model<-lm(Wife~Husband)
+model$coefficients
+```
+Przedział ufności dla współczynnika kierunkowego wyznaczę metodą bootstrapu resztowego.
+```{r, warning=FALSE, message=FALSE}
+set.seed(2)
+N <- 5000
+model <- lm(Wife~Husband, data=heights)
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+
+df <- data.frame(intercept = nwsp[1,], slope = nwsp[2,])
+
+quantile(df$slope, c(0.025,0.975))
+``` 
