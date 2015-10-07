@@ -1,0 +1,51 @@
+---
+title: "Praca Domowa 1"
+author: "Krzysztof Rutkowski"
+date: "5.10.2015"
+output: 
+  html_document:
+  toc: TRUE
+---
+  ## Praca domowa
+  
+  1. Na zbiorze danych `heights{PBImisc}` oszacuj zależność liniową pomiędzy wzrostem żony a męża.
+
+Patrzymy jak wygląda prosta regresji pomiędzy wzrostem żony i męża.
+
+```{r}
+library(PBImisc)
+library(ggplot2)
+data(heights)
+
+ggplot(data=heights, aes(x=Husband, y=Wife)) + geom_point(size=3, shape=16, alpha=0.6) + 
+  geom_smooth(method="lm", se=FALSE)
+```
+
+Teraz policzmy dokładnie współczynniki prostej regresji.
+```{r}
+model1 <- lm(Husband~Wife, data=heights)
+model1$coefficients
+```
+
+2. Wyznacz obliczeniowo przedział ufności dla współczynnika nachylenia.
+
+Przedział ufności obliczymy korzystając z metody bootstrap resztowy.
+```{r}
+N <- 5000
+model <- lm(Husband~Wife, data=heights)
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+df <- data.frame(intercept = nwsp[1,], slope = nwsp[2,])
+hist(df$intercept, 100, col="grey")
+hist(df$slope, 100, col="grey")
+```
+
+Przedział ufności dla współczynnika nachylenia:
+```{r}
+quantile(nwsp[2,], c(0.025, 0.975))
+```
+
