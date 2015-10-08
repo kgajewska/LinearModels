@@ -59,8 +59,11 @@ summary(aov(change.2191~Mutation-1, data=AML))
 
 ```{r, warning=FALSE, message=FALSE}
 head(model.matrix(CD14.2191~Mutation, data=AML))
+head(model.matrix(change.2191~Mutation, data=AML))
 
 head(model.matrix(change.2191~Mutation-1, data=AML))
+model.matrix(change.2191~Mutation-1, data=AML)
+model.matrix(change.2191~Mutation+0, data=AML)
 ```
 
 ## Model assumptions
@@ -111,6 +114,9 @@ plot(TukeyHSD(model.va.3), las=1)
 
 ```{r, warning=FALSE, message=FALSE}
 library(agricolae)
+model = aov(change.2191~Mutation, data=AML)
+HSD.test(model, "Mutation", console = TRUE)
+
 model = aov(response~dose, vaccination)
 HSD.test(model, "dose", console = TRUE)
 ```
@@ -195,7 +201,20 @@ coefs <- sapply(contrs, function(i)
 t(coefs)
 ```
 
-# Home work
+# Home work 1/2 [deadline 15 X]
+
+Compare range distribution (or studentized range distribution) for SNK/HSD tests between two scenarios: 
+- all groups have equal size (so called balanced case),
+- some groups have unequal size (so called unbalanced case).
+
+You may use KS-test or QQplots to verify if both distributions are equal.
+
+Try different number of groups and different ways in which classes may be unequal.
+
+Results in form of knitr report shall be submitted on GitHub.
+
+
+# Home work 2/2 [deadline 22 X]
 
 Finish all tasks in
 https://rawgithub.com/pbiecek/LinearModels/master/MIMUW_2015/MaterialyPomocnicze/02_lab.html
