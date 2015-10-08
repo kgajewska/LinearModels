@@ -1,0 +1,60 @@
+---
+title: "Praca domowa 1"
+author: "Micha³ Frej"
+date: "07-10-2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Wzrost ¿ony w zale¿noœci od wzrostu mê¿a
+```{r, warning=FALSE,message=FALSE}
+library(PBImisc)
+model1 <- lm(Wife~Husband, data=heights)
+model1$coefficients
+```
+WprowadŸmy wspólne oznaczenia.
+```{r, warning=FALSE,message=FALSE}
+alfa=0.05
+N <- 5000
+set.seed(1)
+```
+Zacznijmy od narysowania histogramu wspó³czynnika nachylenia dla pierwszego modelu.
+```{r, warning=FALSE,message=FALSE}
+nwsp <- replicate(N, {
+      ndf <- data.frame(x = heights$Husband,
+                        y = model1$fitted.values + sample(model1$residuals))
+      model2 <- lm(y~x, data=ndf)
+      model2$coefficients
+})
+df <- data.frame(intercept = nwsp[1,], slope = nwsp[2,])
+par(mfrow=c(1,1))
+hist(df$slope, 100, col="red", main="Histogram wsp. nachylenia (model ¯ona~M¹¿)", xlab="wspó³czynnik nachylenia",ylab="czêstoœæ")
+```
+
+95% przedzia³ ufnoœci:
+```{r, warning=FALSE,message=FALSE}
+quantile(df$slope,c(alfa/2,1-alfa/2))
+```
+## Wzrost mê¿a w zale¿noœci od wzrostu ¿ony
+```{r, warning=FALSE,message=FALSE}
+model2 <- lm(Husband~Wife, data=heights)
+model2$coefficients
+```
+Histogram wspó³czynnika nachylenia:
+```{r, warning=FALSE,message=FALSE}
+nwsp <- replicate(N, {
+      ndf <- data.frame(x = heights$Wife,
+                        y = model2$fitted.values + sample(model2$residuals))
+      model2 <- lm(y~x, data=ndf)
+      model2$coefficients
+})
+df <- data.frame(intercept = nwsp[1,], slope = nwsp[2,])
+par(mfrow=c(1,1))
+hist(df$slope, 100, col="blue",main="Histogram wsp. nachylenia (model M¹¿~¯ona)", xlab="wspó³czynnik nachylenia",ylab="czêstoœæ")
+```
+
+95% przedzia³ ufnoœci:
+```{r, warning=FALSE,message=FALSE}
+quantile(df$slope,c(alfa/2,1-alfa/2))
+```
