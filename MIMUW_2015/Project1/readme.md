@@ -57,7 +57,7 @@ In phase 3: note that there are 12 types of cancers. Show the information about 
 
 After each phase you should create a single report (e.g. with the use of knitr). This report will presented during classes and then scored.
 
-Report after phase 2 shall not be longer than 10 pages (may be much shorter).
+Report after phase 2 shall not be longer than 10 pages (may be shorter).
 
 Report after phase 3 shall summarise all your results from all phases and shall not be longer than 3 pages.
 
