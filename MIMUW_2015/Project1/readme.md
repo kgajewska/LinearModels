@@ -46,7 +46,7 @@ We expect that two primary sources of genetic variation will be gender and cance
 The goal of this project is to quantify sources of genetic variation among cancer types. 
 Find genetic signatures -> sets of genes that differ among cancer types.
 
-In phase 1: find genes that differ between cancer types significantly.
+In phase 1: find genes that differ between cancer types significantly (i.e. for which genes expression differ for different cohorts of cancer).
 
 In phase 2: note that gene expression profiles are correlated. Take this correlation into account and find ‘small’ number of genes that different between cancers.
 
