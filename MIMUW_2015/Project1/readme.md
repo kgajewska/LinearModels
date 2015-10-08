@@ -55,7 +55,7 @@ In phase 3: note that there are 12 types of cancers. Show the information about 
 
 # Other requirements
 
-After each phase you should create a single report (e.g. with the use of knitr) and this report is presented during classes and scored.
+After each phase you should create a single report (e.g. with the use of knitr). This report will presented during classes and then scored.
 
 Report after phase 2 shall not be longer than 10 pages (may be much shorter).
 
