@@ -22,7 +22,7 @@ Results in form of knitr report shall be submitted on GitHub.
 ## Solution
 
 I will compute range distribution (not studentized) for HSD test. That is the distribution between the highest and lowest means of groups.
-For SNK it would be different since range is computed for each nearest (in sense of mean) pair separately. (I treat operator "/" in SNK/HSD as "or", and I will do analysis only for HSD test).
+For SNK it would be different since groups are sorted by means and ranges are computed for each pair separately. (I treat operator "/" in SNK/HSD as "or", and I will do analysis only for HSD test).
 
 Firstly, I will check the laws of range for 60 observations derived from normal distribution which are grouped in 4 groups, in one case each containg 15 observations, in the other groups have 10, 20, 15, 15 observations.
 
