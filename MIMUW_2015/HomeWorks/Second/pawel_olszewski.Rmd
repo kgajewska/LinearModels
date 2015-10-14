@@ -1,0 +1,76 @@
+---
+title: "Second Homework"
+author: "Paweł Olszewski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+Pierwsza funkcja będzie nam losowała zadany rozmiar próbki - losuje ona (w niezbyt piękny sposób, ale dla potrzeb tego zadania starcza) 
+k liczb, które sumują się do n
+```{r}  
+
+gnerate_values<-function(n,k) 
+{
+  a <- vector()
+  while(sum(a)!=n && length(a)!=k)
+  {
+   tmp <- sample(k, n-k, replace=TRUE)
+   a <- as.numeric( table(tmp) ) + 1
+  }
+  a
+}
+```
+
+
+Ta funkcja będzie nam służuła do powtarzania eksperymentów, z różną liczebnością grup
+```{r}
+f <- function(k)
+{
+  l <- 100
+
+  y1 <- rnorm(l, 0,1)
+  x <-c(gnerate_values(l,k))
+  g <- rep(c(1:k), x)
+  
+  res <- tapply(y1,g, mean)
+  max <-which.max(res)
+  min <-which.min(res)
+  res[max] - res[min]
+}
+```
+
+Powtarzamy 10000 razy z 10 grupami
+```{r}
+res1 <-replicate(10000, f(10))
+hist(res1)
+```
+
+Powtarzamy 10000 razy z 20 grupami
+```{r}
+res2 <- replicate(10000, f(20))
+hist(res2)
+```
+
+Wykonujemy test Kołmogorowa-Smirnowa
+```{r}
+ks.test(res1, res2)
+```
+Widzimy, że p-wartość jest bardzo mała, Zobaczmy jak w następnych przypdkach
+
+```{r}
+res3 <- replicate(1000, f(5))
+hist(res3)
+ks.test(res1, res3)
+```
+
+Tutaj p-wartość jest również bardzo mała, podobnie jak i w kolejnym przypadku
+
+```{r}
+ks.test(res2, res3)
+
+```
+
+
+Na podstawie p-wartości możemy zatem uznać, że rozkłady te są różne.
