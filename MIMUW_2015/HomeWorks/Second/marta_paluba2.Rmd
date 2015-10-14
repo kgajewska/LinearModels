@@ -1,0 +1,50 @@
+---
+title: "PD2"
+author: "Marta Pa³uba"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+Generujê próbkê z czteremia grupami równoelementowymi:
+
+```{r}
+wektor1=replicate(10000, {
+  wyniki <- rnorm(400, 0,1)
+  grupy <- rep(c("a","b","c","d"),100)
+  srednie<-tapply(wyniki,grupy,mean)
+  max(srednie)-min(srednie)
+})
+```
+
+Generujê próbjkê z czterema grupami ró¿noelementowymi
+
+```{r}
+wektor2=replicate(10000, {
+  wyniki <- rnorm(400, 0,1)
+  grupy <- rep(c("a","b","c","d"),c(150,50,75,125))
+  srednie<-tapply(wyniki,grupy,mean)
+  max(srednie)-min(srednie)
+})
+```
+
+Przeprwadzam na nich dwóch test Ko³mogorowa-Smirnowa:
+
+```{r}
+ks.test(wektor1,wektor2)
+```
+
+Jak widzimy, rozk³ady te nie s¹ takie same.
+
+Generujê próbkê z szeœcioma grupami ró¿noelementowymi i porównujê rozk³¹dy z poprzednimi dwoma:
+```{r}
+wektor3=replicate(10000, {
+  wyniki <- rnorm(400, 0,1)
+  grupy <- rep(c("a","b","c","d","e","f"),c(38,12,170,16,55,109))
+  srednie<-tapply(wyniki,grupy,mean)
+  max(srednie)-min(srednie)
+})
+ks.test(wektor1,wektor3)
+ks.test(wektor2,wektor3)
+```
+Widaæ, ¿e rozk³ady s¹ ró¿ne.
