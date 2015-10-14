@@ -89,64 +89,23 @@ ks.test(x3, y3)
 I could just rewrite what I have written after the previous test.
 What is worth of noting is that distribution of y3 is unlike the distributions of y1 and y2, as we can see on histograms.
 
-Now I will do very similar tests, but for numbers derived, firstly from exponential distribution and later from uniform distribution.
+I will carry out one more experiment for normal distribution, with two groups, in one case divided evenly, in second divided on subgroups with 55 numbers and 45 (so the difference is not so big).
 
 ```{r}
-y4=replicate (10000, {a<-rexp(60)
-level<-rep(1:4, times=15)
+y4=replicate (10000, {a<-rnorm(100)
+level<-rep(1:2, times=50)
 b<-tapply(a,level,mean)
 b[which.max(b)]-b[which.min(b)]
 })
 hist(y4)
 
-
-x4=replicate (10000, {a<-rexp(60)
-level<-c(rep(1, times=10),rep(2, times=20),rep(3, times=15), rep(4, times=15))
+x4=replicate (10000, {a<-rnorm(100)
+level<-c(rep(1, times=55),rep(2, times=45))
 b<-tapply(a,level,mean)
 b[which.max(b)]-b[which.min(b)]
 })
 hist(x4)
 
 ks.test(x4, y4)
-```
-
-```{r}
-y5=replicate (10000, {a<-runif(60)
-level<-rep(1:2, times=30)
-b<-tapply(a,level,mean)
-b[which.max(b)]-b[which.min(b)]
-})
-hist(y5)
-
-
-x5=replicate (10000, {a<-runif(60)
-level<-c(rep(1, times=20),rep(2, times=40))
-b<-tapply(a,level,mean)
-b[which.max(b)]-b[which.min(b)]
-})
-hist(x5)
-
-ks.test(x5, y5)
-```
-In both cases I got small p-value in KS test, so distributions are different.
-
-I will carry out one more experiment for normal distribution, with two groups, in one case divided evenly, in second divided on subgroups with 55 numbers and 45 (so the difference is not so big).
-
-```{r}
-y6=replicate (10000, {a<-rnorm(100)
-level<-rep(1:2, times=50)
-b<-tapply(a,level,mean)
-b[which.max(b)]-b[which.min(b)]
-})
-hist(y6)
-
-x6=replicate (10000, {a<-rnorm(100)
-level<-c(rep(1, times=55),rep(2, times=45))
-b<-tapply(a,level,mean)
-b[which.max(b)]-b[which.min(b)]
-})
-hist(x6)
-
-ks.test(x6, y6)
 ```
 In this case I got very different p-values. Sometimes it was as high as 0.995 and sometimes as low as 0.0541, but never less then 0.05. So in this case we can assume that distributions are the same.
