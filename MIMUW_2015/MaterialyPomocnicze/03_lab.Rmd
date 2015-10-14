@@ -1,0 +1,16 @@
+---
+title: "Model diagnostic and variable transformations"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+First, complete the `02_lab.Rmd` lab. Then:
+
+1. Present diagnostic plots for obtained one-way ANOVA model.
+2. Try Box-Cox transformation to verify if any transformation improves the model fit
+3. Try all discussed model diagnostic tests to verify is all model assumptions are fulfilled.
+4. If any test has not passed, try to transform original variables to overcome the problem with assumptions.
+
