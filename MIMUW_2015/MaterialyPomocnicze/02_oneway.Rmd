@@ -214,7 +214,7 @@ Try different number of groups and different ways in which classes may be unequa
 Results in form of knitr report shall be submitted on GitHub.
 
 
-# Home work 2/2 [deadline 22 X]
+# Home work 2/2 [deadline 29 X]
 
 Finish all tasks in
 https://rawgithub.com/pbiecek/LinearModels/master/MIMUW_2015/MaterialyPomocnicze/02_lab.html
