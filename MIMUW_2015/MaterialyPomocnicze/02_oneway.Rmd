@@ -1,0 +1,224 @@
+---
+title: "One-way analysis of variance"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Use Case 1: Leukaemia
+
+## Intro
+
+We are going to use data from Acute myeloid leukaemia AML study in order to practice the one-way ANOVA.
+
+We observe an effect of analogue of D3 vitamin (2191) on patients with different genetic mutations.
+
+The question: Are the mutations in genes that causes leukaemia related with the effect of D3 analogue (2191).
+
+
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+
+head(AML)
+# normalisation
+AML$change.2191 = AML$CD14.2191 - AML$CD14.control
+attach(AML)
+
+summary(AML)
+```
+
+## Summaries and descriptive statistics
+
+```{r, warning=FALSE, message=FALSE}
+by(change.2191, Mutation, mean)
+
+boxplot(change.2191~Mutation, data=AML)
+abline(h=0, col='grey', lwd=2)
+```
+
+## One-way ANOVA
+
+```{r, warning=FALSE, message=FALSE}
+# with intercept
+summary(aov(CD14.2191~Mutation))
+
+(model.1.mut <- anova(lm(CD14.2191~Mutation)))
+
+model.1.mut[1,5]
+
+# without
+
+summary(aov(change.2191~Mutation-1, data=AML))
+
+(tmp <- summary(lm(change.2191~Mutation-1, data=AML)))
+```
+
+## Model matrix
+
+```{r, warning=FALSE, message=FALSE}
+head(model.matrix(CD14.2191~Mutation, data=AML))
+head(model.matrix(change.2191~Mutation, data=AML))
+
+head(model.matrix(change.2191~Mutation-1, data=AML))
+model.matrix(change.2191~Mutation-1, data=AML)
+model.matrix(change.2191~Mutation+0, data=AML)
+```
+
+## Model assumptions
+
+```{r, warning=FALSE, message=FALSE}
+library(car)
+leveneTest(AML$CD14.2191, AML$Mutation)
+
+shapiro.test(lm(CD14.2191~Mutation, data=AML)$residuals)
+```
+
+## Post-hoc tests
+
+```{r, warning=FALSE, message=FALSE}
+pairwise.t.test(CD14.2191, Mutation, data=AML)
+```
+
+# Use Case 2: Dose response studies
+
+## Descriptive statistics
+
+```{r, warning=FALSE, message=FALSE}
+summary(vaccination)
+attach(vaccination)
+by(response, dose, mean)
+
+library(lattice)
+bwplot(response~dose, data=vaccination)
+```
+
+## One-way ANOVA
+
+```{r, warning=FALSE, message=FALSE}
+summary(aov(response~dose, data=vaccination))
+```
+
+## Post-hoc tests
+
+```{r, warning=FALSE, message=FALSE}
+model.va.3 = aov(response~dose, data=vaccination)
+TukeyHSD(model.va.3)
+
+par(mar=c(5,6,4,2))
+plot(TukeyHSD(model.va.3), las=1)
+```
+
+## Tukey differences
+
+```{r, warning=FALSE, message=FALSE}
+library(agricolae)
+model = aov(change.2191~Mutation, data=AML)
+HSD.test(model, "Mutation", console = TRUE)
+
+model = aov(response~dose, vaccination)
+HSD.test(model, "dose", console = TRUE)
+```
+
+## Student-Newman-Keuls  differences
+
+```{r, warning=FALSE, message=FALSE}
+SNK.test(model, "dose", console = TRUE)
+```
+
+## Least significant differences
+
+```{r, warning=FALSE, message=FALSE}
+LSD.test(model, "dose", p.adj="bonferroni", console = TRUE)
+```
+
+## Scheffe test
+
+```{r, warning=FALSE, message=FALSE}
+scheffe.test(model, "dose", console = TRUE)
+```
+
+## Model assumptions
+
+Homogeneity of Variances
+
+```{r, warning=FALSE, message=FALSE}
+attach(vaccination)
+bartlett.test(response~ dose, data=vaccination)
+
+fligner.test(response~ dose, data=vaccination)
+
+leveneTest(response, dose)
+
+leveneTest(response, dose, center=mean)
+```
+
+# Contrasts
+
+## List of contrasts
+
+```{r, warning=FALSE, message=FALSE}
+t(contr.treatment(5))
+
+t(contr.helmert(5))
+
+t(contr.poly(5))
+
+t(contr.sdif(5))
+
+model.matrix(response~dose, vaccination)[1:5,]
+
+model.matrix(response~dose, vaccination,
+ contrasts=list(dose=contr.helmert))[1:5,]
+
+model.matrix(response~dose, vaccination,
+ contrasts=list(dose=contr.poly))[1:5,]
+```
+
+## Contrasts in action
+
+```{r, warning=FALSE, message=FALSE}
+summary(lm(response~dose, data = vaccination))
+
+kontr = contr.sdif(5)
+summary(lm(response ~ dose, data = vaccination, contrasts=list(dose=kontr)))
+
+model.va.7 <- lm(response~ordered(dose), data=vaccination)
+summary(model.va.7)
+```
+
+## Compare all contrasts
+
+```{r, warning=FALSE, message=FALSE}
+options()$contrasts
+
+contrs <- apropos("contr\\.")
+coefs <- sapply(contrs, function(i)
+ lm(response~dose, data = vaccination,
+ contrasts=list(dose=get(i)))$coefficients
+)
+t(coefs)
+```
+
+# Home work 1/2 [deadline 15 X]
+
+Compare range distribution (or studentized range distribution) for SNK/HSD tests between two scenarios: 
+- all groups have equal size (so called balanced case),
+- some groups have unequal size (so called unbalanced case).
+
+You may use KS-test or QQplots to verify if both distributions are equal.
+
+Try different number of groups and different ways in which classes may be unequal.
+
+Results in form of knitr report shall be submitted on GitHub.
+
+
+# Home work 2/2 [deadline 29 X]
+
+Finish all tasks in
+https://rawgithub.com/pbiecek/LinearModels/master/MIMUW_2015/MaterialyPomocnicze/02_lab.html
+and upload the knitr report (html+Rmd) on GitHub.
+
+For each completed point (2-5) you will receive one point.
+

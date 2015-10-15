@@ -1,0 +1,47 @@
+---
+title: "Regresja prosta - Praca domowa 1"
+author: "Katarzyna Kanska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+### 1. Na zbiorze danych `heights{PBImisc}` oszacuj zale¿noœæ liniow¹ pomiêdzy wzrostem ¿ony a mê¿a.
+
+```{r, warning=FALSE, message=FALSE}
+library("PBImisc")
+library("ggplot2")
+
+model<-lm(Husband~Wife, data=heights)
+summary(model)
+
+ggplot(heights, aes(x=Wife, y=Husband)) +
+  geom_point() + geom_smooth(method="lm", formula=y~x)
+
+```
+
+Otrzymaliœmy dodatni¹ zale¿noœæ **`Husband` = 0,83292*`Wife` + 37,81005**.
+
+### 2. Wyznacz obliczeniowo przedzia³ ufnoœci dla wspó³czynnika nachylenia.
+
+Pos³u¿ê siê metod¹ boostrapu resztowego.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+N <- 5000
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model <- lm(y~x, data=ndf)
+  model$coefficients
+})
+
+df <- data.frame(slope = nwsp[2,])
+hist(df$slope, 100, col="grey")
+
+quantile(df$slope, probs=c(0.025, 0.975))
+
+```
+
+5% przedzia³ ufnoœci dla wspó³czynnika nachylenia to **[0,6918457 ; 0,9780119]**.

@@ -1,0 +1,81 @@
+---
+title: "Zadanie domowe 2"
+output: html_document
+---
+
+Eksperymenty
+-----------
+
+Definiujê funkcjê tworz¹c¹ próbkê z rozk³adu ró¿nic œrednich dla grup o równych licznoœciach
+k - liczba grup,
+l - licznoœæ grup
+
+```{r}
+f<-function(k, l) {
+  x<-rnorm(k*l)
+  g<-rep(1:k,times=l)
+  y<-tapply(x, g, mean)
+  roznica<-max(y)-min(y)
+  return(roznica)
+}
+```
+Definiujê funkcjê tworz¹c¹ próbkê z rozk³adu ró¿nic œrednich dla grup o ró¿nych licznoœciach
+k - liczba grup
+l - œrednia licznoœæ grup
+p - wektor k-elementowy prawodobieñstw przynale¿noœci do ka¿dej z grup
+
+```{r}
+g<-function(k, l, p) {
+  x<-rnorm(k*l)
+  i<-sample(1:k, size=k*l, prob=p, replace=TRUE)
+  y<-tapply(x, i, mean)
+  roznica<-max(y)-min(y)
+  return(roznica)
+}
+```
+Wykonujê seriê eksperymentów porównuj¹c¹ rozk³ady ró¿nic œrednich w obu przypadkach
+
+1. Podzia³ na 4 grupy, ka¿da œrednio po 100 elementów
+
+```{r}
+n<-10000
+k<-4
+l<-100
+A<-replicate(n, f(k, l))
+B<-replicate(n, g(k, l, c(0.1, 0.5, 0.3, 0.1)))
+ks.test(A,B)
+```
+
+Uzyskana p-wartoœæ sugeruje, ¿e rozk³ady s¹ istonie ró¿ne (dla poziomu istotnoœci 0.05).
+
+2. Podzia³ na 20 grup, ka¿da œrednio po 100 elementów
+
+```{r}
+n<-10000
+k<-20
+l<-100
+A<-replicate(n, f(k, l))
+B<-replicate(n, g(k, l, c(0.01, 0.08, 0.05, 0.05, 0.04, 0.03, 0.1, 0.06, 0.08, 0.03, 0.06, 0.07, 0.01, 0.03, 0.03, 0.01, 0.08, 0.09, 0.06, 0.03)))
+ks.test(A,B)
+```
+
+Uzyskana p-wartoœæ sugeruje, ¿e rozk³ady s¹ istonie ró¿ne (dla poziomu istotnoœci 0.05).
+
+3. Podzia³ na 5 grup, ka¿da œrednio po 20 elementów
+
+```{r}
+n<-10000
+k<-5
+l<-20
+A<-replicate(n, f(k, l))
+B<-replicate(n, g(k, l, c(0.2, 0.2, 0.2, 0.2, 0.2)))
+ks.test(A,B)
+```
+
+
+Pomimo tego, ¿e prawdopodobieñstwa wyst¹pienia ka¿dej z grup s¹ równe, uzyskana p-wartoœæ sugeruje, ¿e rozk³ady s¹ istonie ró¿ne (dla poziomu istotnoœci 0.05). 
+
+Wnioski
+--------
+
+Na podstawie powy¿szych symulacji mo¿na stwierdziæ, ¿e rozk³ad ró¿nic œrednich w przypadku zbalansowanym ró¿ni siê od rozk³adu ró¿nic œrednich dla przypadku niezbalansowanego. Oznacza to, ¿e testów SNK/HSD nie mo¿na stosowaæ w przypadku niezbalansowanym.

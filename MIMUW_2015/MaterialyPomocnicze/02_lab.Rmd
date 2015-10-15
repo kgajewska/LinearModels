@@ -1,0 +1,36 @@
+---
+title: "One-way analysis of variance"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Intro
+
+Dendritic spine is a small part of synapse of an axon. It's role is not fully known, yet there are some results that link it's properties (like length) with brain cognitive functions. 
+Find more here: https://en.wikipedia.org/wiki/Dendritic_spine
+
+In our dataset we have length of spines for four different groups of mouses Rows stand for different axons. Some of them are from wild mice (WT) some are from transgenic mice (TG). Some of these mice receive a placebo (-) some treatment (+). 
+
+```{r}
+spines <- archivist::aread("pbiecek/ModeleLiniowe/repo/17df9d1fc4f43962a91b9ab14b7b8e6f")
+head(spines)
+```
+
+# What to do
+
+1. Load the dataset.
+
+2. Plot graphical summaries for the dataset (show either distribution of spine's length in each group or mean+/-sd).
+
+3. Perform one-way ANOVA and post-hoc tests.
+Are there differences among different post hoc tests?
+Compare different approaches and discuss results.
+
+4. Choose suitable contrasts and test them.
+Prepare graphical summaries and discuss results.
+
+5. Create a knitr report that summarises the story/relation for spine's length and groups of mouses.
+

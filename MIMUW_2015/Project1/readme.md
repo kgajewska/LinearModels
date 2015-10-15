@@ -41,12 +41,12 @@ We expect that two primary sources of genetic variation will be gender and cance
 ```
 
 
-# Goal
+# The Goal
 
-Goal of this project is to quantify sources of genetic variation among cancer types. 
+The goal of this project is to quantify sources of genetic variation among cancer types. 
 Find genetic signatures -> sets of genes that differ among cancer types.
 
-In phase 1: find genes that differ between cancer types significantly.
+In phase 1: find genes that differ between cancer types significantly (i.e. for which genes expression differ for different cohorts of cancer).
 
 In phase 2: note that gene expression profiles are correlated. Take this correlation into account and find ‘small’ number of genes that different between cancers.
 
@@ -55,9 +55,9 @@ In phase 3: note that there are 12 types of cancers. Show the information about 
 
 # Other requirements
 
-After each phase you should create a single report (e.g. with the use of knitr) and this report is presented during classes and scored.
+After each phase you should create a single report (e.g. with the use of knitr). This report will presented during classes and then scored.
 
-Report after phase 2 shall not be longer than 10 pages (may be much shorter).
+Report after phase 2 shall not be longer than 10 pages (may be shorter).
 
 Report after phase 3 shall summarise all your results from all phases and shall not be longer than 3 pages.
 

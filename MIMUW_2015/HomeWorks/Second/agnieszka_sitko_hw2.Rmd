@@ -1,0 +1,80 @@
+---
+title: "Praca domowa 2"
+author: "Agnieszka Sitko"
+date: 2015-10-15
+output: 
+  html_document:
+    toc: yes
+---
+
+```{r, warning= FALSE, message= FALSE}
+N <- 5000
+set.seed(12)
+
+```
+<ol><li>Przypadek zrównoważony </li> 
+Generuję próbkę z rozkładu normalnego o długości 500 oraz pięć równolicznych poziomóW. Znajduję różnicę między największą i najmniejszą średnią. Powtarzam 5000 razy.
+```{r, warning=FALSE, message=FALSE}
+range.500.a <- replicate (N, {
+      
+      sample <- rnorm(500)
+      classes <- rep(1:100, times = 5)
+      means <- tapply(sample, classes, mean)
+      range <- range(means)[2] - range(means)[1]
+      range
+})
+pa <- hist(range.500.a, col=rgb(0,0,1,1/4))
+
+```
+<li>Przypadek niezr�wnowa�ony </li>
+<ul><li>Generuj� próbkę z rozkładu normalnego o długości 500 oraz pięć różnolicznych poziomów. Znajduję różnicę między największą i najmniejszą średnią. Powtarzam 5000 razy.</li>
+```{r,warning=FALSE, message=FALSE}
+range.500.b <- replicate (N, {
+      
+      sample <- rnorm(500)
+      classes <- rep( c(1,2,3,4,5), times = c(100, 20, 180, 160, 40))
+      means <- tapply(sample, classes, mean)
+      range <- range(means)[2] - range(means)[1]
+      range
+})
+
+pb <- hist(range.500.b,col=rgb(1,1,0,1/4))
+```
+<li>Generuję próbkę z rozkładu normalnego o długości 500 oraz 3 różnoliczne poziomy. Znajduję różnicę między największą i najmniejszą średnią. Powtarzam 5000 razy.</li>
+```{r,warning=FALSE, message=FALSE}
+range.500.c <- replicate (N, {
+      
+      sample <- rnorm(500)
+      classes <- rep( c(1,2,3), times = c(100, 150, 250))
+      means <- tapply(sample, classes, mean)
+      range <- range(means)[2] - range(means)[1]
+      range
+})
+
+pc <- hist(range.500.c,col=rgb(1,0,0,1/4))
+```
+</ul>
+</ol>
+Już analiza graficzna narzuca podejrzenie, że rozkład różnic nie jest taki sam.
+```{r, warning=FALSE, message=FALSE}
+
+plot( pa, col = rgb(0,0,1,1/4), xlim = c(0,3.5), ylim = c(0,1600), head = "Histogramy")
+plot( pb, col = rgb(1,1,0,1/4), xlim = c(0,3.5), ylim =c(0,1600), add=T)
+plot( pc, col=rgb(1,0,0,1/4), xlim = c(0,3.5), ylim =c(0,1600), add=T)
+
+```
+
+
+
+Sprawdzam, czy rzeczywiście różnice pochodzą z różnych rozkładów. Stosuję trzykrotnie test Kołmogorowa - Smirnova.
+```{r, warning=FALSE, message=FALSE}
+ks.test(range.500.a, range.500.b)
+ks.test(range.500.a, range.500.c)
+ks.test(range.500.b, range.500.c)
+
+```
+
+Wyniki testów pozwalają stwierdzić, że w każdym przypadku analizowane rozkłady istotnie się różnią.
+
+
+
