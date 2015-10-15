@@ -1,0 +1,66 @@
+---
+title: "Praca Domowa 2"
+author: "Krzysztof Rutkowski"
+date: "14.10.2015"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+Najpierw definiuje funkcje tworzace zbalansowane oraz niezbalansowane dane,
+generowane z rozkladu normalnego, z parametrami na wielkosc grup:
+```{r}
+createBalancedData <- function(nOfGroups, sizeOfGroup){
+  data <- matrix(nrow=nOfGroups*sizeOfGroup, ncol=2)
+  data[,2] <- rnorm(nrow(data))
+  data[,1] <- rep(1:sizeOfGroup, nOfGroups)
+  data <- data.frame(data)
+  colnames(data) = c("group", "value")
+  data$group <- factor(data$group)
+  return(data)
+}
+
+createUnbalancedData <- function(nOfGroups, minSizeOfGroup, maxSizeOfGroup){
+  sizesOfGroups <- sample(minSizeOfGroup:maxSizeOfGroup, nOfGroups, replace = TRUE)
+  data <- matrix(nrow=sum(sizesOfGroups), ncol=2)
+  data[,2] <- rnorm(nrow(data))
+  data[,1] <- unlist(sapply(1:length(sizesOfGroups), function(x) rep(x, sizesOfGroups[x])))
+  data <- data.frame(data)
+  colnames(data) = c("group", "value")
+  data$group <- factor(data$group)
+  return(data)
+}
+```
+nastepnie tworzymy testy HSD oraz liczymy roznice 
+miedzy najwieksza a najmniejsza roznica w srednich
+dla zbalansowanych oraz niezbalansowanych danych
+```{r}
+library(agricolae)
+countRangeHSD <- function(data){
+  M <- TukeyHSD(aov(value~group, data=data))$group[,1]
+  return(max(M) - min(M))
+}
+
+countBalanced <- function(nOfGroups, sizeOfGroup){
+  data <- createBalancedData(nOfGroups, sizeOfGroup)
+  countRangeHSD(data)
+}
+
+countUnbalanced <- function(nOfGroups, minSizeOfGroup, maxSizeOfGroup){
+  data <- createUnbalancedData(nOfGroups, minSizeOfGroup, maxSizeOfGroup)
+  countRangeHSD(data)
+}
+```
+
+Liczymy rozklad rozklad roznic przy wielokrotnym powtorzeniu
+```{r}
+rangesBalanced <- replicate(100, countBalanced(10, 10))
+hist(rangesBalanced)
+
+rangesUnbalanced <- replicate(100, countUnbalanced(10, 4, 16))
+hist(rangesUnbalanced)
+
+ks.test(rangesBalanced, rangesUnbalanced)
+```
+Przyjmujac poziom istotnosci a=0.05 odrzucamy wiec hipoteze o rownosci rozkladow.
+Z tego wzgledu test Tukeya nie nadaje sie do testowania niezbalansowanych grup.
