@@ -269,7 +269,7 @@ Example:
 logtrans(GC~log(size), data=genomes, alpha=seq(-20,100,1))
 ```
 
-# The Home Work
+# Home work [deadline 22 X]
 
 1. Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so, all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on).
 2. Show diagnostic plots for both simulated datasets.
