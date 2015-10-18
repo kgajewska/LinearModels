@@ -1,0 +1,212 @@
+---
+title: "Homework 3"
+author: "Katarzyna Kañska"
+date: "18.10.2015"
+output: html_document
+---
+
+### 1. Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so, all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on).
+
+The only assumption of the linear model is that the following relation is satisfied:
+$y = \alpha*x + \varepsilon$, where $\varepsilon$ is a normally distributed random variable, $\alpha$ is a constant.
+
+So we generate the first dataset simply by applying the above formula.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+X1 <- runif(1000, min = 0, max = 50)
+Y1 <- 3.14*X1 + rnorm(1000, mean = 0, sd = 15)
+
+dataset1 <- data.frame(X1, Y1)
+
+```
+
+Let's see what we got.
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(dataset1, aes(x=X1, y=Y1)) +
+  geom_point() + geom_smooth(method="lm", formula=y~x)
+```
+
+To generate the second dataset we need to violate the model assumptions. We start with **non homogeneous variance of residuals**. To get things worse, we take $\varepsilon$ from uniform distribution with non-zero mean.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+X2 <- X1
+Y2 <- 3.14*X2
+Y2[X2<15 | X2>35] <- Y2[X2<15 | X2>35] + runif(sum(as.numeric(X2<15 | X2>35)), min = -15, max = 5)
+Y2[X2>=15 & X2<=35] <- Y2[X2>=15 & X2<=35] + runif(sum(as.numeric(X2>=15 & X2<=35)), min = -5, max = 25)
+
+```
+
+Now we add the **influential observation**.
+
+```{r, warning=FALSE, message=FALSE}
+
+X2[1] <- 75
+Y2[1] <- 6.28*X2[1]
+
+dataset2 <- data.frame(X2, Y2)
+```
+
+Let's see what we got this time.
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(dataset2, aes(x=X2, y=Y2)) +
+  geom_point() + geom_smooth(method="lm", formula=y~x)
+```
+
+### 2. Show diagnostic plots for both simulated datasets.
+
+```{r, warning=FALSE, message=FALSE}
+model1 <- lm( Y1~X1, data=dataset1)
+model2 <- lm( Y2~X2, data=dataset2)
+```
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+
+plot(model1, which=1, main="dataset 1")
+plot(model2, which=1, main="dataset 2")
+
+```
+
+The plot for the dataset1 indicates that the mean of residuals is equal zero and it does not depend on the fitted values. The plot for the dataset2 indicates that the mean of residuals is a function of fitted values, which suggest a non-linear model for this data.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+
+plot(model1, which=2, main="dataset 1")
+plot(model2, which=2, main="dataset 2")
+
+```
+
+The plot for the dataset1 indicates that the standardized residuals are normally distributed -- points lay on the $y=x$ line. On the plot for the dataset2 we see that the distribution of standardized residuals is light-tailed -- points deviate from the $y=x$ line for low and high values.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+
+plot(model1, which=3, main="dataset 1")
+plot(model2, which=3, main="dataset 2")
+
+```
+
+The plot for the dataset1 indicates that the variance is homogenous. The plot for the dataset2 suggests the non homogeneous variance of residuals.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+
+plot(model1, which=4, main="dataset 1")
+plot(model2, which=4, main="dataset 2")
+
+```
+
+On the plot for the dataset1 we see that all Cook's distances are smaller than 1. Therefore all of the obsevations are not influencial. In the dataset2 the observation number 1 is clearly the influencial one.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+
+plot(model1, which=5, main="dataset 1")
+plot(model2, which=5, main="dataset 2")
+
+```
+
+In the dataset1 there are no outliers. In the dataset2 the observation number 1 is an outlier -- it has high leverage and large value of the corresponding residual.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+
+plot(model1, which=6, main="dataset 1")
+plot(model2, which=6, main="dataset 2")
+
+```
+
+These plots confirm what we already noticed. In the dataset1 there are no outliers. In the dataset2 the observation number 1 is an outlier -- it has large Cook's distance and high leverage.
+
+### 3. Choose three tests for model diagnostic
+
+* Durbin-Watson test for autocorrelation of disturbances.
+* Rainbow test for linearity.
+* Ramsey's RESET test for functional form.
+
+### 4. For each test create two simulated datasets. One that passes the given test and one that does not (e.g. simulate data with heterogeneous variance).
+
+As an ideal dataset, which has lack of first order autocorrelation in epsilons, model coefficients are the same for high/low values of $x$ and relation between $x$ and $y$ is linear, we will use dataset1 from the first exercise.
+
+Dataset3 -- first order autocorrelation in epsilons:
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+X3 <- sort(X1)
+Y3 <- 3.14*X3 + arima.sim(n = 1000, list(ar = 0.5), sd = 15)
+dataset3 <- data.frame(X3,Y3)
+```
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(dataset3, aes(x=X3, y=Y3)) +
+  geom_point() + geom_smooth(method="lm", formula=y~x)
+```
+
+Dataset4 -- model coefficients are different for high/low values of $x$:
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+X4 <- X1
+Y4 <- rep(0, times=1000)
+Y4[X4<25] <- 0.785*X4[X4<25]
+Y4[X4>=25] <- 6.28*X4[X4>=25]
+Y4 <- Y4 +  rnorm(1000, mean = 0, sd = 15)
+dataset4 <- data.frame(X4, Y4)
+```
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(dataset4, aes(x=X4, y=Y4)) +
+  geom_point() + geom_smooth(method="lm", formula=y~x)
+```
+
+Dataset5 -- relation between $x$ and $y$ is not linear:
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+X5 <- X1
+Y5 <- 0.785* X5^2 + 3.14*X5 + rnorm(1000, mean = 0, sd = 50)
+dataset5 <- data.frame(X5, Y5)
+```
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(dataset5, aes(x=X5, y=Y5)) +
+  geom_point() + geom_smooth(method="lm", formula=y~x)
+```
+
+### 5. Present results from diagnostic tests, show p-values for both datasets.
+
+```{r, warning=FALSE, message=FALSE}
+library("lmtest")
+```
+
+Durbin-Watson test for autocorrelation of disturbances.
+```{r, warning=FALSE, message=FALSE}
+dwtest( Y1 ~ X1, order.by=~X1, data = dataset1)
+dwtest( Y3 ~ X3, order.by=~X3, data = dataset3)
+```
+
+Rainbow test for linearity.
+```{r, warning=FALSE, message=FALSE}
+raintest( Y1 ~ X1, order.by=~X1, data = dataset1)
+raintest( Y4 ~ X4, order.by=~X4, data = dataset4)
+```
+
+Ramsey's RESET test for functional form.
+```{r, warning=FALSE, message=FALSE}
+resettest( Y1 ~ X1, data = dataset1, type="regressor")
+resettest( Y5 ~ X5, data = dataset5, type="regressor")
+```
+
+As we expected - dataset1 passes all given tests, while datasets 3, 4, 5 fail the corresponding tests.
