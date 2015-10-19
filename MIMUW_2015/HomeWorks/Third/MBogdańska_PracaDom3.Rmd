@@ -1,0 +1,112 @@
+---
+title: "Praca domowa 3"
+author: "Magdalena Bogdańska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    toc: TRUE
+---
+# 1. Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on). Show diagnostic plots for both simulated datasets.
+
+The first dataset called data1 will be prepared in such a way that all diagnostic plots will show the fulfilment of modle assumptions. In other words, it will be a set of two vectors in which values of second vector are a linear function of the values in the first vector with a normally distributed variance.
+
+The second data set (data2) is the modification of first data obtained by taking third power of each element and adding to some elements random variables from uniform distribution with variance different from the variance in the other elements.
+```{r, warning=FALSE, message=FALSE}
+set.seed(2)
+N<-1000
+X<-seq(1, 20, length.out=N)
+Y<-2*X+rnorm(N,1,0.1)
+
+Z<-Y^3
+Z[1:(N/100)]<-Z[1:(N/100)]^2 + runif(N/100,20,200)
+
+data1 <- data.frame(X, Y)
+data2 <- data.frame(X, Z)
+
+model1 <- lm( Y~X, data1)
+model2 <- lm( Z~X, data2)
+
+par(mfrow=(c(1,2)))
+for (i in 1:6)
+{
+  plot(model1, which=i)
+  plot(model2, which=i)
+}
+```
+
+From diagnostic plots one can see that the linear regression model is proper for the first data set, while the second data set doesn't pass assumptions of linear regression. 
+
+From the first diagnostic plot we observe that residuals aren't independent on fitted values. We should reject the hypothesis of normality of residuals based on the second plot. The third plot suggests that variance of residuals isn't homogeneous. 
+The fifth plot also shows that linear model isn't correct for data1, as it shows existence of influencing observations based on leverege measure.  
+
+-------------------------------------------------------------------------------------------
+
+
+# 2. Choose three tests for model diagnostic. For each test create two simulated datasets. One that passes the given test and one that does not. Present results from diagnostic tests, show p-values for both datasets.
+
+## 2.1. Breusch-Pagan test against heteroskedasticity
+```{r, warning=FALSE, message=FALSE}
+N<-1000
+X<-seq(1, 30, length.out=N)
+Y<-2*X+rnorm(N,1,0.1)
+
+Z<-Y
+Z[1:(N/4)]<-Z[1:(N/4)] + runif(N/4,10,20)
+
+data1 <- data.frame(X, Y)
+data2 <- data.frame(X, Z)
+
+model1 <- lm( Y~X, data1)
+model2 <- lm( Z~X, data2)
+
+library(lmtest)
+bptest(model1)
+bptest(model2)
+```
+Using standard p-value equal to 0.05, first dataset data1 passes the test (so variances of residuals are homogeneous), while the second one - doesn't. P-values can be extracted by the following commands:
+
+```{r, warning=FALSE, message=FALSE}
+bptest(model1)$p.value
+bptest(model2)$p.value
+```
+
+## 2.2. Durbin-Watson test for autocorrelation of residuals
+```{r, warning=FALSE, message=FALSE}
+N<-1000
+X<-seq(1, 50, length.out=N)
+Y<-2*X+rnorm(N,1,0.1)
+
+Z<-Y
+Z[1:(N/4)]<-Z[1:(N/4)] + runif(N/4,1,2)
+
+data1 <- data.frame(X, Y)
+data2 <- data.frame(X, Z)
+
+model1 <- lm( Y~X, data1)
+model2 <- lm( Z~X, data2)
+
+dwtest(model1)
+dwtest(model2)
+```
+From the results of Durbin-Watson test we conclude that the first dataset has independent residuals, while the second one - dependent.
+
+## 2.3. Ramsey's RESET test for functional form
+```{r, warning=FALSE, message=FALSE}
+N<-1000
+X<-seq(1, 20, length.out=N)
+Y<-2*X+rnorm(N,1,0.1)
+
+Z<-log(Y)
+
+data1 <- data.frame(X, Y)
+data2 <- data.frame(X, Z)
+
+model1 <- lm( Y~X, data1)
+model2 <- lm( Z~X, data2)
+
+resettest(model1)
+resettest(model2)
+```
+The linear model is a correct one for the first dataset, isn't correct for the second one.
+
+
