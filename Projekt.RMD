@@ -65,12 +65,12 @@ for (i in 30:200) {
   cook[i]<-max(cooks.distance(model))
 }
 ```
-The results of a one-way ANOVA can be considered reliable as long as the following assumptions are met:
+The results of a one-way ANOVA can be considered reliable as long as the following assumptions are met:<br/>
 
-Response variable residuals are normally distributed (or approximately normally distributed).
-Samples are independent.
-Variances of populations are equal.
-Responses for a given group are independent and identically distributed normal random variables (not a simple random sample (SRS)).
+Response variable residuals are normally distributed (or approximately normally distributed).<br/>
+Samples are independent.<br/>
+Variances of populations are equal.<br/>
+Responses for a given group are independent and identically distributed normal random variables (not a simple random sample (SRS)).<br/>
 ANOVA is a relatively robust procedure with respect to violations of the normality assumption.
 ## Analysis of model and conclusions
 ```{r}
