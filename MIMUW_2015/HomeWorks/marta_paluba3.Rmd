@@ -1,0 +1,94 @@
+---
+title: "PD3"
+author: "Marta Pa³uba"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+  
+### 1. Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so, all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on).
+### 2. Show diagnostic plots for both simulated datasets.
+
+Generujê pierwszy zbiór danych:
+
+```{r}
+set.seed(18)
+x=rexp(1000)
+y=x+rnorm(1000,0,1)
+dane1=data.frame(x,y)
+```
+Zobaczmy jak wygl¹da na wykresach:
+```{r}
+model1<-lm(y~x, data=dane1)
+par(mfrow=c(2,2))
+plot(model1)
+
+CD=cooks.distance(model1)
+hist(CD,breaks=50)
+hist(rstandard(model1),breaks=50)
+hist(rstudent(model1),breaks=50)
+```
+
+Widaæ, ¿e wszystko siê zgadza.
+Mo¿na dodatkowo sprawdziæ rozk³ad normalny reszt testem Shapiro-Wilka
+```{r}
+shapiro.test(rstandard(model1))
+```
+pvalue jest wysokie, wiêc nie ma podstaw do odrzucenia hipotezy o normalnoœci rozk³adu reszt.
+
+Generujê drugi zbiór danych:
+```{r}
+set.seed(18)
+x2=rexp(1000)
+y21=2*x2[1:500]+rnorm(500,0,1)
+y22=17*x2[501:1000]+rnorm(500,0,1)
+w=c(y21,y22)
+dane2=data.frame(x2,w)
+```
+Zobaczmy jak wygl¹da na wykresach:
+
+```{r}
+model2<-lm(w~x2, data=dane2)
+par(mfrow=c(2,2))
+plot(model2)
+
+CD2=cooks.distance(model2)
+hist(CD2,breaks=50)
+hist(rstandard(model2),breaks=50)
+hist(rstudent(model2),breaks=50)
+```
+
+Widaæ, ¿e teraz ¿e model2 nie zgadza siê na wykresach. Rozk³ad reszt nie jest normalny (na qqplocie ogony znacznie odstaj¹, na histogramach widaæ, ¿e ogony s¹ za d³ugie) ani nie ma homogenicznoœci wariancji.
+
+### 3. Choose three tests for model diagnostic
+
+* Breusch-Godfrey test for higher-order serial correlation.
+* Breusch-Pagan test against heteroskedasticity
+* Ramsey's RESET test for functional form
+
+### 4. For each test create two simulated datasets. One that passes the given test and one that does not
+### 5. Present results from diagnostic tests, show p-values for both datasets.
+Skorzystam z danych wygenerwoanych w punkcie 1.
+
+* Breusch-Godfrey test
+```{r}
+library(lmtest)
+
+bgtest(model1)
+bgtest(model2)
+```
+
+* Breusch-Pagan test
+```{r}
+bptest(model1)
+bptest(model2)
+```
+
+* Ramsey's RESET test
+```{r}
+resettest(model1)
+resettest(model2)
+```
+
+Wszêdzie model1 (dla dane1) 'przechodzi' test, a model2 (dla dane2) nie.
