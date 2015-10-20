@@ -1,0 +1,281 @@
+---
+title: "Model diagnostic and variable transformations"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Model diagnostic / Residuals
+
+*based on: Analiza danych z programem R. Modele liniwowe i mieszane*
+
+Model diagnostic is based on residuals.
+
+Let's start with expected properties of residuals.
+
+How residuals are related with epsilons (homogenous, Gaussian).
+
+![a](models/resid1.png)
+
+So what is the relation between residuals and epsilons?
+
+![a](models/resid7.png)
+
+What is the marginal distribution of residual r_i?
+
+![a](models/resid2.png)
+
+## Standardized residuals
+
+As we see residuals have expected value 0 but may have different variances. 
+Let's introduce standardized residuals.
+
+![a](models/resid3.png)
+
+In R in order to calculate standardized residuals one may use `rstandard{stats}` function.
+
+
+## Studentized residuals
+
+Notice, that the term r_i is also present in an estimate of variance \hat\sigma. 
+It will be easier to calculate distribution of residuals if denominator and nominator will be independent. This leads to studentized residuals.
+
+![a](models/resid4.png)
+
+Studentized residuals may be calculated in R with `rstudent{stats}`.
+
+
+## Cook distance
+
+Another useful measure is the Cook distance. It measures the effect of a single observation on predicted values. Observations with high values of Cook distance are called leverages.
+
+![a](models/resid5.png)
+![a](models/resid6.png)
+
+
+In order to calculate Cook distances one may use `cooks.distance{stats}` function.
+
+## Diagnostic plots
+
+These residuals may be examined visually with the `plot.lm()` function.
+
+```{r, message=FALSE, warning=FALSE}
+library(PBImisc)
+
+model.gen.2 <- lm(log(GC)~log(size), data=genomes)
+
+plot(model.gen.2, which=1:6)
+```
+
+# Model diagnostic
+
+A lot of useful tests for model diagnostic are implemented in `lmtest` package. Here you will find few, most commonly used.
+
+## The Breusch-Pagan test against heteroskedasticity.
+
+Implemented in `bptest{lmtest}`
+
+Null hypothesis: 
+
+Variance of epsilons is homogenous
+
+Technique: 
+
+Verify if 
+r_i^2 = gamma X + e
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+library(lmtest)
+bptest(log(GC)~log(size), data = genomes)
+```
+
+
+## Goldfeld-Quandt test against heteroskedasticity.
+
+Implemented in `gqtest{lmtest}`
+
+Null hypothesis: 
+
+Variance of epsilons is homogeneous.
+
+Technique: 
+
+Divide all observations into two groups, with high/low values of variable x_i
+Verify if 
+\sigma_{x_i high} = \sigma_{x_i low}
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+gqtest(log(GC)~log(size), order.by=~size, point =0.5, data = genomes)
+```
+
+## Harrison-McCabe test for heteroskedasticity
+
+Implemented in `hmctest{lmtest}`
+
+Null hypothesis: 
+
+Variance of epsilons is homogeneous
+
+Technique: 
+
+Compare cumulative sum of squared residuals along selected variable x_i
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+hmctest(log(GC)~log(size), order.by=~size, data = genomes, plot=TRUE)
+```
+
+## Durbin-Watson test for autocorrelation of disturbances.
+
+Implemented in `dwtest{lmtest}`
+
+Null hypothesis: 
+
+Lack of first order autocorrelation in epsilons
+
+Technique: 
+
+Verify if there is AR(1) autocorrelation for residuals.
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+dwtest(log(GC) ~ log(size), order.by=~size, data = genomes)
+```
+
+## Breusch-Godfrey test for higher-order serial correlation.
+
+Implemented in `bgtest{lmtest}`
+
+Null hypothesis: 
+
+Lack of higher order autocorrelations in epsilons
+
+Technique: 
+
+Verify if there are non zero coefficients in AR(p) autocorrelation model for residuals.
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+bgtest(log(GC)~log(size), order.by=~size, order=3, data = genomes)
+```
+
+## Rainbow test for linearity
+
+Implemented in `raintest{lmtest}`
+
+Null hypothesis: 
+
+Model coefficients are the same for high/low values of x_i.
+
+Technique: 
+
+Test if estimates of model coefficients are the same on full dataset and on a subset. Subset defined by low/high values of x_i.
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+raintest(log(GC)~log(size), order.by=~size, data = genomes)
+```
+
+## Ramsey's RESET test for functional form
+
+Implemented in `resettest{lmtest}`
+
+Null hypothesis: 
+
+Relation between x_i and y is linear (if any).
+
+Technique: 
+
+Introduce new artificial variables, that are transformations of original X, \hat y or PCA out of X. Test if the new variables are significant.
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+resettest(log(GC)~log(size), data = genomes, type="regressor")
+```
+
+## Shapiro-Wilk Normality Test
+
+Implemented in `shapiro.test{stats}`
+
+Null hypothesis: 
+
+Observations follow normal distribution.
+
+Technique: 
+
+Verify square of sum of weighed order statistics.
+
+Example
+
+```{r, warning=FALSE, message=FALSE}
+model <- lm(log(GC)~log(size), data = genomes)
+shapiro.test(rstandard(model))
+```
+
+
+# Variable transformations
+
+What we can do if normality assumptions of model structure do not work?
+
+In many cases a simple transformation helps, for example, consider following structures
+
+* y = a x^b; after the logarithm the model will have the linear structure
+* y = a exp(b); after the logarithm the model will have the linear structure
+* y = x/(ax - b); after the inverse transformation the model will have the linear structure
+
+If y takes values in 0-1 domain (e.g. percept of something), then the arcsin transformation helps in stabilization of variance.
+
+## The Box Cox transformation
+
+Consider the class of transformations with parameter lambda (this class is called BoxCox transformations)
+
+```{}
+y' = (y^lambda - 1)/lambda [if lambda \eq 0]
+
+     log(y)                [if lambda = 0]
+```
+     
+Use maximum likelihood method in order to find the optimal lambda.
+
+Implemented in `box.cox{car}` and `boxcox{MASS}`.
+
+Example:
+
+```{r, warning=FALSE, message=FALSE}
+tmp <- boxcox(GC~log(size), data=genomes)
+(wsp <- tmp$x[which.max(tmp$y)])
+```
+
+## The log-trans transformation
+
+Consider the following class of transformations with parameter a: y' = log(y + a). Use the likelihood method to identify the optimal a.
+
+This transformation is implemented in `logtrans{MASS}`.
+ 
+Example:
+
+```{r, warning=FALSE, message=FALSE}
+logtrans(GC~log(size), data=genomes, alpha=seq(-20,100,1))
+```
+
+# Home work [deadline 22 X]
+
+1. Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so, all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on).
+2. Show diagnostic plots for both simulated datasets.
+
+3. Choose three tests for model diagnostic (note, you should not choose the same three tests as other students. If your Submission will have same diagnostic tests as other already submitted home work then your homework will be rejected. )
+4. For each test create two simulated datasets. One that passes the given test and one that does not (e.g. simulate data with heterogeneous variance)
+5. Present results from diagnostic tests, show p-values for both datasets.
+
+
