@@ -1,0 +1,172 @@
+---
+title: "Praca domowa 3"
+author: "Agnieszka Sitko"
+date: '2015-10-15'
+output:
+      html_document:
+      toc: yes
+pdf_document:
+      toc: yes
+---
+```{r, warning = FALSE, message = FALSE}
+library(lmtest)
+set.seed(3)
+```
+
+<h3>PART I</h3>
+
+
+`model11` will pass all diagnostic tests. 
+```{r, warning = FALSE, message = FALSE}
+x11 <- sample(1000)
+epsilon11 <- rnorm(1000)
+y11 <- x11 + epsilon11
+model11 <- lm(y11~x11)
+plot(x11, y11)
+par(mfrow = c(3,2))
+plot(model11, which = 1:6)
+
+#Breusch-Pagan test for homoskedasticity
+bptest(model11)
+
+#Goldfeld-Quandt test for homoskedasticity
+gqtest(model11)
+
+#Harrison-McCabe test for homoskedasticity
+hmctest(y11~x11, order.by=~x11, plot=FALSE,  data = as.data.frame(cbind(x11,y11)))
+
+#Durbin-Watson test for autocorrelation
+dwtest(y11~x11, order.by=~x11,  data = as.data.frame(cbind(x11,y11)))
+
+#Breusch-Godfrey test for higher-order serial correlation
+bgtest(y11~x11, order.by=~x11,  data = as.data.frame(cbind(x11,y11)))
+
+#Rainbow test for linearity
+raintest(y11~x11, order.by=~x11, data = as.data.frame(cbind(x11,y11)))
+
+#Ramsey's RESET test for functional form
+resettest(model11, type = "regressor")
+
+#Shapiro-Wilk Normality Test
+shapiro.test(rstandard(model11))
+
+```
+
+
+`model12` will fail at least 3 diagnostic tests.
+```{r, warning = FALSE, message = FALSE}
+x12 <- 1:1000
+epsilon12 <- c(runif(500, -0.5, 0.5), runif(500, -2, 2))
+y12 <- log(x12) + epsilon12
+model12 <- lm (y12 ~ x12)
+par(mfrow = c(1,1))
+plot(x12,y12)
+abline(model12)
+```
+
+
+
+
+
+It is highly unlikely for `model12` to pass linearity tests. What is more, variance of residuals is suspected to be heterogeneous.
+```{r, message=FALSE, warning=FALSE}
+par(mfrow = c(3,2))
+plot(model12, which = 1:6)
+```
+
+
+Normal QQ plot shows that residuals may not be normally distributed.
+```{r, message=FALSE, warning=FALSE}
+#Breusch-Pagan test for homoskedasticity
+bptest(model12)
+
+#Goldfeld-Quandt test for homoskedasticity
+gqtest(model12)
+
+#Harrison-McCabe test for homoskedasticity
+hmctest(y12~x12, order.by=~x12,plot=FALSE)
+
+#Durbin-Watson test for autocorrelation
+dwtest(y12~x12, order.by=~x12)
+
+#Breusch-Godfrey test for higher-order serial correlation
+bgtest(y12~x12, order.by=~x12)
+
+#Rainbow test for linearity
+raintest(y12~x12, order.by=~x12)
+
+#Ramsey's RESET test for functional form
+resettest(model12, type = "regressor")
+
+#Shapiro-Wilk Normality Test
+shapiro.test(rstandard(model12))
+```
+
+
+So, in fact `model12` do not pass any of analyzed diagnostic test.
+
+<h3>PART II</h3>
+
+In each case `model21i` will pass diagnostic test and `model22i` will fail.
+
+<b> Goldfeld - Quandt test for homoskedasticity </b>
+```{r, warning = FALSE, message = FALSE}
+x21a <- 1:1000
+epsilon21a <- rnorm(1000)
+y21a <- 1:1000 + epsilon21a
+model21a <- lm(x21a~y21a)
+plot(x21a,y21a)
+abline(model21a)
+plot(model21a, which = 1)
+gqtest(model21a)
+
+
+x22a <- 1:1000
+epsilon22a <- c(rnorm(100, 0, 10), rnorm(500, 0, 15), rnorm(400, 0, 543))
+y22a <- 1:1000 + epsilon22a
+model22a <- lm(x22a~y22a)
+plot(x22a,y22a)
+abline(model22a)
+plot(model22a, which = 1)
+gqtest(model22a)
+
+```
+
+<b>Durbin-Watson for autocorrelation</b>
+```{r, warning = FALSE, message = FALSE}
+x21b <- 1:10
+y21b <- 1:10
+par(mfrow = c(1,1))
+plot(x21b,y21b)
+model21b <- lm(y21b~x21b)
+dwtest(y21b ~ x21b, order.by =~x21b)
+
+
+x22b <- 1:1000 
+y22b <- 1:1000
+par(mfrow = c(1,1))
+plot(x22b,y22b)
+model22b <- lm(y22b ~ x22b)
+dwtest(y22b ~ x22b, order.by =~x22b)
+
+```
+Although both models in theory are perfectly fitted (which means that fitted values should equal observed values), only first passes tests for autocorrelation. The above example shows that given test of autocorrelation may yield to different results depending on the size of our sample. It is due to the roundings errors which occur while calculating residuals.
+
+<b>RESET test </b>
+```{r, warning = FALSE, message = FALSE}
+x21c <- sample(1000)
+y21c <- x21c
+par(mfrow = c(1,1))
+plot(x21c,y21c)
+model21c <- lm(y21c~x21c)
+resettest(model21c)
+
+x22c <- sample(1000)
+y22c <- log(x22c)
+par(mfrow = c(1,1))
+plot(x22c,y22c)
+model22c <- lm(y22c ~ x22c)
+abline(model22c)
+resettest(model22c)
+
+```
