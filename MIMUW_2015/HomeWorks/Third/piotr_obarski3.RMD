@@ -10,20 +10,20 @@ output:
 ### Show diagnostic plots for both simulated datasets.
 Po wygenerowaniu danych, na wykresach diagnostycznych będę sprawdzać, czy testy diagnostyczne są spełnione, więc od razu zrobię 1. i 2. punkt z pracy domowej.
 
-Jeśli zależność pomiędzy zmiennymi jest liniowa model powinnien być całkowicie dopasowany. Zatem zróbmy właśnie w ten sposób.
+
 ```{r}
 library(ggplot2)
 library(lmtest)
 
 x1<-c(1:1000)
-y1<-x1
+y1<-rnorm(1000)
 dataset1<-data.frame(x1,y1)
 model<-lm(y1~x1, data=dataset1)
 plot(y1~x1, data=dataset1)
 plot(model, which=1:6)
 model$residuals[1:20]
 ```
-Widać na wykresach diagnostycznych, że model jest dobry. Co ciekawe wykresy nie są całkowicie zdegenerowane i nie są "perfekcyjne", a późniejsze spojrzenie na residua pokazuje, że są one bliskie 0, a nie tak jak powinny być równe 0.
+Widać na wykresach diagnostycznych, że model jest dobry.
 </br>
 
 Żeby wygenerować drugi zbiór danych, staram się zrobić coś, żeby zależność nie była liniowa.
@@ -42,6 +42,7 @@ plot(model2, which=1:6)
 ```
 </br>
 Na wykresach widać, że rzeczywiście nie ma zależności liniowej, a wykresy diagnostyczne potwierdzają tezę, że model jest zły.
+Np. wykres Normal Q-Q jest bardzo odległy od idealnego, na wykresie Residuals vs Fitted, widać pewien trend, zatem wariancja reszt nie jest jednorodna, a na Residuals vs Levrage widać, że niektóre obserwacje mają znacząco większe znaczenie niż zdecydowana większość z nich.
 Jeszcze zrobię wykresy diagnostyczne obok siebie, żeby je porównać.
 
 ```{r}
@@ -69,34 +70,21 @@ shapiro.test(rstandard(model))
 shapiro.test(rstandard(model2))
 ```
 
-Spotkało mnie tutaj niemiłe zaskoczenie, gdyż jednak model, który był testowany jako pierwszy nie ma reszt rozłożonych normalnie, mimo że jest idealna zależność liniowa. Dodam zatem do y1 z dataset1 trochę zaburzenia normalnego i powtórzę testy.
-
-
-```{r}
-y3<-y1+rnorm(1000)*10
-dataset3<-data.frame(x1,y3)
-model<-lm(y3~x1, data=dataset3)
-shapiro.test(rstandard(model))
-shapiro.test(rstandard(model2))
-```
 Widać, że p-value w pierwszym przypadku jest duże, w drugim małe, co oznacza, że pierwszy test został pomyślnie zakończony, w przeciwieństwie do drugiego.
 
 W teście Harrisona-McCabe'a użyję tych samych danych co powyżej, jednak w dataset2 zamienię zmienną objaśnianą ze zmienną objaśniającą.
 
 ```{r}
-plot(x2~y2, data=dataset2)
-par(mfrow=c(1,2))
-hmctest(y3~x1, order.by=~x1, data = dataset3, plot=TRUE)
+hmctest(y1~x1, order.by=~x1, data = dataset1, plot=TRUE)
 hmctest(x2~y2, order.by=~y2, data = dataset2, plot=TRUE)
-par(mfrow=c(1,1))
 ```
 W pierwszym teście wysoka wartość p-value sugeruje, że wariancje epislonów są homogeniczne, w drugim wręcz przeciwnie.
 
-Teraz testuję liniowość testem Rainbow. Za zbiór danych który ma przejść test przyjmuję dataset3. Lekko zmodyfikuję zbiór dataset2 i on będzie tym, który testu nie przejdzie.
+Teraz testuję liniowość testem Rainbow. Za zbiór danych który ma przejść test przyjmuję dataset1. Lekko zmodyfikuję zbiór dataset2 i on będzie tym, który testu nie przejdzie.
 ```{r}
 dataset2$y2[200:500]<- -dataset2$y2[200:500]
 plot(y2~x2, data=dataset2)
-raintest(y3~x1, order.by=~x1, data = dataset3)
+raintest(y1~x1, order.by=~x1, data = dataset1)
 raintest(y2~x2, order.by=~x2, data = dataset2)
 ```
 Rzeczywiście wartości p-value potwierdzają, że się dzieje tak jak zapowiedziałem.
