@@ -5,14 +5,13 @@ date: "Modele liniowe i mieszane"
 output: 
   html_document:
   toc: TRUE
-pdf_document:
-  toc: yes
 ---
 # Preparing data to analysis
 
 Firstly we launch load library agricolae which is needed to perform post-hoc test used later and we load data.
 ```{r}
 library(agricolae)
+library(MASS)
 load("~/Modele liniowe i mieszane/projekt 1/clinical.cb.rda")
 load("~/Modele liniowe i mieszane/projekt 1/expression.cb1.rda")
 load("~/Modele liniowe i mieszane/projekt 1/expression.cb2.rda")
@@ -25,19 +24,14 @@ clinical.cb$sampleID<-sub("-", ".", clinical.cb$sampleID)
 clinical.cb$sampleID<-sub("-", ".", clinical.cb$sampleID)
 clinical.cb$sampleID<-sub("-", ".", clinical.cb$sampleID)
 ```
-
+Then we change the names of rows in expression
 
 ```{r}
-# rownames(clinical.cb)<-clinical.cb$sampleID
-# clinical.cb <-clinical.cb[,-1]
-
 rownames(expression)<- expression$Sample
 expression <- expression[, -1]
 
 t_expression <- t(expression)
 t_expression <- as.data.frame(t_expression)
-
-# clinical.cb$id<-rownames(clinical.cb)
 
 colnames(clinical.cb)[1]<-"id"
 t_expression$id<- rownames(t_expression)
@@ -45,26 +39,7 @@ data<- merge(clinical.cb, t_expression, by="id")
 ```
 # Analyzing data
 
-## Performing post-hoc test
-```{r}
-colnames(data)[18] <- "CancerType"
-CancerType <- data$CancerType
-
-nrofgroups <- 0
-normality<-1
-cook<-0
-
-# length(colnames(data))
-# to perform test I in loop there is 200, but eventually should be length(colnames(data))
-for (i in 30:200) {
-  x <- data[,i]
-  model = aov(x ~ CancerType)
-  # in Scheffe test we do not need equal numbers of observations in groups as well as in LSD test, but we have many groups, and Scheffe is more conservative, so we will get less number of genes, what I think is quite good, because ultimately such a quantititave analysis leads to quality analysis
-  nrofgroups[i]<-match(tail(scheffe.test(model, "CancerType", console = FALSE)$groups$M,1), letters)
-  normality[i]<-(shapiro.test(rstandard(model))$p.value>=0.05)
-  cook[i]<-max(cooks.distance(model))
-}
-```
+## Checking assumptions
 The results of a one-way ANOVA can be considered reliable as long as the following assumptions are met:<br/>
 
 Response variable residuals are normally distributed (or approximately normally distributed).<br/>
@@ -72,18 +47,72 @@ Samples are independent.<br/>
 Variances of populations are equal.<br/>
 Responses for a given group are independent and identically distributed normal random variables (not a simple random sample (SRS)).<br/>
 ANOVA is a relatively robust procedure with respect to violations of the normality assumption.
-## Analysis of model and conclusions
+
 ```{r}
-# I think we can add a few more tests about validity of our model, especially we can add
-# sth to be able to generate interesting graphs, since he said that he likes graphs
-# need to check normality and equal variances of populations
-# use bartlett.test(x, CancerType)
-hist(nrofgroups[30:length(nrofgroups)])
-boxplot(cook[30:length(cook)], ylim=c(0, 0.1))
-boxplot(cook[30:length(cook)], ylim=c(0, 1))
-hist(cook[30:length(cook)]) # need to be fixed
+colnames(data)[18] <- "CancerType"
+
+normality<-1
+CancerType <- data$CancerType
+for (i in 30:length(colnames(data))) {
+  x <- data[,i]
+  model = aov(x ~ CancerType)
+  normality[i]<-(shapiro.test(rstandard(model))$p.value>=0.01)
+}
+
 which(normality==FALSE)
 length(which(normality==FALSE))/(i-30)
 
-colnames(data)[nrofgroups>7 & (is.na(nrofgroups) == FALSE)] # from histogram we see that it is better to put 7
+```
+Assumption about normality of residuals is not fulfilled, so we will transform our data.
+# Data transformation
+```{r}
+
+for(i in 30:length(colnames(data))) {
+  x <- data[,i]
+  x<-x+1-min(x) # shift data to get only positive
+  a<-boxcox(x~CancerType)
+  if (a$x[which.max(a$y)]!= 0) {
+    x<-(x^(a$x[which.max(a$y)])-1)/a$x[which.max(a$y)]
+  } else {
+    x<-log(x)
+  } 
+  data[,i]<-x
+}
+```
+
+
+in Scheffe test we do not need equal numbers of observations in groups as well as in LSD test, but we have many groups, and Scheffe is more conservative, so we will get less number of genes, what I think is quite good, because ultimately such a quantititave analysis leads to quality analysis
+```{r}
+normality<-1
+normality_in_groups<-1
+variance_of_groups<-1
+for (i in 30:length(colnames(data))) {
+  x <- data[,i]
+  variance_in_groups[i]<-(bartlett.test(x, CancerType)$p.value>=0.01)
+  zmienna<-0
+  for (j in 1:length(levels(CancerType))){
+    zmienna[j]<-tapply(x, CancerType, shapiro.test)[[j]]$p.value
+  }
+  normality_in_groups[i]<-(min(zmienna)>=0.05)
+  model = anova(lm(x ~ CancerType))
+  if(model$"Pr(>F)"[1]<=0.05){
+  nrofgroups[i]<-match(tail(scheffe.test(model, "CancerType", console = FALSE)$groups$M,1), letters)
+  }
+  normality[i]<-(shapiro.test(rstandard(model))$p.value>=0.01)
+}
+which(normality==FALSE)
+length(which(normality==FALSE))/(i-30)
+
+which(normality_in_groups==FALSE)
+length(which(normality_in_groups==FALSE))/(i-30)
+which(variance_in_groups==FALSE)
+length(which(variance_in_groups==FALSE))/(i-30)
+```
+
+
+## Conclusions
+
+```{r}
+hist(nrofgroups[30:length(nrofgroups)])
+colnames(data)[nrofgroups>7 & (is.na(nrofgroups) == FALSE)]
 ```
