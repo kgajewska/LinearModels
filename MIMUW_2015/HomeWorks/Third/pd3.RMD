@@ -1,0 +1,78 @@
+---
+title: "hm3"
+author: "Rafał Cylwa"
+date: "21 października 2015"
+output: html_document
+---
+```{r}
+library(lmtest)
+```
+
+1. Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so, all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on).
+
+
+Firstly, we generate data passing all diagnostic tests, that is:
+
+
+```{r}
+set.seed(21)
+a<-runif(1000, min=-1, max = 1)
+b <- a + rnorm(1000, mean = 0, sd = 0.1)
+model1 <- lm(b~a)
+plot(b~a)
+```
+
+Now we execute some tests.
+
+```{r}
+bptest(model1)
+gqtest(model1)
+hmctest(model1)
+dwtest(model1, order.by = ~a)
+bgtest(model1, order.by = ~a)
+raintest(model1)
+resettest(model1)
+shapiro.test(rstandard(model1))
+```
+As we expected, all test are passed.
+
+Let's generate second data set.
+```{r}
+set.seed(21)
+c<-seq(from =0, to = 5, length.out = 1000)
+d <- exp(c)+ c(runif(500, min = -0.2, max = 0.2), rnorm(500, mean = 0, sd=2))
+model2 <- lm(d~c)
+plot(d~c)
+```
+
+And test it:
+```{r}
+bptest(model2)
+gqtest(model2)
+hmctest(model2)
+dwtest(model2, order.by = ~c)
+bgtest(model2, order.by = ~c)
+raintest(model2)
+resettest(model2)
+shapiro.test(rstandard(model2))
+```
+This time, none of the tests is passed.
+
+2.Show diagnostic plots for both simulated datasets.
+
+Diagnostic plots for first data set.
+
+```{r}
+par(mfrow = c(2,3))
+plot(model1, which = 1:6)
+```
+
+And for the second one.
+
+```{r}
+par(mfrow = c(2,3))
+plot(model2, which = 1:6)
+```
+
+
+3-5. In 1. we simulated a first data set that passes all tests and second one that fails all of them. So all required tasks in 3-5. are already done.
