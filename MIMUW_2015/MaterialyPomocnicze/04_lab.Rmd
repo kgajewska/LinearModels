@@ -1,0 +1,17 @@
+---
+title: "Two way ANOVA"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+Modify the shiny app, that was presented during lectures in following directions:
+
+1. Add possibility of specifying sizes of each group. How the power of the test depends on the lack of balance in groups?
+
+2. Add possibility of specifying contrasts for factors. How the power of the aov/lm test depends on contrast that is used?
+
+3. Add the possibility of choosing range for the total number of observation. How the power of the test depends on the sample size?
+
