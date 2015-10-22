@@ -1,0 +1,386 @@
+---
+title: "Project1"
+author: "Marta Pa³uba, Emilia Pompe, Ma³gorzata Pujszo"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+  toc: TRUE
+---
+Loading required libraries 
+
+```{r message=FALSE, error=FALSE, warning=FALSE}
+library(MASS)
+library(dplyr)
+library(lawstat)
+library(agricolae)
+```
+
+#Changing the data
+
+```{r}
+load("expression.cb1.rda")
+load("expression.cb2.rda")
+load("clinical.cb.rda")
+```
+Let's see what our data looks like.
+```{r}
+head(expression.cb1[,1:5])
+head(expression.cb2[,1:5])
+head(clinical.cb[,1:6])
+```
+
+Firstly, we want to merge expression.cb1, expression.cb2 and clinical.cb , so we have one big data frame that we can work on. For that we have to:
+ 
+ * combine expression.cb1 and expression.cb2
+```{r}
+expression <-rbind(expression.cb1, expression.cb2)
+```
+
+* change "." to "-" in names of the columns, so they match the names in clinical.cb
+```{r}
+colnames(expression)<-gsub(".","-", colnames(expression), fixed=TRUE)
+```
+ 
+ * transpose data to have genes in columns and patient IDs in raws and name corresponding columns/raws
+```{r}
+trial <-t(expression[,-1])
+trial<- as.data.frame(trial)
+colnames(trial) <- expression[,1]
+trial$sampleID <- rownames(trial)
+```
+ 
+ * merge clinical.cb with changed data from expression
+```{r}
+dataset<-merge(trial, clinical.cb, by="sampleID")
+```
+
+Let's see how it looks now.
+```{r}
+head(dataset[,1:6])
+```
+
+Now we have something to work on.
+
+#Filter the data
+
+```{r}
+table(dataset$X_cohort)
+```
+
+As we can observe we have 13 types of cancer, but one has only 12 observation. It's not enough to conclude anything from it, so we decide to remove it. 
+
+```{r}
+dataset <- filter(dataset, X_cohort!="TCGA Formalin Fixed Paraffin-Embedded Pilot Phase II")
+dataset$X_cohort<-factor(dataset$X_cohort)
+```
+
+To improve the model we also decide to remove the values of any data points which lie beyond the extremes of the whiskers in boxplot. To do that we use the function called boxplot.stats
+
+```{r}
+f<-function (x) {
+  x[x %in% boxplot.stats(x)$out]<-NA
+  x
+}
+dataset[,2:16116]<-apply(dataset[,2:16116], 2, f)
+```
+
+
+#Assumptions
+
+To find genes that differ between cancer types significantly, we would like to use ANOVA. But ANOVA requires normality of residuals and homogeneity of variance. To check if residuals have normal distribiution we used Shapiro-Wilk test. To test the homogeneity of variance we use Levene test.
+
+```{r eval=FALSE} 
+shapiro_coeff1 <- rep(NA, times=16115)
+shapiro_coeff2 <- rep(NA, times=16115)
+levene1 <- rep(NA, times=16115)
+levene2 <- rep(NA, times=16115)
+```
+
+ We're using 2 different models:
+
+ * the standard one - just using lm-function
+ * after the Box Cox transformation
+ 
+Now, we are creating a huge loop going through each gene.
+ 
+```{r eval=FALSE}
+threshold <- 20
+n <- 10
+set.seed(7)
+for(i in 1:16116){
+  y <- dataset[,i] + abs(min(dataset[,i], na.rm=TRUE)) +0.01
+  d <- data.frame(y=y[!(is.na(y))], x=dataset$X_cohort[!(is.na(y))])
+  bad <- names(which(table(d$x) < threshold)) 
+  d <- filter(d, !(x %in% bad))
+  d$x <- factor(d$x) 
+  p.values.levene <- rep(NA, times=n )
+  p.values.shapiro <- rep(NA, times=n )
+  for (k in 1:n){
+    testy<-tapply(d$y, d$x, function(x) {
+      sample(x, size=50, replace = TRUE)})
+    a<-data.frame(nrow=50, ncol=2)
+    d.equal<-c()
+    for (j in 1:length(testy)) {
+      a <- cbind(as.numeric(testy[[j]]), names(testy)[j])
+      d.equal <- as.data.frame(rbind(d.equal, a))
+    }
+    colnames(d.equal)<-c("y","x")
+    d.equal$y<-as.numeric(as.character(d.equal$y))
+    model <- lm(y~x, data=d.equal)
+    assign(paste0("model",k), model)
+    p.values.levene[k] <- levene.test(d.equal$y, d.equal$x)$p.value
+  }
+  if (median(p.values.levene)>0.01){
+    p.values.shapiro <- sapply(1:n, function(number){
+      model <-get(paste0("model",number))
+      return(shapiro.test(rstandard(model))$p.value)
+    })
+  }
+  median.shapiro <- median(p.values.shapiro)
+  shapiro_coeff1[i-1] <- median.shapiro
+  levene1[i-1] <- median(p.values.levene)
+  if (is.na(median.shapiro)  | median.shapiro<0.01){
+    for (k in 1:n) {
+      #print(k)
+      tmp <- boxcox(get(paste0("model",k)), lambda=seq(-2,5,0.2), plotit=FALSE)
+      wsp <- tmp$x[which.max(tmp$y)]
+      d.equal <- get(paste0("model",k))$model
+      if(wsp<=0.05){
+        model <- lm(log(y)~x, data = d.equal)
+        p.values.levene[k] <- levene.test(log(d.equal$y), d.equal$x)$p.value
+      }
+      else {
+        model <- lm((y^wsp)~x, data = d.equal)  
+        p.values.levene[k] <- levene.test((d.equal$y)^wsp, d.equal$x)$p.value
+      }
+      assign(paste0("model",k), model) 
+    }   
+    if (median(p.values.levene)>0.01){
+      p.values.shapiro <- sapply(1:n, function(number){
+        model <-get(paste0("model",number))
+        return(shapiro.test(rstandard(model))$p.value)
+      })    
+    }
+    shapiro_coeff2[i-1] <- median(p.values.shapiro)
+    levene2[i-1] <- median(p.values.levene)
+    }
+}
+```
+
+Let's see what we are doing step by step.
+
+In every column we are temporarily removing the types of cancer that have less than 20 observations for given gene. 
+
+```{r eval=FALSE}
+  y <- dataset[,i] + abs(min(dataset[,i], na.rm=TRUE)) +0.01
+  d <- data.frame(y=y[!(is.na(y))], x=dataset$X_cohort[!(is.na(y))])
+  bad <- names(which(table(d$x) < threshold)) 
+  d <- filter(d, !(x %in% bad))
+  d$x <- factor(d$x) 
+```
+
+The next problem that we are trying to solve is that the Levene test is very sensitive for non-equal size of groups. Our idea is to take random sample of size 50 and repeat this step 10 times in order to get more reliable results.
+
+```{r eval=FALSE}
+ for (k in 1:n){
+    testy<-tapply(d$y, d$x, function(x) {
+      sample(x, size=50, replace = TRUE)})
+    a<-data.frame(nrow=50, ncol=2)
+    d.equal<-c()
+    for (j in 1:length(testy)) {
+      a <- cbind(as.numeric(testy[[j]]), names(testy)[j])
+      d.equal <- as.data.frame(rbind(d.equal, a))
+    }
+    colnames(d.equal)<-c("y","x")
+    d.equal$y<-as.numeric(as.character(d.equal$y))
+    model <- lm(y~x, data=d.equal)
+    assign(paste0("model",k), model)
+    p.values.levene[k] <- levene.test(d.equal$y, d.equal$x)$p.value
+  }
+```
+
+Now when the median of p-values is greater than significance level (0.01) we are performing Shapiro test.
+
+
+```{r eval=FALSE}
+if (median(p.values.levene)>0.01){
+    p.values.shapiro <- sapply(1:n, function(number){
+      model <-get(paste0("model",number))
+      return(shapiro.test(rstandard(model))$p.value)
+    })
+  }
+```
+
+If the medians of p-values of Levene test or Shapiro test are less than 0.01 we are making Box-Cox transformation and repeat our reasoning for transformated variables.
+
+If the Levene test is rejecting null hypothesis for both models, we are infering that such genes differ significantly. Otherwise we are performing ANOVA test or Kruskal test (when Shapiro test fails) - for model giving better results.
+
+#ANOVA and Kruskal test
+
+ANOVA test for better model:
+
+```{r}
+load("test.results.both.RData")
+threshold<-20
+anova.data.frame <- as.data.frame(rbind(
+  cbind(which(test.results.both$shapiro_coeff1>=0.01), rep(1, times=length(which(test.results.both$shapiro_coeff1>=0.01)))),
+  cbind(which(test.results.both$shapiro_coeff2>=0.01), rep(2, times=length(which(test.results.both$shapiro_coeff2>=0.01))))))
+
+anova.data.frame[,1] <- anova.data.frame[,1] + 1
+anova.data.frame$p.value <- rep(NA, times = nrow(anova.data.frame))
+
+for(k in 1:nrow(anova.data.frame)){
+  i <- anova.data.frame[k,1]
+  y <- dataset[,i] + abs(min(dataset[,i], na.rm=TRUE)) +0.01
+  d <- data.frame(y=y[!(is.na(y))], x=dataset$X_cohort[!(is.na(y))])
+  bad <- names(which(table(d$x) < threshold)) 
+  d <- filter(d, !(x %in% bad)) 
+  d$x <- factor(d$x) 
+  
+  model <- lm(y~x, data=d)
+  if (anova.data.frame[k,2]==1) {
+    anova.data.frame[k,3] <- anova(model)[1,5]
+  }
+  else {
+    tmp <- boxcox(model, lambda=seq(-2,5,0.2), plotit=FALSE)
+    wsp <- tmp$x[which.max(tmp$y)]
+    if(wsp<=0.05){
+      model1 <- lm(log(y)~x, data = d)
+    }
+    
+    else {
+      model1 <- lm((y^wsp)~x, data = d)  
+    }
+    anova.data.frame[k,3] <- anova(model1)[1,5]
+  }
+}
+```
+
+Kruskal test for better model. 
+Here we are making one modification: firstly we are transforming y to a normal distribution and check its normality using Shapiro test. If it is working, we are again performing ANOVA, if not we are perfoming Kruskal on better model (original or after Box-Cox).
+
+```{r}
+kruskal.data.frame <- as.data.frame(rbind(cbind(which(test.results.both$shapiro_coeff1<0.01), rep(1, times=length(which(test.results.both$shapiro_coeff1<0.01)))),
+                                          cbind(which(test.results.both$shapiro_coeff2<0.01), rep(2, times=length(which(test.results.both$shapiro_coeff2<0.01))))))
+
+kruskal.data.frame[,1] <- kruskal.data.frame[,1] + 1
+kruskal.data.frame$p.value <- rep(NA, times = nrow(kruskal.data.frame))
+
+for(k in 1:nrow(kruskal.data.frame)){
+  i <- kruskal.data.frame[k,1]
+  
+  y <- dataset[,i] + abs(min(dataset[,i], na.rm=TRUE)) +0.01
+  d <- data.frame(y=y[!(is.na(y))], x=dataset$X_cohort[!(is.na(y))])
+  bad <- names(which(table(d$x) < threshold)) 
+  d <- filter(d, !(x %in% bad)) 
+  d$x <- factor(d$x) 
+  
+  # transforming y to normal distribution
+  d$y.new <- qnorm(ecdf(d$y)(d$y)-1/(2*length(y))) 
+  model3 <- lm(y.new~x, data = d) 
+  if((shapiro.test(rstandard(model3))$p.value >= 0.01) & levene.test(d$y.new, d$x)$p.value >= 0.01){
+    kruskal.data.frame[k,3] <- anova(model3)[1,5]
+    kruskal.data.frame[k,2] <- 3
+  } else {
+    
+    if (kruskal.data.frame[k,2]==1) {
+      kruskal.data.frame[k,3] <- kruskal.test(y~x, data=d)$p.value
+    }
+    else {
+      model <- lm(y~x, data=d)
+      tmp <- boxcox(model, lambda=seq(-2,5,0.2), plotit=FALSE)
+      wsp <- tmp$x[which.max(tmp$y)]
+      if(wsp<=0.05){
+        d$y <- log(d$y)
+      }
+      else {
+        d$y <- (d$y)^wsp  
+      }
+      kruskal.data.frame[k,3] <- kruskal.test(y~x, data=d)$p.value
+    }
+  }
+}
+```
+
+#Results
+
+anova.kruskal is a data frame consisting of p-values of ANOVA and Kruskal tests.
+
+```{r}
+anova.data.frame$which.test <- rep("anova", times=nrow(anova.data.frame))
+kruskal.data.frame$which.test <- sapply(kruskal.data.frame[,2], function(nr) ifelse(nr==3, "anova", "kruskal"))
+
+anova.kruskal <- rbind(anova.data.frame, kruskal.data.frame)
+colnames(anova.kruskal)[1:2] <- c("gene.number", "better.model")
+```
+
+Let's take a look at our results. It turned out that very few genes were not significant in our analysis.
+```{r}
+head(anova.kruskal, 10)
+table(anova.kruskal$p.value>0.01)
+table(anova.kruskal$p.value>0.005)
+```
+
+We would like to show one detailed example of our analysis, for the gene number 1201.
+```{r}
+anova.kruskal[which(anova.kruskal$gene.number==1201),]
+i <- 1201
+colnames(dataset)[i]
+```
+
+As before, we needed to throw away the levels with less than 20 observations. Note that here we did not need transform the data to be positive, as no Box-Cox transformations are needed.
+```{r}
+y <- dataset[,i]
+d <- data.frame(y=y[!(is.na(y))], x=dataset$X_cohort[!(is.na(y))])
+bad <- names(which(table(d$x) < threshold)) 
+d <- filter(d, !(x %in% bad)) 
+d$x <- factor(d$x) 
+
+table(d$x)
+```
+
+11 groups were taken into consideration. The proper model for this gene was the one without any transformations.
+
+```{r, fig.width=4, fig.height=4}
+boxplot(y~x, data=d, las=2)
+
+model <- lm(y~x, data = d)
+```
+
+Let us check the crucial assumption of normality:
+```{r}
+shapiro.test(rstandard(model))
+```
+
+When our model has the normal distribution, we can use Bartlett test instead of Levene test. It's slightly better and doesn't need equal groups, but it is more sensitive for asumption of normality.
+
+```{r}
+bartlett.test(d$y~d$x)
+```
+
+Now we can do ANOVA:
+
+```{r}
+anova(model)
+```
+
+The result of the ANOVA test shows that there are significant differences in the model.
+
+Let us also take a look at the diagnostic plots
+```{r, fig.width=8, fig.height=4}
+par(mfrow=c(1,2))
+plot(model, which=1:2)
+par(mfrow=c(1,2))
+plot(model, which=3:4)
+par(mfrow=c(1,2))
+plot(model, which=5:6)
+```
+
+The post hoc analysis indicated which levels were significantly different. Note that the results of these two test are slightly different.
+
+```{r}
+LSD.test(aov(y~x, data=d), "x", p.adj="holm", console = TRUE)
+scheffe.test(aov(y~x, data=d), "x", console = TRUE)
+```
+
+
