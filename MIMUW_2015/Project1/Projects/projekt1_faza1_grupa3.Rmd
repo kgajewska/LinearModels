@@ -1,0 +1,160 @@
+---
+title: "Project 1, Phase 1"
+author: "Agnieszka Sitko, Annanina Koster, Rafal Cylwa, Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+      html_document:
+      toc: TRUE
+---
+      # Preparing data to analysis
+      
+      Firstly we launch load library agricolae which is needed to perform post-hoc test used later and we load data.
+```{r}
+library(agricolae)
+library(MASS)
+load("~/Modele liniowe i mieszane/projekt 1/clinical.cb.rda")
+load("~/Modele liniowe i mieszane/projekt 1/expression.cb1.rda")
+load("~/Modele liniowe i mieszane/projekt 1/expression.cb2.rda")
+```
+We merge data contained in files expression.cb1 and expression.cb2, and then standarize codes of patients in file clinical.cb in order to have the same type of names as in file expression. 
+```{r}
+expression <- rbind(expression.cb1, expression.cb2)
+remove(expression.cb1, expression.cb2)
+clinical.cb$sampleID<-sub("-", ".", clinical.cb$sampleID)
+clinical.cb$sampleID<-sub("-", ".", clinical.cb$sampleID)
+clinical.cb$sampleID<-sub("-", ".", clinical.cb$sampleID)
+```
+Then we move the name of gene from column into rownames. Subsequently we transpose data in set expression. Finally we name the column which consists a patient id in set clinical.cb as "id", add such a column in t_expression set and merge those sets.
+For convenience we change the name of column X_cohort which consists of cohorts of cancer to the "CancerType", and we also create a set CancerType from this column.
+```{r}
+rownames(expression)<- expression$Sample
+expression <- expression[, -1]
+
+t_expression <- t(expression)
+t_expression <- as.data.frame(t_expression)
+
+colnames(clinical.cb)[1]<-"id"
+t_expression$id<- rownames(t_expression)
+data<- merge(clinical.cb, t_expression, by="id")
+
+colnames(data)[18] <- "CancerType"
+CancerType <- data$CancerType
+
+```
+# Analyzing data
+
+## Checking assumptions
+The results of a one-way ANOVA can be considered reliable as long as the following assumptions are met:<br/>
+      
+* Response variable residuals are normally distributed (or approximately normally distributed).<br/>
+* Samples are independent.<br/>
+* Variances of populations are equal.<br/>
+* Responses for a given group are independent and identically distributed normal random variables (not a simple random sample (SRS)).<br/>
+ANOVA is a relatively robust procedure with respect to violations of the normality assumption.
+
+Samples are independent (or we hope so, but even if they don't we can do nothing). So hereunder we will check the rest of the assumptions. To do that we will use twice Shapiro-Wilk test, to check normality in groups and normality of residuals and we will use bartlett test to check wheter variances in groups are equal.
+```{r, warning=FALSE}
+normality<-1
+normality_in_groups<-1
+variance_in_groups<-1
+# length(colnames(data))
+for (i in 30:1000) {
+      x <- data[,i]
+      model = aov(x ~ CancerType)
+      normality[i]<-(shapiro.test(rstandard(model))$p.value>=0.01)
+      
+      if(try(bartlett.test(x, CancerType), TRUE) == TRUE) {
+            variance_in_groups[i]<-(bartlett.test(x, CancerType)$p.value>=0.01)
+      }
+      zmienna<-0
+      for (j in 1:length(levels(CancerType))){
+            if(try(tapply(x, CancerType, shapiro.test)[[j]], TRUE) == TRUE) {
+                  zmienna[j]<-tapply(x, CancerType, shapiro.test)[[j]]$p.value
+            }
+      }
+      normality_in_groups[i]<-(min(zmienna)>=0.01)
+}
+
+#which(normality==FALSE)
+length(which(normality==FALSE))/(i-29)
+#which(normality_in_groups==FALSE)
+length(which(normality_in_groups==FALSE))/(i-29)
+#which(variance_in_groups==FALSE)
+length(which(variance_in_groups==FALSE))/(i-29)
+```
+Assumption about normality of residuals is not fulfilled as well as assumption of normality in groups. Variances in groups are not equal so this assumption is also violated. Hence we will transform our data 
+To try fixing this situation we will transform data via boxcox method. We will also shift our data to get only positive values (it is needed to carry out transformation), but as we know this will not affect variance and means in each group will be shifted equally so the difference between means will be unchanged.
+## Data transformation
+```{r}
+a <- 0
+for(i in 30:1000) {
+      x <- data[,i]
+      x<-x+1-min(x[which(!is.na(x))]) # shift data to get only positive
+            a<-boxcox(x~CancerType, plotit = FALSE)
+            if (a$x[which.max(a$y)]!= 0) {
+                  x<-(x^(a$x[which.max(a$y)])-1)/a$x[which.max(a$y)]
+            } else {
+            x<-log(x)
+      } 
+      data[,i]<-x
+}
+```
+## Testing means
+To test wheter means in groups are equal we will check it in anova model and then we will carry out Scheffe test. </br>
+We don't have equal number of observations and in Scheffe test we do not need that as well as in LSD test. But we have many genes, and Scheffe is more conservative, so we will get less number of genes in the outcome. This is quite good, because ultimately such a quantititave analysis usually leads to a quality analysis.
+```{r, warning = FALSE, message = FALSE, error=FALSE}
+normality<-1
+normality_in_groups<-1
+variance_in_groups<-1
+nrofgroups <- 0
+critdif<-0
+for (i in 30:1000) {
+      x <- data[,i]
+      if(try(bartlett.test(x, CancerType), TRUE) == TRUE) {
+            variance_in_groups[i]<-(bartlett.test(x, CancerType)$p.value>=0.01)
+      }
+      zmienna<-0
+      for (j in 1:length(levels(CancerType))){
+            if(try(tapply(x, CancerType, shapiro.test)[[j]], TRUE) == TRUE) {
+                  zmienna[j]<-tapply(x, CancerType, shapiro.test)[[j]]$p.value
+            }
+      }
+      normality_in_groups[i]<-(min(zmienna)>=0.05)
+      model = anova(lm(x ~ CancerType))
+      model1 <- lm(x ~ CancerType)
+      if(model$"Pr(>F)"[1]<=0.05){
+            nrofgroups[i]<-match(tail(scheffe.test(aov(model1), "CancerType", console = FALSE)$groups$M,1), letters)
+      critdif[i]<-scheffe.test(aov(model1), "CancerType", console = FALSE)$statistics$CriticalDifference/scheffe.test(aov(model1), "CancerType", console = FALSE)$statistics$Mean
+      }
+      normality[i]<-(shapiro.test(rstandard(model1))$p.value>=0.01)
+}
+#which(normality==FALSE)
+length(which(normality==FALSE))/(i-29)
+#which(normality_in_groups==FALSE)
+length(which(normality_in_groups==FALSE))/(i-29)
+#which(variance_in_groups==FALSE)
+length(which(variance_in_groups==FALSE))/(i-29)
+```
+Data transofmation didn't improved our situation significantly, but ANOVA is quite robust with respect to violations of the assumptions, so we will accepct our result nevertheless.
+Moreover prof. Niemiro said that ANOVA is used even though assumptions are not fulfilled because it is quite robust and it is better to have something than nothing.
+
+## Conclusions
+Now we will check which and how many genes differ the most. We will do that by looking at for which genes there are many groups and also for which genes there is the biggest critical difference in scheffe test (normed by dividing it by mean from statistics in scheffe test).
+```{r}
+hist(nrofgroups[30:length(nrofgroups)], main="Distribution of significantly different groups in gene", xlab="Number of significantly different groups")
+length(colnames(data)[nrofgroups>7 & (is.na(nrofgroups) == FALSE)])
+table(nrofgroups[30:length(nrofgroups)])
+# colnames(data)[nrofgroups>7 & (is.na(nrofgroups) == FALSE)]
+```
+We see the distribution of significantly different groups in genes. It looks very similar to normal distribution, with a little bit steeper decrease on the right side. Looking at this histogram, we decided that genes that have more than 7 groups differ signicifantly.<br/>
+Now look at the criticial range.
+```{r}
+hist(critdif[30:length(critdif)], main="Distribution of normed critical differences", xlab="Normed critical range")
+length(colnames(data)[critdif>0.4 & (is.na(critdif) == FALSE)])
+# colnames(data)[critdif>0.4 & (is.na(critdif) == FALSE)]
+
+```
+It has very different distribution from the numbers of groups. Most observations are between 0.1 and 0.2. We decided that genes that have critical range higher than 0.4 differ significantly.<br/>
+
+
+Final remark: There are gens for which exists a group where are less than five observations. The means from these groups are probably not representative. Our goal was to identify genes which differ significantly and it is hard to say if they do, but depending on what we want to do afterwards we can always easily remove those genes, so at this stage of the project we decided to keep them.
