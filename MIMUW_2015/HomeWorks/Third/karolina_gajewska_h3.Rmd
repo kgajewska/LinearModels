@@ -1,0 +1,115 @@
+---
+title: "Praca domowa 3"
+author: "Karolina Gajewska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+0. Diagnostic plots
+```{r, message=FALSE}
+# Ÿród³o: https://rpubs.com/therimalaya/43190
+library("grid")
+#install.packages("gridExtra")
+library("gridExtra")
+
+require(ggplot2)
+diagPlot<-function(model){
+  p1<-ggplot(model, aes(.fitted, .resid))+geom_point()
+  p1<-p1+stat_smooth(method="loess")+geom_hline(yintercept=0, col="red", linetype="dashed")
+  p1<-p1+xlab("Fitted values")+ylab("Residuals")
+  p1<-p1+ggtitle("Residual vs Fitted")+theme_bw()
+  
+  p2<-ggplot(model, aes(qqnorm(.stdresid)[[1]], .stdresid))+geom_point(na.rm = TRUE)
+  p2<-p2+geom_abline(aes(qqline(.stdresid)))+xlab("Theoretical Quantiles")+ylab("Standardized Residuals")
+  p2<-p2+ggtitle("Normal Q-Q")+theme_bw()
+  
+  p3<-ggplot(model, aes(.fitted, sqrt(abs(.stdresid))))+geom_point(na.rm=TRUE)
+  p3<-p3+stat_smooth(method="loess", na.rm = TRUE)+xlab("Fitted Value")
+  p3<-p3+ylab(expression(sqrt("|Standardized residuals|")))
+  p3<-p3+ggtitle("Scale-Location")+theme_bw()
+  
+  p4<-ggplot(model, aes(seq_along(.cooksd), .cooksd))+geom_bar(stat="identity", position="identity")
+  p4<-p4+xlab("Obs. Number")+ylab("Cook's distance")
+  p4<-p4+ggtitle("Cook's distance")+theme_bw()
+  
+  p5<-ggplot(model, aes(.hat, .stdresid))+geom_point(aes(size=.cooksd), na.rm=TRUE)
+  p5<-p5+stat_smooth(method="loess", na.rm=TRUE)
+  p5<-p5+xlab("Leverage")+ylab("Standardized Residuals")
+  p5<-p5+ggtitle("Residual vs Leverage Plot")
+  p5<-p5+scale_size_continuous("Cook's Distance", range=c(1,5))
+  p5<-p5+theme_bw()+theme(legend.position="bottom")
+  
+  p6<-ggplot(model, aes(.hat, .cooksd))+geom_point(na.rm=TRUE)+stat_smooth(method="loess", na.rm=TRUE)
+  p6<-p6+xlab("Leverage hii")+ylab("Cook's Distance")
+  p6<-p6+ggtitle("Cook's dist vs Leverage hii/(1-hii)")
+  p6<-p6+geom_abline(slope=seq(0,3,0.5), color="gray", linetype="dashed")
+  p6<-p6+theme_bw()
+  
+  return(list(rvfPlot=p1, qqPlot=p2, sclLocPlot=p3, cdPlot=p4, rvlevPlot=p5, cvlPlot=p6))
+}
+```
+
+1. Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so, all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on).
+
+1a Create good dataset:
+```{r, message=FALSE}
+set.seed(1)
+b0<- .2
+b1 <- .5
+n<-1000
+X<- runif (n, 0, 1)
+Y<- b0 + b1*X + rnorm(n,4,1)
+dataset1<- data.frame(X,Y)
+model1<-lm(Y~X, data=dataset1)
+```
+
+1b Create bad dataset:
+```{r, message=FALSE}
+b0<- .2
+b1 <- .5
+n<-1000
+X2<- rnorm(n, 400, 10)
+Y2<- b0 + b1*X2*X2 + runif(n,-1,10)
+dataset2<- data.frame(X2,Y2)
+model2<-lm(Y2~X2, data=dataset2)
+
+```
+
+
+Show diagnostic plots for both simulated datasets.
+
+```{r}
+
+g<-diagPlot(model1)
+do.call(grid.arrange, c(g, list(ncol=3)))
+```
+
+Na wykresie "Residuals vs Fitted" widzimy, ¿e reszty modelu cechuj¹ siê warunow¹ œredi¹ równ¹ zeru niezale¿nie od teoretycznych wartoœci zmiennej objaœnianej. Na podstawie wykresu kwantylowego dla rozk³au normalnego widzimy, ¿e punkty na wkresie uk³adaj¹ siê wzd³u¿ lini prostej, zatem reszty modelu cechuje rozk³ad normalny. Z kolei na podstawie wykresu "Scale Location" stwierdzamy, ¿e wariancja reszt modelu jest jednorodna. Z wykresu "Cook's Distance" odczytujemy, ¿e miary Cooka s¹ mniejsze od 0.015, co wskazuje na brak nietypowych obserwacji. 
+
+```{r}
+g2<-diagPlot(model2)
+do.call(grid.arrange, c(g2,list(ncol=3)))
+```
+
+
+Na wykresach dla modelu2 widzimy znaczne odchylenia. Warunkowa œrednia wartoœæ reszt modelu jest zale¿na od wartoœci teoretycznych zmiennej objaœnianej. Co wiêcej, reszty nie cechuje rozk³ad normalny. Wariancja reszt modelu nie jest jednorodna. 
+
+
+
+3.Choose three tests for model diagnostic (note, you should not choose the same three tests as other students. If your Submission will have same diagnostic tests as other already submitted home work then your homework will be rejected. )
+
+```{r, message=FALSE}
+library(lmtest)
+gqtest(log(Y)~log(X), data = dataset1)
+bgtest(log(Y)~log(X), data = dataset1)
+```
+
+```{r, message=FALSE}
+resettest(log(Y)~log(X), data = dataset1, type="regressor")
+gqtest(log(Y2)~log(X2), data = dataset2)
+bgtest(log(Y2)~log(X2), data = dataset2)
+resettest(log(Y2)~log(X2), data = dataset2, type="regressor")
+```
+W obu przypadkach du¿a p-value œwiadczy o tym, ¿e wariancja reszt dla obserwaci o ma³ej wartoœci zmiennej X nie ró¿ni siê istotnie  od wariancji dla du¿ych wartoœciach zmiennej X. W pierwszym modelu nie wystêpuje autokoleracja, w drugim zaœ tak. Wiêksze  p-value od przyjêtego poziomu istotnoœci 0.05 dla testu RESET swiadczy o tym,¿e wy¿sze potêgi zmiennej log(X) nie zwiêkszaj¹ jakoœci modelu, nie ma istotnych odstêp od liniowoœci miedzy zmiennymi log (Y) a log (X). 
+
