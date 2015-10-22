@@ -1,0 +1,132 @@
+---
+title: "Untitled"
+author: "Emilia Pompe"
+date: "Saturday, October 17, 2015"
+output: html_document
+---
+
+# Homework 3
+### Emilia Pompe
+## Part 1.
+
+The first dataset passes all the tests presented during classes:
+```{r}
+set.seed(7)
+x <- seq(from=0, by=0.05, length=1000)
+y <- 5+2*x + rnorm(1000,0, 0.01)
+dataset1 <- data.frame(y=y, x=x)
+model1 <- lm(y~x, data = dataset1)
+
+shapiro.test(rstandard(model1))
+shapiro.test(rstudent(model1))
+
+library(lmtest)
+bptest(model1)
+gqtest(model1)
+hmctest(model1)
+dwtest(model1)
+bgtest(model1)
+raintest(model1)
+resettest(model1)
+```
+
+To prepare the second dataset, I only changed a part of the vector y as follows:
+```{r}
+set.seed(7)
+x[502] <- -100
+y[501:1000] <- 5+9*x[501:1000]+rnorm(500,0,0.4)
+y[501:510] <- 10000
+
+dataset2 <- data.frame(y=y, x=x)
+model2 <- lm(y~x, data = dataset2)
+```
+
+Let us check which tests are passed by the second model:
+```{r}
+shapiro.test(rstandard(model2))
+shapiro.test(rstudent(model2))
+bptest(model2)
+gqtest(model2)
+hmctest(model2)
+dwtest(model2)
+bgtest(model2)
+raintest(model2)
+resettest(model2)
+```
+
+After changing the dependent variable, almost none of the tests was passed. Now let us compare diagnostic plot for both models. 
+```{r, fig.width = 8, fig.height = 4, warning = FALSE}
+for (j in 1:6){
+  par(mfrow=c(1,2))
+  plot(model1, which=j)
+  plot(model2, which=j)
+}
+```
+
+By analysing results from diagnostic plots and tests we can observe that the assumptions for the second model do not hold. Standardized or studentized residuals do not follow the normal distribution, variance of epsilons is heterogeneous and relation between y and x is not linear. Moreover, there is a 'pattern' between fitted values and residuals.  
+Maximum numbers of the Cooks's distances:
+```{r}
+max(cooks.distance(model1))
+max(cooks.distance(model2))
+```
+
+In the first model the Cook's distances are significantly lower than the usual threshold equal to 0.5, while in the second model the maximum of Cook's distances is much higher.
+
+## Part 2.
+I chose the Breusch-Pagan test, the Shapiro-Wilk test and the RESET test.
+In the example below I created two datasets; the first one does not pass the Breusch-Pagan test, while the second does. This happens because the variance of epsilons in the third out of 4 groups is different.
+```{r}
+set.seed(7)
+y <- c(rnorm(250, 0, 0.1),
+       rnorm(250, 0.1, 0.1),
+       rnorm(250, 0.2, 0.2),
+       rnorm(250, 0.4, 0.1))
+x <- rep(1:4, each=250)
+dataset3_bad <- data.frame(y=y, x=as.factor(x))
+
+y[501:750] <- rnorm(250, 0.2, 0.1)
+dataset3_good <- data.frame(y=y, x=as.factor(x))
+
+bptest(lm(y~x, dataset3_bad))
+bptest(lm(y~x, dataset3_good))
+```
+
+In the second example I created two datasets: only the second one passed the Shapiro-Wilk test. The reason for it is using the uniform distribution instead of the normal distribution. Hence, the assumption of normality for standardized residuals does not hold.
+```{r}
+set.seed(7)
+x <- seq(from=0, by=1, length=1000)
+y <- 5+2*x + runif(1000, -0.19, 0.19)
+dataset4_bad <- data.frame(y=y, x=x)
+
+model <- lm(y~x, data = dataset4_bad)
+shapiro.test(rstandard(model))
+
+y <- 5+2*x + rnorm(1000,0, 0.11)
+dataset4_good <- data.frame(y=y, x=x)
+
+model <- lm(y~x, data = dataset4_good)
+shapiro.test(rstandard(model))
+```
+
+In the last example I created a model which does not pass the RESET test, because the relation between x and y is rather exponential than linear, which is clear from the plot below. For comparison, the relation in the second dataset is linear.
+
+```{r, fig.width=8, fig.height=4}
+set.seed(7)
+x <- seq(from=0, by=0.03, length=1000)
+y <- exp(x) + rnorm(1000, 0, 1)
+dataset5_bad <- data.frame(y=y, x=x)
+resettest(lm(y~x, data = dataset5_bad))
+par(mfrow=c(1,2))
+plot(x,y, main = "Exponential relation")
+abline(lm(y~x), col="red", lwd=2)
+
+y <- x+rnorm(1000,0,1)
+dataset5_good <- data.frame(y=y, x=x)
+resettest(lm(y~x, data = dataset5_good))
+plot(x,y, main = "Linear relation")
+abline(lm(y~x), col="red", lwd=2)
+```
+
+
+
+
