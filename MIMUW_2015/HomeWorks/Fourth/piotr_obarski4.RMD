@@ -1,0 +1,84 @@
+---
+title: "Praca domowa 4"
+author: "Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+Tworzê dwa zbiory z czterema grupami.
+```{r}
+levels<-rep(c("a", "b", "c", "d"), 400)
+aa<-rep("aa", 400)
+bb<-rep("bb", 400)
+cc<-rep("cc", 400)
+dd<-rep("dd", 400)
+levels2<-c(aa, bb, cc, dd)
+```
+
+Nastêpnie przeprowadzam symulacjê 1000 razy. Korzystaj¹c z tabelki zamieszczonej na str. 90 ksi¹¿ki "Analiza danych z programem R. Modele liniowe z efektami sta³ymi, losowymi i mieszanymi" ustalam ka¿d¹ $\gamma$ na 0 oraz $\alpha_2$ na 0.7, $\beta_3$ na 0.7 i $\alpha_3$ na 0.7. Jako ¿e hipotez¹ testu jest, ¿e ka¿dy wspó³czynnik jest równy 0 to effect size= True value - Hypothesized value=0.7-0=0.7, tak wiêc niektóre effects size s¹ równe 0.7. Poniewa¿, zmieni³em tylko parametry $\alpha, \beta$, a $\gamma$ pozostawi³em bez zmian, to wszystkie effects dotycz¹ czêœci g³ównej (main effects). Nastêpnie patrzê na p.value anovy i zapisujê do tabel i sprawdzam w jakim procencie test wyszed³ negatywnie (tj. odrzuci³em $H_0$, a wiem ¿e $H_1$ jest prawdziwa) i to jest moc testu.
+```{r}
+test1<-0
+test2<-0
+test_interactions<-0
+x<-0
+for (i in 1:1000) {
+  x<-rnorm(1600)
+  x[which(levels=="b")]<-rnorm(100)+0.7
+  x[which(levels2=="cc")]<-rnorm(100)+0.7
+  x[which(levels=="d")]<-rnorm(100)+0.7
+  g <- lm(x ~ levels*levels2)
+  test1[i]<-anova(g)$"Pr(>F)"[1]
+  test2[i]<-anova(g)$"Pr(>F)"[2]
+  test_interactions[i]<-anova(g)$"Pr(>F)"[3]
+}
+
+length(which(test1<0.05))/1000
+length(which(test2<0.05))/1000
+length(which(test_interactions<0.05))/1000
+```
+Tutaj podobnie jak wy¿ej z tym ¿e przyj¹³em $\gamma_{2,2}$ równe 0.7 oraz $\gamma_{3,4}$ równe 0.7.
+```{r}
+test1<-0
+test2<-0
+test_interactions<-0
+x<-0
+for (i in 1:1000) {
+  x<-rnorm(1600)
+  x[intersect(which(levels=="b"),which(levels2=="bb"))]<-rnorm(100)+0.7
+  x[intersect(which(levels=="c"),which(levels2=="dd"))]<-rnorm(100)+0.7
+  g <- lm(x ~ levels*levels2)
+  test1[i]<-anova(g)$"Pr(>F)"[1]
+  test2[i]<-anova(g)$"Pr(>F)"[2]
+  test_interactions[i]<-anova(g)$"Pr(>F)"[3]
+}
+
+length(which(test1<0.05))/1000
+length(which(test2<0.05))/1000
+length(which(test_interactions<0.05))/1000
+```
+Nastêpnie jest kombinacja dwóch poprzednich przypadków.
+```{r}
+
+test1<-0
+test2<-0
+test_interactions<-0
+x<-0
+for (i in 1:1000) {
+  x<-rnorm(1600)
+  x[which(levels=="b")]<-rnorm(100)+0.7
+  x[which(levels2=="cc")]<-rnorm(100)+0.7
+  x[which(levels=="d")]<-rnorm(100)+0.7
+  x[intersect(which(levels=="b"),which(levels2=="bb"))]<-rnorm(100)+0.7
+  x[intersect(which(levels=="c"),which(levels2=="dd"))]<-rnorm(100)+0.7
+  g <- lm(x ~ levels*levels2)
+  test1[i]<-anova(g)$"Pr(>F)"[1]
+  test2[i]<-anova(g)$"Pr(>F)"[2]
+  test_interactions[i]<-anova(g)$"Pr(>F)"[3]
+}
+
+length(which(test1<0.05))/1000
+length(which(test2<0.05))/1000
+length(which(test_interactions<0.05))/1000
+```
