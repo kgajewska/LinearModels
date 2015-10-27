@@ -81,22 +81,22 @@ test_interactions&lt;-0
 x&lt;-0
 for (i in 1:1000) {
   x&lt;-rnorm(1600)
-  x[which(levels==&quot;b&quot;)]&lt;-rnorm(100)+0.7
-  x[which(levels2==&quot;cc&quot;)]&lt;-rnorm(100)+0.7
-  x[which(levels==&quot;d&quot;)]&lt;-rnorm(100)+0.7
+  x[which(levels==&quot;b&quot;)]&lt;-rnorm(400)+0.7
+  x[which(levels2==&quot;cc&quot;)]&lt;-rnorm(400)+0.7
+  x[which(levels==&quot;d&quot;)]&lt;-rnorm(400)+0.7
   g &lt;- lm(x ~ levels*levels2)
   test1[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[1]
   test2[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[2]
   test_interactions[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[3]
-}
-
-length(which(test1&lt;0.05))/1000</code></pre>
+}</code></pre>
+<p>Teraz sprawdzamy moce testów. Pierwszy wynik to moc testu dla głównego efektu (main effect) dotyczącego rodziny grup zawartych w levels. Drugi to moc testu dla rodziny grup zawartych w levels2. Zobaczymy w ilu procentach przypadków hipoteza <span class="math">\(H_0\)</span> została odrzucona, wiedząc, że hipoteza alternatywna jest prawdziwa. Z kolei ostatnia wartość to procentowa ilość wyników negatywnych w teście na brak interakcji (podczas gdy interakcji nie ma).</p>
+<pre class="r"><code>length(which(test1&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>length(which(test2&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.988</code></pre>
+<pre><code>## [1] 1</code></pre>
 <pre class="r"><code>length(which(test_interactions&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.971</code></pre>
-<p>Tutaj podobnie jak wyżej z tym że przyjąłem <span class="math">\(\gamma_{2,2}\)</span> równe 0.7 oraz <span class="math">\(\gamma_{3,4}\)</span> równe 0.7.</p>
+<pre><code>## [1] 0.998</code></pre>
+<p>Jako że nie ma interakcji wydaje się, że test na interakcje powinnien być zaakceptowany w ok. 95% przypadków, jednak tak się nie stało. </br> ## Punkt 2 Tutaj podobnie jak wyżej z tym że przyjąłem <span class="math">\(\gamma_{2,2}\)</span> równe 0.7 oraz <span class="math">\(\gamma_{3,4}\)</span> równe 0.7.</p>
 <pre class="r"><code>test1&lt;-0
 test2&lt;-0
 test_interactions&lt;-0
@@ -109,36 +109,36 @@ for (i in 1:1000) {
   test1[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[1]
   test2[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[2]
   test_interactions[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[3]
-}
-
-length(which(test1&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.848</code></pre>
+}</code></pre>
+<p>Tutaj sytuacja analogiczna jak wyżej, z tym że interakcja jest, natomiast efekt główny (addytywny) nie powinnien być widoczny.</p>
+<pre class="r"><code>length(which(test1&lt;0.05))/1000</code></pre>
+<pre><code>## [1] 0.85</code></pre>
 <pre class="r"><code>length(which(test2&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.862</code></pre>
+<pre><code>## [1] 0.835</code></pre>
 <pre class="r"><code>length(which(test_interactions&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
-<p>Następnie jest kombinacja dwóch poprzednich przypadków.</p>
+<p>Wydaję mi się, że dwie pierwsze wielkości powinny być rzędu 0.05, gdyż starałem się tak zaprojektować dane, by efekt główny nie był widoczny. Niestety nie mogę dojść dlaczego wychodzi wynik tak wysoki.</br> ## Punkt 3 Następnie jest kombinacja dwóch poprzednich przypadków.</p>
 <pre class="r"><code>test1&lt;-0
 test2&lt;-0
 test_interactions&lt;-0
 x&lt;-0
 for (i in 1:1000) {
   x&lt;-rnorm(1600)
-  x[which(levels==&quot;b&quot;)]&lt;-rnorm(100)+0.7
-  x[which(levels2==&quot;cc&quot;)]&lt;-rnorm(100)+0.7
-  x[which(levels==&quot;d&quot;)]&lt;-rnorm(100)+0.7
+  x[which(levels==&quot;b&quot;)]&lt;-rnorm(400)+0.7
+  x[which(levels2==&quot;cc&quot;)]&lt;-rnorm(400)+0.7
+  x[which(levels==&quot;d&quot;)]&lt;-rnorm(400)+0.7
   x[intersect(which(levels==&quot;b&quot;),which(levels2==&quot;bb&quot;))]&lt;-rnorm(100)+0.7
   x[intersect(which(levels==&quot;c&quot;),which(levels2==&quot;dd&quot;))]&lt;-rnorm(100)+0.7
   g &lt;- lm(x ~ levels*levels2)
   test1[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[1]
   test2[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[2]
   test_interactions[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[3]
-}
-
-length(which(test1&lt;0.05))/1000</code></pre>
+}</code></pre>
+<p>Tutaj sytuacja analogiczna jak wyżej, jednak zarówno efekty interakcji jak i główne są obecne.</p>
+<pre class="r"><code>length(which(test1&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>length(which(test2&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.991</code></pre>
+<pre><code>## [1] 1</code></pre>
 <pre class="r"><code>length(which(test_interactions&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
 

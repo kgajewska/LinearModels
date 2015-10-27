@@ -25,19 +25,25 @@ test_interactions<-0
 x<-0
 for (i in 1:1000) {
   x<-rnorm(1600)
-  x[which(levels=="b")]<-rnorm(100)+0.7
-  x[which(levels2=="cc")]<-rnorm(100)+0.7
-  x[which(levels=="d")]<-rnorm(100)+0.7
+  x[which(levels=="b")]<-rnorm(400)+0.7
+  x[which(levels2=="cc")]<-rnorm(400)+0.7
+  x[which(levels=="d")]<-rnorm(400)+0.7
   g <- lm(x ~ levels*levels2)
   test1[i]<-anova(g)$"Pr(>F)"[1]
   test2[i]<-anova(g)$"Pr(>F)"[2]
   test_interactions[i]<-anova(g)$"Pr(>F)"[3]
 }
+```
+Teraz sprawdzamy moce testów. Pierwszy wynik to moc testu dla głównego efektu (main effect) dotyczącego rodziny grup zawartych w levels. Drugi to moc testu dla rodziny grup zawartych w levels2. Zobaczymy w ilu procentach przypadków hipoteza $H_0$ została odrzucona, wiedząc, że hipoteza alternatywna jest prawdziwa.
+Z kolei ostatnia wartość to procentowa ilość wyników negatywnych w teście na brak interakcji (podczas gdy interakcji nie ma).
 
+```{r}
 length(which(test1<0.05))/1000
 length(which(test2<0.05))/1000
 length(which(test_interactions<0.05))/1000
 ```
+Jako że nie ma interakcji wydaje się, że test na interakcje powinnien być zaakceptowany w ok. 95% przypadków, jednak tak się nie stało. </br>
+## Punkt 2
 Tutaj podobnie jak wyżej z tym że przyjąłem $\gamma_{2,2}$ równe 0.7 oraz $\gamma_{3,4}$ równe 0.7.
 ```{r}
 test1<-0
@@ -53,11 +59,15 @@ for (i in 1:1000) {
   test2[i]<-anova(g)$"Pr(>F)"[2]
   test_interactions[i]<-anova(g)$"Pr(>F)"[3]
 }
-
+```
+Tutaj sytuacja analogiczna jak wyżej, z tym że interakcja jest, natomiast efekt główny (addytywny) nie powinnien być widoczny. 
+```{r}
 length(which(test1<0.05))/1000
 length(which(test2<0.05))/1000
 length(which(test_interactions<0.05))/1000
 ```
+Wydaję mi się, że dwie pierwsze wielkości powinny być rzędu 0.05, gdyż starałem się tak zaprojektować dane, by efekt główny nie był widoczny. Niestety nie mogę dojść dlaczego wychodzi wynik tak wysoki.</br>
+## Punkt 3
 Następnie jest kombinacja dwóch poprzednich przypadków.
 ```{r}
 
@@ -67,9 +77,9 @@ test_interactions<-0
 x<-0
 for (i in 1:1000) {
   x<-rnorm(1600)
-  x[which(levels=="b")]<-rnorm(100)+0.7
-  x[which(levels2=="cc")]<-rnorm(100)+0.7
-  x[which(levels=="d")]<-rnorm(100)+0.7
+  x[which(levels=="b")]<-rnorm(400)+0.7
+  x[which(levels2=="cc")]<-rnorm(400)+0.7
+  x[which(levels=="d")]<-rnorm(400)+0.7
   x[intersect(which(levels=="b"),which(levels2=="bb"))]<-rnorm(100)+0.7
   x[intersect(which(levels=="c"),which(levels2=="dd"))]<-rnorm(100)+0.7
   g <- lm(x ~ levels*levels2)
@@ -77,7 +87,10 @@ for (i in 1:1000) {
   test2[i]<-anova(g)$"Pr(>F)"[2]
   test_interactions[i]<-anova(g)$"Pr(>F)"[3]
 }
+```
+Tutaj sytuacja analogiczna jak wyżej, jednak zarówno efekty interakcji jak i główne są obecne.
 
+```{r}
 length(which(test1<0.05))/1000
 length(which(test2<0.05))/1000
 length(which(test_interactions<0.05))/1000
