@@ -1,0 +1,171 @@
+---
+title: "Homework 4"
+author: "Ma³gorzata Pujszo"
+date: "Tuesday, October 27, 2015"
+output: html_document
+---
+
+Rozpatrujê 2 zmienne jakoœciowe: A i B. Jedna rozmiaru k=3, druga m=4. Zak³adam, ¿e w ka¿dej z grup jest n=100 obserwacji. Ustalam œredni¹ mi, tworzê wektory alpha, beta i macierz gamma - efekty addytywne pierwszej i drugiej zmiennej oraz efekty interakcji. Niektóre wspó³rzêdne ustalam na wartoœæ 0.7.
+
+
+```{r, warning=FALSE}
+library(ggplot2)
+
+n <- 100
+alpha <- c(0.7, 0, 0)
+beta <- c(0, 0.7, 0.7, 0)
+
+k <- length(alpha)
+m <- length(beta)
+
+gamma <- matrix(0, nrow=k, ncol=m)
+gamma[2,2] <- 0.7
+gamma[2,4] <- 0.7
+gamma[3,3] <- 0.7
+
+mi <- 0
+
+A <- rep(1:k, each=n*m)
+B <-rep(1:m, times=n*k)
+```
+
+Poniewa¿ chcemy badaæ moc testów dla efektów g³ównych i dla efektu interakcji w trzech scenariuszach, tworzê funkcjê trzech parametrów binarnych (czy.alpha, czy.beta, czy.gamma). Funkcja buduje model w zale¿noœci od tych parametrów i zwraca wyniki dwukierunkowej ANOVY zbudowanej na tym modelu. Dwukierunkowa ANOVA zwróci nam odpowiednie p-wartoœci dla interesuj¹cych nas testów.
+```{r}
+f <- function(czy.alpha, czy.beta, czy.gamma) {
+  y <- mi + czy.alpha*alpha[A] + czy.beta*beta[B] + czy.gamma*gamma[cbind(A,B)] + rnorm(n*m*k)
+  df <- data.frame(y=y, A=factor(A), B=factor(B))
+  return (anova(lm(y~A*B, data=df)))
+}
+```
+
+By dostaæ moce testów musimy tê funkcjê zreplikowaæ wiele razy (w tym przypadku bêdzie to 1000).
+
+1. Scenariusz - pewne efekty g³ówne przyjmuj¹ wartoœæ 0.7
+
+Istotnoœæ cechy A:
+```{r}
+set.seed(3)
+istot.A <- replicate (1000, f(1, 1, 0)[1,5])
+istotnosc.A <- data.frame(p=istot.A)
+ggplot(istotnosc.A, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.A < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.A >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+W tym przypadku 100% testów dobrze oceni³o istotnoœæ cechy A, wiêc moc tego testu wynosi 100%.
+
+Istotnoœæ cechy B:
+```{r}
+set.seed(3)
+istot.B <- replicate (1000, f(1, 1, 0)[2,5])
+istotnosc.B <- data.frame(p=istot.B)
+ggplot(istotnosc.B, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.B < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+Tutaj podobnie moc testu wynosi 100%.
+
+Istotnoœæ interakcji:
+```{r}
+set.seed(3)
+istot.A.B <- replicate (1000, f(1, 1, 0)[3,5])
+istotnosc.A.B <- data.frame(p=istot.A.B)
+ggplot(istotnosc.A.B, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.A.B < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.A.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+W tym przypadku w 95,6% przypadków nasz test dobrze oceni³ istotnoœæ interakcji. Czyli moc testu wynosi 95,6%.
+
+2. Scenariusz - pewne efekty interakcji przyjmuj¹ wartoœæ 0.7.
+
+Istotnoœæ cechy A:
+```{r}
+set.seed(3)
+istot.A <- replicate (1000, f(0, 0, 1)[1,5])
+istotnosc.A <- data.frame(p=istot.A)
+ggplot(istotnosc.A, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.A < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.A >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+W tym przypadku 0,4% testów dobrze oceni³o istotnoœæ cechy A, wiêc moc tego testu wynosi 0,4%.
+Istotnoœæ cechy B:
+```{r}
+set.seed(3)
+istot.B <- replicate (1000, f(0, 0, 1)[2,5])
+istotnosc.B <- data.frame(p=istot.B)
+ggplot(istotnosc.B, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.B < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+Tutaj moc testu wynosi 14,5%.
+
+Istotnoœæ interakcji:
+```{r}
+set.seed(3)
+istot.A.B <- replicate (1000, f(0, 0, 1)[3,5])
+istotnosc.A.B <- data.frame(p=istot.A.B)
+ggplot(istotnosc.A.B, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.A.B < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.A.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+W tym przypadku w 100% przypadków nasz test dobrze oceni³ istotnoœæ interakcji. Czyli moc testu wynosi 100%.
+
+3. Scenariusz - pewne efekty g³ówne i efekty interakcji przyjmuj¹ wartoœæ 0.7.
+
+Istotnoœæ cechy A:
+```{r}
+set.seed(3)
+istot.A <- replicate (1000, f(1, 1, 1)[1,5])
+istotnosc.A <- data.frame(p=istot.A)
+ggplot(istotnosc.A, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.A < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.A >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+W tym przypadku 100% testów dobrze oceni³o istotnoœæ cechy A, wiêc moc tego testu wynosi 100%.
+Istotnoœæ cechy B:
+```{r}
+set.seed(3)
+istot.B <- replicate (1000, f(1, 1, 1)[2,5])
+istotnosc.B <- data.frame(p=istot.B)
+ggplot(istotnosc.B, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.B < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+Tutaj podobnie moc testu wynosi 100%.
+
+Istotnoœæ interakcji:
+```{r}
+set.seed(3)
+istot.A.B <- replicate (1000, f(1, 1, 1)[3,5])
+istotnosc.A.B <- data.frame(p=istot.A.B)
+ggplot(istotnosc.A.B, aes(x=p)) +
+  geom_histogram() + 
+  xlim(0,1) +
+  ggtitle(paste0(round(100*mean(istot.A.B < 0.05),1), "% p-wartoœci mniejszych ni¿ 0.05 \n\n", 
+                 round(100*mean(istot.A.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
+```
+
+W tym przypadku w 100% przypadków nasz test dobrze oceni³ istotnoœæ interakcji. Czyli moc testu wynosi 100%.
