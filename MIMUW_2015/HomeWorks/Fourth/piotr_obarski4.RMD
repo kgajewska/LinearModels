@@ -1,0 +1,99 @@
+---
+title: "Praca domowa 4"
+author: "Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+Tworzę dwa zbiory z czterema grupami.
+```{r}
+levels<-rep(c("a", "b", "c", "d"), 400)
+aa<-rep("aa", 400)
+bb<-rep("bb", 400)
+cc<-rep("cc", 400)
+dd<-rep("dd", 400)
+levels2<-c(aa, bb, cc, dd)
+```
+
+Następnie przeprowadzam symulację 1000 razy. Korzystając z tabelki zamieszczonej na str. 90 książki "Analiza danych z programem R. Modele liniowe z efektami stałymi, losowymi i mieszanymi" ustalam każdą $\gamma$ na 0 oraz $\alpha_2$ na 0.7, $\beta_3$ na 0.7 i $\alpha_3$ na 0.7. Jako że hipotezą testu jest, że każdy współczynnik jest równy 0 to effect size= True value - Hypothesized value=0.7-0=0.7, tak więc niektóre effects size są równe 0.7. Ponieważ, zmieniłem tylko parametry $\alpha, \beta$, a $\gamma$ pozostawiłem bez zmian, to wszystkie effects dotyczą części głównej (main effects). Następnie patrzę na p.value anovy i zapisuję do tabel i sprawdzam w jakim procencie test wyszedł negatywnie (tj. odrzuciłem $H_0$, a wiem że $H_1$ jest prawdziwa) i to jest moc testu.
+```{r}
+test1<-0
+test2<-0
+test_interactions<-0
+x<-0
+for (i in 1:1000) {
+  x<-rnorm(1600)
+  x[which(levels=="b")]<-rnorm(400)+0.7
+  x[which(levels2=="cc")]<-x[which(levels2=="cc")]+0.7
+  x[which(levels=="d")]<-x[which(levels=="d")]+0.7
+  g <- lm(x ~ levels*levels2)
+  test1[i]<-anova(g)$"Pr(>F)"[1]
+  test2[i]<-anova(g)$"Pr(>F)"[2]
+  test_interactions[i]<-anova(g)$"Pr(>F)"[3]
+}
+```
+Teraz sprawdzamy moce testów. Pierwszy wynik to moc testu dla głównego efektu (main effect) dotyczącego rodziny grup zawartych w levels. Drugi to moc testu dla rodziny grup zawartych w levels2. Zobaczymy w ilu procentach przypadków hipoteza $H_0$ została odrzucona, wiedząc, że hipoteza alternatywna jest prawdziwa.
+Z kolei ostatnia wartość to procentowa ilość wyników negatywnych w teście na brak interakcji (podczas gdy interakcji nie ma).
+
+```{r}
+length(which(test1<0.05))/1000
+length(which(test2<0.05))/1000
+length(which(test_interactions<0.05))/1000
+```
+
+## Punkt 2
+Tutaj podobnie jak wyżej z tym że przyjąłem $\gamma_{2,2}$ równe 0.7 oraz $\gamma_{3,4}$ równe 0.7.
+```{r}
+test1<-0
+test2<-0
+test_interactions<-0
+x<-0
+for (i in 1:1000) {
+  x<-rnorm(1600)
+  x[intersect(which(levels=="b"),which(levels2=="bb"))]<-rnorm(100)+0.7
+  x[intersect(which(levels=="c"),which(levels2=="dd"))]<-rnorm(100)+0.7
+  g <- lm(x ~ levels*levels2)
+  test1[i]<-anova(g)$"Pr(>F)"[1]
+  test2[i]<-anova(g)$"Pr(>F)"[2]
+  test_interactions[i]<-anova(g)$"Pr(>F)"[3]
+}
+```
+Tutaj sytuacja analogiczna jak wyżej, z tym że interakcja jest, natomiast efekt główny (addytywny) nie powinnien być widoczny. 
+```{r}
+length(which(test1<0.05))/1000
+length(which(test2<0.05))/1000
+length(which(test_interactions<0.05))/1000
+```
+Wydaję mi się, że dwie pierwsze wielkości powinny być rzędu 0.05, gdyż starałem się tak zaprojektować dane, by efekt główny nie był widoczny. Niestety nie mogę dojść dlaczego wychodzi wynik tak wysoki.</br>
+```{r}
+```
+## Punkt 3
+Następnie jest kombinacja dwóch poprzednich przypadków.
+```{r}
+
+test1<-0
+test2<-0
+test_interactions<-0
+x<-0
+for (i in 1:1000) {
+  x<-rnorm(1600)
+  x[which(levels=="b")]<-rnorm(400)+0.7
+  x[which(levels2=="cc")]<-x[which(levels2=="cc")]+0.7
+  x[which(levels=="d")]<-x[which(levels=="d")]+0.7
+  x[intersect(which(levels=="b"),which(levels2=="bb"))]<-x[intersect(which(levels=="b"),which(levels2=="bb"))]+0.7
+  x[intersect(which(levels=="c"),which(levels2=="dd"))]<-x[intersect(which(levels=="c"),which(levels2=="dd"))]+0.7
+  g <- lm(x ~ levels*levels2)
+  test1[i]<-anova(g)$"Pr(>F)"[1]
+  test2[i]<-anova(g)$"Pr(>F)"[2]
+  test_interactions[i]<-anova(g)$"Pr(>F)"[3]
+}
+```
+Tutaj sytuacja analogiczna jak wyżej, jednak zarówno efekty interakcji jak i główne są obecne, tak więc moce testów powinny być blisko 1.
+
+```{r}
+length(which(test1<0.05))/1000
+length(which(test2<0.05))/1000
+length(which(test_interactions<0.05))/1000
+```

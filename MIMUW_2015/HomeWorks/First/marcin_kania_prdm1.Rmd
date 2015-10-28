@@ -1,0 +1,47 @@
+---
+title: "Praca domowa nr 1"
+author: "Marcin Kania"
+date: "Modele liniowe i mieszane"
+output: html_document
+---
+
+£adujemy bibliotekê "PBImisc" i zapisujemy zmienn¹ heights w... zmiennej heights.
+
+```{r, warning=FALSE, message=FALSE}
+library("PBImisc")
+heights <- heights 
+#Niepotrzebne w³aœciwie, gdy¿ nie obrabiamy tej zmiennej, a i tak jest dostêpna z za³adowanej biblioteki
+```
+Spórzmy sobie wstêpnie na za³adowane dane:
+```{r, warning=FALSE, message=FALSE}
+names(heights)
+nrow(heights)
+ncol(heights)
+head(heights)
+summary(heights)
+```
+ZnajdŸmy wspó³czynniki regresji liniowej i wyspiszmy je
+
+```{r, warning=FALSE, message=FALSE}
+model <- lm(Husband ~ Wife, data = heights)
+model$coefficients
+```
+Coœ one mówi¹ w sumie, ale lepiej spojrzeæ na obrazek.
+
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+ggplot(heights, aes(x = Wife, y = Husband)) + geom_point()+geom_smooth(method="lm", formula=y~x)
+```
+
+Liniowo mówi¹c, wygl¹da na to, ¿e im wy¿sza ¿ona, tym wy¿szego ma mê¿a.
+No dobrze, wyznaczmy jeszcze do tego przedzia³ ufnoœci dla nachylenia o poziomie istotnoœci 99%. Wykorzystamy do tego metodê bootstrapu resztowego.
+```{r, warning=FALSE, message=FALSE}
+N <- 10000
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+quantile(nwsp[2,], c(0.005,0.995))
+```

@@ -1,0 +1,22 @@
+---
+title: "Regresja prosta - Laboratorium"
+author: "Przemyslaw Biecek"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+W pakiecie `PBImisc` znajduje się zbiór danych `genomes`.
+
+1. Wczytaj ten zbiór danych. Dla różnych genomów znajdują się w nim między innymi informacje o wielkości genomu oraz średnim współczynniku GC (udział zasad G lub C w genomie).
+
+2. Przedstaw graficznie zależność pomiędzy wielkością genomu a cechą GC.
+
+3. Przedstaw graficznie zależność pomiędzy logarytmem wielkości genomu a cechą GC. Która z tych zależności wygląda bardziej na zależność liniową?
+
+4. Wyznacz model liniowy dla obu powyższych zależności.
+
+5. Wyznacz przedziały ufności (używając metody boostrap resztowy) dla obu współczynników regresji. 
+
+6. Wykorzystaj rmarkdown do zbudowania dokumentu html, z opisem powyższych analiz.

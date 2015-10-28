@@ -1,0 +1,138 @@
+---
+title: "Homework 4"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+#Part I - adding main effects
+
+In this scenario there are two dummy variables `levels1` and `levels2`. If an observation takes the value 1 in `levels1`, we add 0.7 to the observation. Therefore, we should observe statistically significant main effect of the variable `levels1`.
+
+##Simulation
+```{r, warning=FALSE, message=FALSE}
+set.seed(21)
+N <- 5000
+M <- 500
+pvals <- replicate(N, {
+      epsilon <- rnorm(M)
+      levels1 <- sample(c(rep(0, 0.9 * M), rep(1, 0.1 * M)))
+      levels2 <- sample(c(rep(0, 0.9 * M), rep(1, 0.1 * M)))
+      y <- levels1 * 0.7 + epsilon
+      
+      anova(lm(y~levels1*levels2))[[5]][c(1,2,3)]
+      
+})
+```
+##Calculating probablities
+
+Probabilities of rejecting given null hypothesis are presented below:
+
+<ol> <li> probablity of rejecting H0: the means in groups designated by the division of the variable levels1 are equal (power of the test) </li>
+As this null hypothesis is not true, we are expecting to get the value close to 1. 
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[1,], xlim = c(0,1))
+sum(pvals[1,] < 0.05) / N 
+```
+<li>probablity of rejecting H0: the means in groups designated by the division of the variable levels2 are equal </li>
+As this null hypothesis is true, we are expecting to get value close to 0.
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[2,], xlim = c(0,1))
+sum(pvals[2,] < 0.05) / N
+```
+<li>probability of rejecting H0: there are no interaction effects in the model </li>
+As this null hypothesis is true, we are expecting to get value close to 0.
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[3,], xlim = c(0,1))
+sum(pvals[3,] < 0.05, na.rm = TRUE) / N
+```
+</ol>
+
+#Part II - adding interactions effects
+
+In this scenario there are two groupping variables `levels1` and `levels2`. If an observation takes value 1 in both variables `levels1` and `levels2` we add 0.7 to this observation. Therefore, we are expecting strong interaction effects.
+
+##Simulation
+```{r, warning=FALSE, message=FALSE}
+
+N <- 5000
+M <- 500
+pvals <- replicate(N, {
+      epsilon <- rnorm(M)
+      levels1 <- sample(c(rep(0, 0.9 * M), rep(1, 0.1 * M)))
+      levels2 <- sample(c(rep(0, 0.9 * M), rep(1, 0.1 * M)))
+      y <- levels1 * levels2 * 0.7 + epsilon
+      
+      anova(lm(y~levels1 * levels2))[[5]][c(1,2,3)]
+      
+})
+```
+
+##Calculating probabilities
+Probabilities of rejecting given null hypothesis are presented below:
+
+<ol> <li> probablity of rejecting H0: the means in groups designated by the division of the variable levels1 are equal </li>
+As this null hypothesis is true, we are expecting to get the value close to 0. 
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[1,], xlim = c(0,1))
+sum(pvals[1,] < 0.05) / N 
+```
+<li>probablity of rejecting H0: the means in groups designated by the division of the variable levels2 are equal </li>
+As this null hypothesis is true, we are expecting to get value close to 0.
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[2,], xlim = c(0,1))
+sum(pvals[2,] < 0.05) / N
+```
+<li>probability of rejecting H0: there are no interaction effects in the model (power of the test for interaction effects) </li>
+As this null hypothesis not is true, we are expecting to get value close to 1.
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[3,], xlim = c(0,1))
+sum(pvals[3,] < 0.05, na.rm = TRUE) / N
+```
+</ol>
+
+
+#Part III 
+
+In this scenario there are, as above, two groupping variables `levels1` and `levels2`. If an observation takes value 1 in the variable `levels1` we add 0.7 to this observation. If the same observations takes value 1 in the variable `levels2` we add another 0.7 to it. Thus, we should notice main effect of the variable `levels1` and interaction effects.
+
+##Simulation
+```{r, warning=FALSE, message=FALSE}
+
+N <- 5000
+M <- 500
+pvals <- replicate(N, {
+      epsilon <- rnorm(M)
+      levels1 <- sample(c(rep(0, 0.9 * M), rep(1, 0.1 * M)))
+      levels2 <- sample(c(rep(0, 0.9 * M), rep(1, 0.1 * M)))
+      y <- levels1 * 0.7 + levels1 * levels2 * 0.7 + epsilon
+      
+      anova(lm(y~levels1 * levels2))[[5]][c(1,2,3)]
+      
+})
+```
+##Calculating probabilities
+Probabilities of rejecting given null hypothesis are presented below:
+
+<ol> <li> probablity of rejecting H0: the means in groups designated by the division of the variable levels1 are equal (power of the test for main effect) </li>
+As this null hypothesis is not true, we are expecting to get the value close to 1. 
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[1,], xlim = c(0,1))
+sum(pvals[1,] < 0.05) / N 
+```
+<li>probablity of rejecting H0: the means in groups designated by the division of the variable levels2 are equal </li>
+As this null hypothesis is true, we are expecting to get value close to 0.
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[2,], xlim = c(0,1))
+sum(pvals[2,] < 0.05) / N
+```
+<li>probability of rejecting H0: there are no interaction effects in the model (power of the test for interaction effects) </li>
+As this null hypothesis not is true, we are expecting to get value close to 1.
+```{r, warning = FALSE, message=FALSE}
+hist(pvals[3,], xlim = c(0,1))
+sum(pvals[3,] < 0.05, na.rm = TRUE) / N
+```
+</ol>

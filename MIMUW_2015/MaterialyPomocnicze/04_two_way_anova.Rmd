@@ -1,0 +1,105 @@
+---
+title: "Two way ANOVA"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Changes
+
+Hope you will like them.
+
+There will be less ‘lecture style’ classes, since you will find a lot of materials in either Polish or English textbook.
+
+There will be more ‘demonstration/collaboration style’ classes. We will build applications to study behaviour of different methods by simulations. We will read about theoretical properties of different methods in textbooks. We will use homeworks as entry points for discussions.
+
+
+
+# Home work for 29 X 2015
+
+Read the chapter 2.3 from ,,Analiza danych z programem R, Modele liniowe mieszane'' or the chapter 16.2 from ,,Practical Regression and Anova using R'' Julian J. Faraway.
+
+Then, by using simulations try to answer following questions (in all, you may assume that residuals ~ N(0,1)). 
+
+* Create a scenario in which some main effects (main=additive) will be of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions.
+* Create a scenario in which some interaction effects will be of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions (since there are no main effects test for them should be on the level alpha).
+* Create a scenario in which there are main effects and interaction effects of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions.
+
+Take any number of groups (k/m) and number of observations (n), but you should not have same parameters as other students.
+
+
+# P-values
+
+What we do is mostly estimation and interference / testing.
+We use p-values for interference so we should be aware of the ,,debate'' related to p-values.
+
+See for example
+
+* http://errorstatistics.com/2015/10/10/p-value-madness-a-puzzle-about-the-latest-test-ban-or-dont-ask-dont-tell/
+
+* http://errorstatistics.com/2015/08/31/the-paradox-of-replication-and-the-vindication-of-the-p-value-but-she-can-go-deeper-i/
+
+* http://errorstatistics.com/2015/10/18/statistical-reforms-without-philosophy-are-blind-ii-update/
+
+Thus we are going to spend more time in understanding what you can and what you cannot do with p-values.
+
+## Power study for one way ANOVA
+
+See the attached shiny app.
+
+# Contrasts 
+
+This is a copy of the last chapter of lecture `02_oneway`.
+
+## List of contrasts
+
+We have to code the categorical variable somehow. And the coding is important.
+
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+
+t(contr.treatment(5))
+
+t(contr.helmert(5))
+
+t(contr.poly(5))
+
+t(contr.sdif(5))
+
+model.matrix(response~dose, vaccination)[1:5,]
+
+model.matrix(response~dose, vaccination,
+ contrasts=list(dose=contr.helmert))[1:5,]
+
+model.matrix(response~dose, vaccination,
+ contrasts=list(dose=contr.poly))[1:5,]
+```
+
+## Contrasts in action
+
+```{r, warning=FALSE, message=FALSE}
+summary(lm(response~dose, data = vaccination))
+
+kontr = contr.sdif(5)
+summary(lm(response ~ dose, data = vaccination, contrasts=list(dose=kontr)))
+
+model.va.7 <- lm(response~ordered(dose), data=vaccination)
+summary(model.va.7)
+```
+
+## Compare all contrasts
+
+```{r, warning=FALSE, message=FALSE}
+options()$contrasts
+
+contrs <- apropos("contr\\.")
+coefs <- sapply(contrs, function(i)
+ lm(response~dose, data = vaccination,
+ contrasts=list(dose=get(i)))$coefficients
+)
+t(coefs)
+```
+
+

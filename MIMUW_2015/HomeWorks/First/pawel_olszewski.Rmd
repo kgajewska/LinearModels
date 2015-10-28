@@ -1,0 +1,74 @@
+---
+title: "Zadanie domowe I"
+author: "Paweł Olszewski"
+date: "8 X 2015"
+output: 
+  html_document:
+  toc: TRUE
+---
+  
+Wczytuję zbiór danych z biblioteki PBImisc
+
+```{r}
+library("PBImisc")
+head(heights)
+```
+
+Buduję model, w którym wzrost żony jest zmienną objaśnianą
+
+```{r}
+model <- lm(Wife~Husband, data=heights)
+model
+```  
+
+Rysuję jak wygląda prosta regresji na płaszczyźnie.
+
+```{r}
+library(ggplot2)
+ggplot(heights, aes(x=Husband, y=Wife)) + geom_point() + geom_smooth(method="lm", formula=y~x, se = F)
+```
+
+
+Korzystająć z metody pokazanej na wykłdzie obliczam przedział ufności korzystająć z metody bootstrapowej
+```{r}
+N <- 10000
+results <- replicate(N, {
+  data <- data.frame(x = heights$Husband,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=data)
+  model2$coefficients
+})
+```
+
+I teraz możemy wyznaczyć przedział ufności
+```{r}
+quantile(results[2,], c(0.025,0.975))
+```
+
+
+Wiemy, że regresja liniowa nie jest symetryczna, zatem wyznaczmy również przedział ufności po zamianie zmiennej objaśniającej.
+Powtarzając te same kroki...
+
+
+```{r}
+model <- lm(Husband~Wife, data=heights)
+model
+```
+
+```{r}
+ggplot(heights, aes(x=Wife, y=Husband)) + geom_point() + geom_smooth(method="lm", formula=y~x, se = F)
+
+N <- 10000
+results2 <- replicate(N, {
+  data <- data.frame(x = heights$Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=data)
+  model2$coefficients
+})
+```
+
+Przedział ufności z zamienioną zmienną objaśniającą i objaśnianą wynosi
+```{r}
+quantile(results2[2,], c(0.025,0.975))
+```
+

@@ -1,0 +1,127 @@
+---
+title: "emilia_pompe_homework2"
+author: "Emilia Pompe"
+date: "Wednesday, October 14, 2015"
+output: html_document
+---
+Ponizsza funkcja generuje wektor liczb ze standardowego rozkladu normalnego, nastepnie "dopisuje" do niego wektor podzialu na grupy i oblicza roznice miedzy maksimum a minimum srednich w grupach. Eksperyment ten jest powtarzany N (domyslnie 1000) razy. Argumentami funkcji sa wektor licznosci grup oraz wspomniana juz liczba powtorzen eksperymentu.
+```{r, warning=FALSE}
+range.distribution <- function(group.numbers, N = 1000){
+  result <- replicate(N, {
+    a <- rnorm(sum(group.numbers), 0, 1)
+    b <- rep(1:length(group.numbers), times=group.numbers)
+    means <- tapply(a, b, mean)
+    max(means) - min(means)
+  })
+}
+```
+
+Uzyje powyzszej funkcji do wygenerowania czterech roznych podzialow na 4 grupy. W pierwszym przypadku grupy sa rownoliczne, w pozostalych - nie sa rownoliczne.
+```{r, warning=FALSE}
+set.seed(7)
+data.4groups <- data.frame(equal=range.distribution(c(250, 250, 250, 250)),
+                          unequal1 = range.distribution(c(100, 200, 300, 400)),
+                          unequal2 = range.distribution(c(100, 100, 400, 400)),
+                          unequal3 = range.distribution(c(100, 100, 100, 700)))
+```
+
+Obejrzymy histogramy wygenerowanych zmiennych.
+```{r, warning=FALSE}
+attach(data.4groups)
+par(mfrow=c(2,2))
+hist(equal, breaks=100, main="Histogram")
+hist(unequal1, breaks=100, main="Histogram")
+hist(unequal2, breaks=100, main="Histogram")
+hist(unequal3, breaks=100, main="Histogram")
+```
+
+Widzimy znaczace roznice w histogramach (zwlaszcza w ogonach rozklad?w), co sugeruje, ze rozklady 'range distributions' dla roznych podzialow grup nie sa takie same. Obejrzymy jeszcze qq-ploty dla wygenerowanych wektorow.
+```{r, warning=FALSE}
+par(mfrow=c(2,3))
+qqplot(equal, unequal1, main = "QQ-plot: 4 groups")
+qqplot(equal, unequal2, main = "QQ-plot: 4 groups")
+qqplot(equal, unequal3, main = "QQ-plot: 4 groups")
+qqplot(unequal1, unequal2, main = "QQ-plot: 4 groups")
+qqplot(unequal1, unequal3, main = "QQ-plot: 4 groups")
+qqplot(unequal2, unequal3, main = "QQ-plot: 4 groups")
+```
+
+Widzimy, ze punkty na wykresach nie odpowiadaja dokladnie linii y=x. Sugeruje to, ze rozklady nie sa takie same. Przeprowadzimy teraz testy Kolmogorova - Smirnova, by sprawdzic, czy rozklady wektorow sa takie same.
+```{r, warning=FALSE}
+ks.test(equal, unequal1)
+ks.test(equal, unequal2)
+ks.test(equal, unequal3)
+ks.test(unequal1, unequal2)
+ks.test(unequal1, unequal3)
+ks.test(unequal2, unequal3)
+
+detach(data.4groups)
+```
+
+W kazdym przypadku mamy odrzucenie hipotezy zerowej na poziomie istotnosci 0.05. Rozklady nie sa wiec takie same.
+Przeprowadze jeszcze analogiczne badanie dla 8 grup (4 rozne podzialy) oraz dla 3 grup (rowniez 4 rozne podzialy).
+```{r, warning=FALSE}
+set.seed(7)
+data.8groups <- data.frame(equal = range.distribution(rep(125, times=8)),
+                           unequal1 = range.distribution(rep(c(50,100,150,200),times=2)),
+                           unequal2 = range.distribution(c(rep(100,times=7),300)),
+                           unequal3 = range.distribution(c(rep(50,times=6), 200, 500)))
+                          
+attach(data.8groups)
+par(mfrow=c(2,2))
+hist(equal, breaks=100, main="Histogram")
+hist(unequal1, breaks=100, main="Histogram")
+hist(unequal2, breaks=100, main="Histogram")
+hist(unequal3, breaks=100, main="Histogram")
+
+par(mfrow=c(2,3))
+qqplot(equal, unequal1, main = "QQ-plot: 8 groups")
+qqplot(equal, unequal2, main = "QQ-plot: 8 groups")
+qqplot(equal, unequal3, main = "QQ-plot: 8 groups")
+qqplot(unequal1, unequal2, main = "QQ-plot: 8 groups")
+qqplot(unequal1, unequal3, main = "QQ-plot: 8 groups")
+qqplot(unequal2, unequal3, main = "QQ-plot: 8 groups")
+
+ks.test(equal, unequal1)
+ks.test(equal, unequal2)
+ks.test(equal, unequal3)
+ks.test(unequal1, unequal2)
+ks.test(unequal1, unequal3)
+ks.test(unequal2, unequal3)
+
+detach(data.8groups)
+```
+
+Wyniki dla osmiu grup sa bardzo podobne: wykresy oraz testy K-S wskazuja na to, ze rozklady nie sa takie same.
+```{r, warning=FALSE}
+set.seed(7)
+data.3groups <- data.frame(equal=range.distribution(c(500, 500, 500)),
+                           unequal1 = range.distribution(c(200, 600, 700)),
+                           unequal2 = range.distribution(c(100, 600, 800)),
+                           unequal3 = range.distribution(c(20, 400, 1080)))
+attach(data.3groups)
+par(mfrow=c(2,2))
+hist(equal, breaks=100, main="Histogram")
+hist(unequal1, breaks=100, main="Histogram")
+hist(unequal2, breaks=100, main="Histogram")
+hist(unequal3, breaks=100, main="Histogram")
+
+
+par(mfrow=c(2,3))
+qqplot(equal, unequal1, main = "QQ-plot: 3 groups")
+qqplot(equal, unequal2, main = "QQ-plot: 3 groups")
+qqplot(equal, unequal3, main = "QQ-plot: 3 groups")
+qqplot(unequal1, unequal2, main = "QQ-plot: 3 groups")
+qqplot(unequal1, unequal3, main = "QQ-plot: 3 groups")
+qqplot(unequal2, unequal3, main = "QQ-plot: 3 groups")
+
+ks.test(equal, unequal1)
+ks.test(equal, unequal2)
+ks.test(equal, unequal3)
+ks.test(unequal1, unequal2)
+ks.test(unequal1, unequal3)
+ks.test(unequal2, unequal3)
+detach(data.3groups)
+```
+
+W przypadku trzech grup rozklady rowniez roznia sie istotnie. Mozna stad wywnioskowac, ze rozklady zaleza od proporcji grup.

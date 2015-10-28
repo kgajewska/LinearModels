@@ -1,0 +1,41 @@
+---
+title: "Zadanie 1"
+output: html_document
+---
+1. Na zbiorze danych heights{PBImisc} oszacuj zale¿noœæ liniow¹ pomiêdzy wzrostem ¿ony a mê¿a.
+
+Zobaczmy jak wygl¹da zale¿noœæ liniowa wzrostu mê¿a od wzrostu ¿ony.
+
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+library(PBImisc)
+ggplot(heights, aes(x=Wife, y=Husband)) +
+  geom_point() +
+  geom_smooth(method="lm", formula=y~x)
+```
+
+ZnajdŸmy wspó³czynniki regresji liniowej.
+
+```{r}
+model<-lm(Husband~Wife, data=heights)
+model$coefficients
+
+```
+
+2. Wyznacz obliczeniowo przedzia³ ufnoœci dla wspó³czynnika nachylenia.
+
+Do wyznaczenia przedzia³u ufnoœci u¿yjmy metody bootstrap resztowy.
+```{r}
+N <- 5000
+nwsp <- replicate(N, {
+  ndf <- data.frame(x = heights$Wife,
+                    y = model$fitted.values + sample(model$residuals))
+  model2 <- lm(y~x, data=ndf)
+  model2$coefficients
+})
+```
+
+Przedzia³ ufnoœci:
+```{r}
+quantile(nwsp[2,], c(0.025, 0.975))
+```

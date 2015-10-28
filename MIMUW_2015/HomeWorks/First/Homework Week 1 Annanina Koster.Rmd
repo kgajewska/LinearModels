@@ -1,0 +1,80 @@
+---
+title: "Homework Week 1"
+author: "Annanina Koster"
+date: "7 oktober 2015"
+output: html_document
+---
+
+- - -
+
+Praca domowa
+
+Na zbiorze danych heights{PBImisc} oszacuj zależność liniową pomiędzy wzrostem żony a męża.
+
+Wyznacz obliczeniowo przedział ufności dla współczynnika nachylenia.
+
+Raport w formacie html z przedziałem ufności wyślij w GitHubie na adres
+
+https://github.com/pbiecek/ModeleLiniowe/tree/master/MIMUW_2015
+
+- - -
+
+{Homework
+
+At dataset heights {PBImisc} estimate a linear relationship between the increase of his wife and husband.
+  
+Determine computationally confidence interval for the slope.
+  
+The report in html format with a confidence interval send a Github address
+  
+https://github.com/pbiecek/ModeleLiniowe/tree/master/MIMUW_2015}
+  
+- - -
+  
+First of all I open the dataset 'heights' from the PBImisc library and store it in a dataset named data.heights. Then I plot the data to see if there is a positive linear relation between the heights of Husbands and Wifes. As can be seen, there is, so the variables don't have to be adjusted. 
+
+```{r}
+library("PBImisc")
+data.heights <- heights
+
+plot(data.heights$Wife, data.heights$Husband)
+library(ggplot2)
+ggplot(data.heights, aes(x=Wife, y=Husband))+geom_point()
+ggplot(data.heights, aes(x=Wife, y=Husband))  +
+  geom_point() + 
+  geom_smooth(method="lm", formula=y~x) +
+  ggtitle("Height Wife vs Height Husband")
+  
+```
+
+Then a linear model is fitted to the data.
+
+```{r}
+
+model.heights <- lm(Husband~Wife, data=data.heights)
+model.heights$coefficients
+summary(model.heights)
+```
+
+Using the bootstrap method, a 95% confidence interval for the slope is calculated.
+
+```{r}
+
+set.seed(12)
+N <- 5000
+nwsp.heights <- replicate(N, {
+  ndf.heights <- data.frame(x = data.heights$Wife,
+                    y = model.heights$fitted.values + sample(model.heights$residuals))
+  model2.heights <- lm(y~x, data=ndf.heights)
+  model2.heights$coefficients
+})
+df.heights <- data.frame(intercept = nwsp.heights[1,], slope = nwsp.heights[2,])
+par(mfrow=c(1,1))
+hist(df.heights$intercept, 100, col="grey")
+hist(df.heights$slope, 100, col="grey")
+
+quantiles.heights <- quantile(df.heights$slope, probs=c(0.025, 0.975))
+quantiles.heights
+
+```
+The 95% confidence interval of the slope is from 0.6891461 to 0.9739710.
