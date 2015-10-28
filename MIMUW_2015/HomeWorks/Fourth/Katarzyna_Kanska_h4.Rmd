@@ -1,0 +1,283 @@
+---
+title: "Homework 4"
+author: "Katarzyna Kañska"
+date: "26.10.2015"
+output: html_document
+---
+
+We assume that residuals $\varepsilon \sim \mathcal{N}(0,1)$.
+Recall that power of statistical test in defined by $\mathbb{P}(\text{reject }\mathrm{H_0} | \mathrm{H_{alternative}} \text{ is true})$.
+
+### Create a scenario in which some main effects (main=additive) will be of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+# size of (whole) sample
+N <- 900
+# number of groups (variable 1)
+k1 <- 2
+# number of groups (variable 2)
+k2 <- 3
+# number of obserwations in each group
+m1 <- N/k1
+m2 <- N/k2
+
+# only residuals
+Y <- rnorm(N)
+
+# groups
+x1 <- rep(c("I", "II"), times=m1)
+x2 <- rep(c("A", "B", "C"), times=m2)
+
+# differing means
+Y[x1=="II"] <- Y[x1=="II"] + 2
+
+Y[x2=="A"] <- Y[x2=="A"] + 0.1
+Y[x2=="B"] <- Y[x2=="B"] + 0.3
+Y[x2=="C"] <- Y[x2=="C"] + 0.85
+
+myData <- data.frame(Y, x1, x2)
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(myData, aes(x=x1, y=Y)) + geom_boxplot()
+ggplot(myData, aes(x=x2, y=Y)) + geom_boxplot()
+
+```
+
+Boxplots indicate diffrences in means between groups.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+interaction.plot(myData$x1, myData$x2, myData$Y)
+interaction.plot(myData$x2, myData$x1, myData$Y)
+```
+
+Lines are parallel, so there is no evidence of interaction between x1 and x2.
+
+```{r, warning=FALSE, message=FALSE}
+model1 <- lm(Y ~ x1 + x2, data = myData)
+summary(model1)
+```
+
+The main effect for group C (variable x2) is of the size 0.7 (as the standard deviation equals 1 in our case).
+
+```{r, warning=FALSE, message=FALSE}
+model2 <- lm(Y ~ x1 * x2, data = myData)
+summary(model2)
+```
+
+We see that interactions are not statistically significant. Therefore to calculate the power of F test for main effects we use the model without interactions.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(777)
+
+M <- 100
+pvals <- replicate(M, {
+
+  Y <- rnorm(N)
+  
+  # differing means
+  Y[x1=="II"] <- Y[x1=="II"] + 2
+  
+  Y[x2=="A"] <- Y[x2=="A"] + 0.1
+  Y[x2=="B"] <- Y[x2=="B"] + 0.3
+  Y[x2=="C"] <- Y[x2=="C"] + 0.85
+
+  myData <- data.frame(Y, x1=factor(x1), x2=factor(x2))
+  
+  tmp <- summary(aov(Y~x1+x2, data=myData))
+  c(tmp[[1]][1,5], tmp[[1]][2,5])
+})
+    
+df <- data.frame(p1=pvals[1,], p2=pvals[2,])
+    
+ggplot(df, aes(x=p1)) + geom_histogram() + xlim(0,1) +
+      ggtitle(paste0("Distribution of p-values for significance of variable x1\n\n",
+                     round(100*mean(pvals[1,] < 0.05),1), "% of p-values smaller than 0.05 \n\n", 
+                     round(100*mean(pvals[1,] >= 0.05),1), "% of p-values larger than 0.05"))
+
+ggplot(df, aes(x=p2)) + geom_histogram() + xlim(0,1) +
+      ggtitle(paste0("Distribution of p-values for significance of variable x2\n\n",
+                     round(100*mean(pvals[2,] < 0.05),1), "% of p-values smaller than 0.05 \n\n", 
+                     round(100*mean(pvals[2,] >= 0.05),1), "% of p-values larger than 0.05"))
+```
+
+The power of F test for main effects is equal 100%.
+
+In this example it is not possible to find the power of F test for interactions because $\mathrm{H_{alternative}}$ is not true ($\mathrm{H_0}$ is that there are no interactions which is true).
+
+
+### Create a scenario in which some interaction effects will be of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions (since there are no main effects test for them should be on the level alpha).
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+# only residuals
+Y <- rnorm(N)
+
+# adding interaction
+Y[x1=="II" & x2=="B"] <- Y[x1=="II" & x2=="B"] + 0.9
+
+myData2 <- data.frame(Y, x1, x2)
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(myData2, aes(x=x1, y=Y)) + geom_boxplot()
+ggplot(myData2, aes(x=x2, y=Y)) + geom_boxplot()
+
+```
+
+Boxplots do not show much diffrence in means between groups.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+interaction.plot(myData2$x1, myData2$x2, myData2$Y)
+interaction.plot(myData2$x2, myData2$x1, myData2$Y)
+```
+
+Lines are not parallel, so there is clear evidence of interaction between x1 and x2.
+
+```{r, warning=FALSE, message=FALSE}
+model1 <- lm(Y ~ x1 + x2, data = myData2)
+summary(model1)
+```
+
+We see that main effects are statistically significant when the model is not considering interactions.
+
+```{r, warning=FALSE, message=FALSE}
+model2 <- lm(Y ~ x1 * x2, data = myData2)
+summary(model2)
+```
+
+But when we introduce the interactions, the main effects loose their significance. The interaction effect between groups II and B is of the size 0.7 (as the standard deviation equals 1 in our case).
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(777)
+
+M <- 100
+pvals <- replicate(M, {
+
+  Y <- rnorm(N)
+  
+  # adding interaction
+  Y[x1=="II" & x2=="B"] <- Y[x1=="II" & x2=="B"] + 0.9
+
+  myData2 <- data.frame(Y, x1=factor(x1), x2=factor(x2))
+  
+  summary(aov(Y~x1*x2, data=myData2))[[1]][3,5]
+})
+    
+df <- data.frame(p=pvals)
+    
+ggplot(df, aes(x=p)) + geom_histogram() + xlim(0,1) +
+      ggtitle(paste0("Distribution of p-values for significance of interactions\n\n",
+                     round(100*mean(pvals < 0.05),1), "% of p-values smaller than 0.05 \n\n", 
+                     round(100*mean(pvals >= 0.05),1), "% of p-values larger than 0.05"))
+```
+
+The power of F test for interactions is equal 100%.
+
+In this example it is not possible to find the power of F test for main effects because $\mathrm{H_{alternative}}$ is not true.
+
+
+
+### Create a scenario in which there are main effects and interaction effects of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+# only residuals
+Y <- rnorm(N)
+
+# differing means
+Y[x1=="II"] <- Y[x1=="II"] + 0.5
+
+Y[x2=="C"] <- Y[x2=="C"] + 0.7
+
+# adding interactions
+Y[x1=="II" & x2=="B"] <- Y[x1=="II" & x2=="B"] + 0.9
+
+myData3 <- data.frame(Y, x1, x2)
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+library("ggplot2")
+ggplot(myData3, aes(x=x1, y=Y)) + geom_boxplot()
+ggplot(myData3, aes(x=x2, y=Y)) + geom_boxplot()
+
+```
+
+From the boxplots we see differences in means between groups.
+
+```{r, warning=FALSE, message=FALSE}
+par(mfrow=c(1,2))
+interaction.plot(myData3$x1, myData3$x2, myData3$Y)
+interaction.plot(myData3$x2, myData3$x1, myData3$Y)
+```
+
+Lines are not parallel, so there is evidence of interaction between x1 and x2.
+
+```{r, warning=FALSE, message=FALSE}
+model1 <- lm(Y ~ x1 + x2, data = myData3)
+summary(model1)
+```
+
+We see that main effects are statistically significant.
+
+```{r, warning=FALSE, message=FALSE}
+model2 <- lm(Y ~ x1 * x2, data = myData3)
+summary(model2)
+```
+
+Also interactions are significant.
+
+The main effect for group II is of the size 0.7, as well as the interaction effect between groups II and B.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(777)
+
+M <- 100
+pvals <- replicate(M, {
+
+  Y <- rnorm(N)
+
+  # differing means
+  Y[x1=="II"] <- Y[x1=="II"] + 0.5
+  
+  Y[x2=="C"] <- Y[x2=="C"] + 0.7
+  
+  # adding interactions
+  Y[x1=="II" & x2=="B"] <- Y[x1=="II" & x2=="B"] + 0.9
+  
+  myData3 <- data.frame(Y, x1=factor(x1), x2=factor(x2))
+  
+  tmp <- summary(aov(Y~x1*x2, data=myData3))
+  c(tmp[[1]][1,5], tmp[[1]][2,5], tmp[[1]][3,5])
+})
+    
+df <- data.frame(p1=pvals[1,], p2=pvals[2,], p3=pvals[3,])
+    
+ggplot(df, aes(x=p1)) + geom_histogram() + xlim(0,1) +
+      ggtitle(paste0("Distribution of p-values for significance of variable x1\n\n",
+                     round(100*mean(pvals[1,] < 0.05),1), "% of p-values smaller than 0.05 \n\n", 
+                     round(100*mean(pvals[1,] >= 0.05),1), "% of p-values larger than 0.05"))
+
+ggplot(df, aes(x=p2)) + geom_histogram() + xlim(0,1) +
+      ggtitle(paste0("Distribution of p-values for significance of variable x2\n\n",
+                     round(100*mean(pvals[2,] < 0.05),1), "% of p-values smaller than 0.05 \n\n", 
+                     round(100*mean(pvals[2,] >= 0.05),1), "% of p-values larger than 0.05"))
+    
+ggplot(df, aes(x=p3)) + geom_histogram() + xlim(0,1) +
+      ggtitle(paste0("Distribution of p-values for significance of interactions\n\n",
+                     round(100*mean(pvals < 0.05),1), "% of p-values smaller than 0.05 \n\n", 
+                     round(100*mean(pvals >= 0.05),1), "% of p-values larger than 0.05"))
+```
+
+The power of F test for main effects as well as for interactions is equal 100%.
