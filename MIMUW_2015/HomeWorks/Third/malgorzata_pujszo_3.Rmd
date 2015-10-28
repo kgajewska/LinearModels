@@ -1,0 +1,104 @@
+---
+title: "Homework 3"
+author: "Ma³gorzata Pujszo"
+date: "Wednesday, October 21, 2015"
+output: html_document
+---
+1.and 2.
+
+Good dataset and diagnostic plot for it.
+
+```{r warning=FALSE, message=FALSE}
+set.seed(9)
+
+x <- runif(1000)
+y <- 5*x + 3 + rnorm(1000)
+good <- data.frame(y = y,
+                  x = x)
+model.good <- lm(y~x, data=good)
+par(mfrow=c(3, 2))
+plot(model.good, which=1:6)
+```
+
+Bad dataset and diagnostic plot for it.
+
+```{r warning=FALSE, message=FALSE}
+x <- runif(1000, 0, 10)
+x[1000]<-20
+y[1:999] <- 5000*x[1:999] + (6*x[1:999]-5)^2 + rnorm(999)*exp(x[1:999])
+y[1000]<- 152000
+
+bad <- data.frame(y = y,
+                  x = x)
+model.bad <- lm(y~x, data=bad)
+par(mfrow=c(3, 2))
+plot(model.bad, which=1:6)
+```
+
+As we can see our dataset doesn't pass Scale-Location, Normal Q-Q, and Cook's distance since there exists observation for which Cook's distance > 1.
+
+3. 
+I choose tests:
+* Shapiro-Wilk Normality Test
+* Ramsey's RESET test for functional form
+* Harrison-McCabe test for heteroskedasticity
+
+4. 
+
+Datasets for Shapiro-Wilk Normality Test
+
+```{r warning=FALSE, message=FALSE}
+x <- runif(1000)
+y <- 5*x + 3 + rnorm(1000)
+good <- data.frame(y = y,
+                  x = x)
+model.good <- lm(y~x, data=good)
+
+y <- 5*x + 3 + rgamma(1000, shape=3)
+bad <- data.frame(y = y,
+                   x = x)
+model.bad <- lm(y~x, data=bad)
+
+shapiro.test(rstandard(model.good))
+shapiro.test(rstandard(model.bad))
+```
+
+As we can see the first example passes the test whereas the second not.
+
+Datasets for Ramsey's RESET test for functional form
+
+```{r warning=FALSE, message=FALSE}
+library(lmtest)
+x <- runif(1000)
+y <- 5*x + 3 + rnorm(1000)
+good <- data.frame(y = y,
+                  x = x)
+
+y <- exp(x) + log(x) + x + rnorm(1000)
+bad <- data.frame(y = y,
+                   x = x)
+
+resettest(y~x, data=good, type="regressor")
+resettest(y~x, data=bad, type="regressor")
+```
+
+Datasets Harrison-McCabe test for heteroskedasticity
+
+```{r warning=FALSE, message=FALSE}
+library(lmtest)
+x <- runif(1000)
+y <- 5*x + 3 + rnorm(1000)
+good <- data.frame(y = y,
+                  x = x)
+
+y[1:250] <- 10*x[1:250] + rnorm(250)*x[1:250]
+y[251:500] <- 10*x[251:500] + rnorm(250, 0, 14)*x[251:500]
+y[501:750] <- 10*x[501:750] + rnorm(250, 0, 4)*x[501:750]
+y[751:1000] <- 10*x[751:1000] + rnorm(250, 0, 22)*x[751:1000]
+bad <- data.frame(y = y,
+                   x = x)
+
+hmctest(y~x, data=good, order.by=~x, plot=TRUE)
+hmctest(y~x, data=bad, order.by=~x, plot=TRUE)
+```
+
