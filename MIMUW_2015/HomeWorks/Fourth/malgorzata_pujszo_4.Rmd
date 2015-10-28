@@ -98,7 +98,8 @@ ggplot(istotnosc.A, aes(x=p)) +
                  round(100*mean(istot.A >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
 ```
 
-W tym przypadku 0,4% testów dobrze oceni³o istotnoœæ cechy A, wiêc moc tego testu wynosi 0,4%.
+W tym przypadku 0,4% testów dobrze oceni³o brak istotnoœci cechy A, wiêc moc tego testu wynosi 0,4%.
+
 Istotnoœæ cechy B:
 ```{r}
 set.seed(3)

@@ -1,0 +1,38 @@
+---
+title: "Homework 2"
+author: "Annanina Koster"
+date: "14 oktober 2015"
+output: html_document
+---
+
+In this experiment, a vector of 10000 means of ranges will be plotted a few times in order to see if they differ. Everytime, the seet is set randomly, so every level will get a different amount of groups. The length of these groups will also be random everytime. And so will the elements of all groups (but these will follow a standard normal distribution). The groups are added to a level, and the means of the different groups within the level is calculated. Then the range of the level is calculated and the mean of the ranges. Since this happens 10.000 times, the vector of the means of the ranges can be plotted in a histogram to see the distribution. If you run this program a few times you will be able to see if the distribution will differ or not.
+
+```
+z <- sample(1:100,1)
+set.seed(z)
+nr <- sample(1:10,1) #number of different groups
+
+nmr <- c(1:nr)
+
+for (j in 1:nr){
+  nmr[j] <- sample(1:100, 1)
+}
+
+level <- c(1:(sum(nmr[1]:nmr[nr])))
+y <- c(1:(sum(nmr[1]:nmr[nr])))
+
+vector <- replicate (10000, {
+
+  for (i in 1:nr){
+    y[i] <- rnorm(nmr[i])
+    level[i] <- rep(1:nmr[i], times=1)
+  }
+  
+  level <- rep(level[1]:level[nr], times=1)
+  y <- rep(y[1]:y[nr], times=1)
+
+means <- tapply(y, level, mean)
+range <- max(means) - min(means)
+})
+hist(vector)
+```
