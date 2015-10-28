@@ -1,0 +1,82 @@
+---
+title: "Homework 3"
+author: "Annanina Koster"
+date: "21 oktober 2015"
+output: html_document
+---
+
+Home work [deadline 22 X]
+Simulate two datasets, 1000 observations each. Create the first dataset in a way to pass all diagnostic plots (so, all assumptions are valid). Create the second dataset in order to fail with at least 3 diagnostic datasets (e.g. with high Cook distances, non homogeneous variance of residuals, so on).
+Show diagnostic plots for both simulated datasets.
+
+Choose three tests for model diagnostic (note, you should not choose the same three tests as other students. If your Submission will have same diagnostic tests as other already submitted home work then your homework will be rejected. )
+
+For each test create two simulated datasets. One that passes the given test and one that does not (e.g. simulate data with heterogeneous variance)
+Present results from diagnostic tests, show p-values for both datasets.
+
+- - -
+
+Hence, the first generated dataset should pass all diagnostic plots, while the second shouldn't:
+
+```{r}
+library(PBImisc)
+
+set.seed(12)
+x <- runif(1000)
+y <- x + rnorm(1000)
+dataset1<-data.frame(x,y)
+model1 <- lm(y~x, data=dataset1)
+plot(model1, which=1:6)
+
+set.seed(12)
+y[200:400] <- 3*x[200:400]+rnorm(201,0,0.8)
+y[550:700] <- 8*x[550:700]+rnorm(151,0, 1.5)
+y[800:900] <- 2*x[800:900]+rnorm(101,0,0.3)
+dataset2 <- data.frame(x,y)
+model2 <- lm(y~x, data=dataset2)
+plot(model2, which=1:6)
+
+par(mfrow=c(3,4))
+plot(model1, which=1:6)
+plot(model2, which=1:6)
+```
+
+I chose the following three tests for model diagnostics:
+The first one is the Goldfeld-Quandt test against heteroskedasticity.
+
+```{r}
+library(lmtest)
+goldfeld1 <- gqtest(y~x, order.by=~x, point =0.5, data = dataset1)
+goldfeld1
+
+goldfeld2 <- gqtest(y~x, order.by=~x, point =0.5, data = dataset2)
+goldfeld2
+```
+
+Since the p-value is larger than 0.05 for the first dataset, we are sure at a 95% confidence level that the null hypothesis that the variance of the epsilons is homogeneous should not be rejected.
+Since the p-value is smaller than 0.05 for the second dataset, we know at a 95% confidence level that there is heterogeneity. 
+
+The second test I will perform is the Rainbow test for linearity.
+
+```{r}
+rain1 <- raintest(y~x, order.by=~x, data = dataset1)
+rain1
+
+rain2 <- raintest(y~x, order.by=~x, data = dataset2)
+rain2
+```
+
+Since for the first dataset the p-value is very high, we can conclude at a 95% confidence level that the model is linear.
+For the second dataset, however, the p-value is lower than 0.05 and therefore we are sure at a 95% confidence level that this model is not linear.
+
+Finally, I will perform the Shapiro-Wilk Normality Test.
+
+```{r}
+shapiro1 <- shapiro.test(rstandard(model1))
+shapiro1
+
+shapiro2 <- shapiro.test(rstandard(model2))
+shapiro2
+```
+
+Once again, it can be seen that dataset1 has a p-value higher than 0.05 and dataset2 lower. Hence, at a 95% confidence level we are sure that dataset1 is normally distributed and dataset 2 is not.
