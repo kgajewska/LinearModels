@@ -82,8 +82,8 @@ x&lt;-0
 for (i in 1:1000) {
   x&lt;-rnorm(1600)
   x[which(levels==&quot;b&quot;)]&lt;-rnorm(400)+0.7
-  x[which(levels2==&quot;cc&quot;)]&lt;-rnorm(400)+0.7
-  x[which(levels==&quot;d&quot;)]&lt;-rnorm(400)+0.7
+  x[which(levels2==&quot;cc&quot;)]&lt;-x[which(levels2==&quot;cc&quot;)]+0.7
+  x[which(levels==&quot;d&quot;)]&lt;-x[which(levels==&quot;d&quot;)]+0.7
   g &lt;- lm(x ~ levels*levels2)
   test1[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[1]
   test2[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[2]
@@ -95,8 +95,10 @@ for (i in 1:1000) {
 <pre class="r"><code>length(which(test2&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>length(which(test_interactions&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.998</code></pre>
-<p>Jako że nie ma interakcji wydaje się, że test na interakcje powinnien być zaakceptowany w ok. 95% przypadków, jednak tak się nie stało. </br> ## Punkt 2 Tutaj podobnie jak wyżej z tym że przyjąłem <span class="math">\(\gamma_{2,2}\)</span> równe 0.7 oraz <span class="math">\(\gamma_{3,4}\)</span> równe 0.7.</p>
+<pre><code>## [1] 0.045</code></pre>
+<div id="punkt-2" class="section level2">
+<h2>Punkt 2</h2>
+<p>Tutaj podobnie jak wyżej z tym że przyjąłem <span class="math">\(\gamma_{2,2}\)</span> równe 0.7 oraz <span class="math">\(\gamma_{3,4}\)</span> równe 0.7.</p>
 <pre class="r"><code>test1&lt;-0
 test2&lt;-0
 test_interactions&lt;-0
@@ -112,12 +114,16 @@ for (i in 1:1000) {
 }</code></pre>
 <p>Tutaj sytuacja analogiczna jak wyżej, z tym że interakcja jest, natomiast efekt główny (addytywny) nie powinnien być widoczny.</p>
 <pre class="r"><code>length(which(test1&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.85</code></pre>
+<pre><code>## [1] 0.862</code></pre>
 <pre class="r"><code>length(which(test2&lt;0.05))/1000</code></pre>
-<pre><code>## [1] 0.835</code></pre>
+<pre><code>## [1] 0.857</code></pre>
 <pre class="r"><code>length(which(test_interactions&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
-<p>Wydaję mi się, że dwie pierwsze wielkości powinny być rzędu 0.05, gdyż starałem się tak zaprojektować dane, by efekt główny nie był widoczny. Niestety nie mogę dojść dlaczego wychodzi wynik tak wysoki.</br> ## Punkt 3 Następnie jest kombinacja dwóch poprzednich przypadków.</p>
+<p>Wydaję mi się, że dwie pierwsze wielkości powinny być rzędu 0.05, gdyż starałem się tak zaprojektować dane, by efekt główny nie był widoczny. Niestety nie mogę dojść dlaczego wychodzi wynik tak wysoki.</br></p>
+</div>
+<div id="punkt-3" class="section level2">
+<h2>Punkt 3</h2>
+<p>Następnie jest kombinacja dwóch poprzednich przypadków.</p>
 <pre class="r"><code>test1&lt;-0
 test2&lt;-0
 test_interactions&lt;-0
@@ -125,22 +131,23 @@ x&lt;-0
 for (i in 1:1000) {
   x&lt;-rnorm(1600)
   x[which(levels==&quot;b&quot;)]&lt;-rnorm(400)+0.7
-  x[which(levels2==&quot;cc&quot;)]&lt;-rnorm(400)+0.7
-  x[which(levels==&quot;d&quot;)]&lt;-rnorm(400)+0.7
-  x[intersect(which(levels==&quot;b&quot;),which(levels2==&quot;bb&quot;))]&lt;-rnorm(100)+0.7
-  x[intersect(which(levels==&quot;c&quot;),which(levels2==&quot;dd&quot;))]&lt;-rnorm(100)+0.7
+  x[which(levels2==&quot;cc&quot;)]&lt;-x[which(levels2==&quot;cc&quot;)]+0.7
+  x[which(levels==&quot;d&quot;)]&lt;-x[which(levels==&quot;d&quot;)]+0.7
+  x[intersect(which(levels==&quot;b&quot;),which(levels2==&quot;bb&quot;))]&lt;-x[intersect(which(levels==&quot;b&quot;),which(levels2==&quot;bb&quot;))]+0.7
+  x[intersect(which(levels==&quot;c&quot;),which(levels2==&quot;dd&quot;))]&lt;-x[intersect(which(levels==&quot;c&quot;),which(levels2==&quot;dd&quot;))]+0.7
   g &lt;- lm(x ~ levels*levels2)
   test1[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[1]
   test2[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[2]
   test_interactions[i]&lt;-anova(g)$&quot;Pr(&gt;F)&quot;[3]
 }</code></pre>
-<p>Tutaj sytuacja analogiczna jak wyżej, jednak zarówno efekty interakcji jak i główne są obecne.</p>
+<p>Tutaj sytuacja analogiczna jak wyżej, jednak zarówno efekty interakcji jak i główne są obecne, tak więc moce testów powinny być blisko 1.</p>
 <pre class="r"><code>length(which(test1&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>length(which(test2&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
 <pre class="r"><code>length(which(test_interactions&lt;0.05))/1000</code></pre>
 <pre><code>## [1] 1</code></pre>
+</div>
 
 
 </div>
