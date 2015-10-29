@@ -1,0 +1,53 @@
+---
+title: "Homework3"
+author: "Micha³ Frej"
+date: "Thursday, October 22, 2015"
+output: html_document
+---
+
+## Czêœæ 1
+1.Zbiór, który przechodzi wszystkie testy diagnostyczne
+```{r,message=FALSE,warning=FALSE}
+set.seed(8)
+N <- 1000
+X <- rnorm(N)
+Y <- 2*X+rnorm(N)
+df1 <- as.data.frame(cbind(X,Y))
+model1 <- lm(Y~X, data=df1)
+
+par(mfrow=c(2,3))
+plot(model1, which=1:6)
+```
+
+2. Zbiór, który nie przechodzi 3 testów(Residuals vs Fitted, QQ,Scale-location)
+```{r,message=FALSE,warning=FALSE}
+A <- 1:N
+B <- A^2
+df2 <- as.data.frame(cbind(A,B))
+model2 <- lm(B~A,data=df2)
+
+par(mfrow=c(2,3))
+plot(model2, which=1:6)
+```
+
+## Czêœæ 2
+3. Bêdê korzysta³ z stworzonych wczeœniej zbiorów df1 oraz df2.Wybieram testy:
+
+a) Shapiro-Wilka
+```{r,message=FALSE,warning=FALSE}
+shapiro.test(model1$residuals)$p.value
+shapiro.test(model2$residuals)$p.value
+```
+
+b) Rainbow
+```{r,message=FALSE,warning=FALSE}
+#install.packages("lmtest")
+library(lmtest)
+raintest(Y~X, data = df1)$p.value
+raintest(B~A, data = df2)$p.value
+```
+c) Durbina-Watsona
+```{r,message=FALSE,warning=FALSE}
+dwtest(Y~X, data = df1)$p.value
+dwtest(B~A, data = df2)$p.value
+```

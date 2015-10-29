@@ -29,7 +29,7 @@ A <- rep(1:k, each=n*m)
 B <-rep(1:m, times=n*k)
 ```
 
-Poniewa¿ chcemy badaæ moc testów dla efektów g³ównych i dla efektu interakcji w trzech scenariuszach, tworzê funkcjê trzech parametrów binarnych (czy.alpha, czy.beta, czy.gamma). Funkcja buduje model w zale¿noœci od tych parametrów i zwraca wyniki dwukierunkowej ANOVY zbudowanej na tym modelu. Dwukierunkowa ANOVA zwróci nam odpowiednie p-wartoœci dla interesuj¹cych nas testów.
+Poniewa¿ chcemy badaæ moc testów (prawdopodobieñstwo odrzucenia hipotezy zerowej pod warunkiem, ¿e wiemy, ¿e prawdziwa jest hipoteza alternatywna) dla efektów g³ównych i dla efektu interakcji w trzech scenariuszach, tworzê funkcjê trzech parametrów binarnych (czy.alpha, czy.beta, czy.gamma). Funkcja buduje model w zale¿noœci od tych parametrów i zwraca wyniki dwukierunkowej ANOVY zbudowanej na tym modelu. Dwukierunkowa ANOVA zwróci nam odpowiednie p-wartoœci dla interesuj¹cych nas testów.
 ```{r}
 f <- function(czy.alpha, czy.beta, czy.gamma) {
   y <- mi + czy.alpha*alpha[A] + czy.beta*beta[B] + czy.gamma*gamma[cbind(A,B)] + rnorm(n*m*k)
@@ -54,7 +54,7 @@ ggplot(istotnosc.A, aes(x=p)) +
                  round(100*mean(istot.A >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
 ```
 
-W tym przypadku 100% testów dobrze oceni³o istotnoœæ cechy A, wiêc moc tego testu wynosi 100%.
+W tym przypadku 100% testów dobrze oceni³o istotnoœæ efektów addytywnych cechy A (odrzuci³o hipotezê zerow¹ o braku istotnoœci), wiêc moc tego testu wynosi 100%.
 
 Istotnoœæ cechy B:
 ```{r}
@@ -82,7 +82,7 @@ ggplot(istotnosc.A.B, aes(x=p)) +
                  round(100*mean(istot.A.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
 ```
 
-W tym przypadku w 95,6% przypadków nasz test dobrze oceni³ istotnoœæ interakcji. Czyli moc testu wynosi 95,6%.
+W tym przypadku w 95,6% przypadków nasz test dobrze oceni³ istotnoœæ interakcji, czyli przyj¹³ hipotezê zerow¹ o braku istotnoœci efektów interakcji.
 
 2. Scenariusz - pewne efekty interakcji przyjmuj¹ wartoœæ 0.7.
 
@@ -98,7 +98,7 @@ ggplot(istotnosc.A, aes(x=p)) +
                  round(100*mean(istot.A >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
 ```
 
-W tym przypadku 0,4% testów dobrze oceni³o brak istotnoœci cechy A, wiêc moc tego testu wynosi 0,4%.
+W tym przypadku hipoteza zerowa o braku istotnoœci efektów addytywnych cechy A jest prawdziwa. Jednak tylko 0,4% testów uzna³o j¹ za prawdziw¹.
 
 Istotnoœæ cechy B:
 ```{r}
@@ -112,7 +112,7 @@ ggplot(istotnosc.B, aes(x=p)) +
                  round(100*mean(istot.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
 ```
 
-Tutaj moc testu wynosi 14,5%.
+Tutaj równie¿ tylko 14,5% nie odrzuca prawdziwej hipotezy zerowej o braku istotnoœci cechy B.
 
 Istotnoœæ interakcji:
 ```{r}
@@ -126,7 +126,7 @@ ggplot(istotnosc.A.B, aes(x=p)) +
                  round(100*mean(istot.A.B >= 0.05),1), "% p-wartoœci wiêkszych ni¿ 0.05"))
 ```
 
-W tym przypadku w 100% przypadków nasz test dobrze oceni³ istotnoœæ interakcji. Czyli moc testu wynosi 100%.
+W tym przypadku w 100% przypadków nasz test dobrze oceni³ istotnoœæ interakcji (odrzuci³ nieprawdziw¹ hipotezê zerow¹ o braku interakcji). Czyli moc testu wynosi 100%.
 
 3. Scenariusz - pewne efekty g³ówne i efekty interakcji przyjmuj¹ wartoœæ 0.7.
 
