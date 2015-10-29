@@ -1,0 +1,93 @@
+---
+title: "Untitled"
+author: "Emilia Pompe"
+date: "Wednesday, October 28, 2015"
+output: html_document
+---
+I created 3 types of datasets corresponding to scenarios 1,2,3. Dataset of each type contains two variables of the type 'factor' (A and B), both of them with levels 0 and 1. In each dataset there is also a variable calles y (numeric). I performed two-way ANOVA N=1000 times on each of the 3 type datasets to in order to calculate the empirical power of tests for main effects and interactions, which is the empirical probability of rejecting the null hypothesis. I assumed the significance level equal to 0.001.
+
+### 1. Scenario 1 (main effects).
+
+
+```{r, message=FALSE}
+N <- 1000
+p_values_main_effects <- replicate(N, {
+  dataset <- data.frame(var.A=factor(c(rep(1,times=500), rep(0, times=500))),
+                        var.B=factor(c(rep(0, times=250), rep(1, times=500), rep(0, times=250))))
+  dataset$y <- rep(c(0.7, 1.4, 0.7, 0), each=250)  + rnorm(1000,0,1)
+  test <- anova(lm(y ~ var.A*var.B, data = dataset))
+  c(test[1,5], test[2,5], test[3,5])
+})
+
+
+plot.title = 'P-values of the main effect for the variable A'
+plot.subtitle = paste0("Power of the test: ",length(p_values_main_effects[1,][p_values_main_effects[1,] < 0.001])/N)
+qplot(p_values_main_effects[1,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+plot.title = 'P-values of the main effect for the variable B'
+plot.subtitle = paste0("Power of the test: ",length(p_values_main_effects[2,][p_values_main_effects[2,] < 0.001])/N)
+qplot(p_values_main_effects[2,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+plot.title = 'P-values of the main effect for the main_effects'
+plot.subtitle = paste0("Power of the test: ",length(p_values_main_effects[3,][p_values_main_effects[3,] < 0.001])/N)
+qplot(p_values_main_effects[3,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+```
+### 2. Scenario 2 (interactions).
+```{r,message=FALSE}
+p_values_interaction <- replicate(N, {
+  dataset <- data.frame(var.A=factor(c(rep(1,times=500), rep(0, times=500))),
+                        var.B=factor(c(rep(0, times=250), rep(1, times=500), rep(0, times=250))))
+  dataset$y <- rep(c(0, 0.7, 0, 0), each=250)  + rnorm(1000,0,1)
+  test <- anova(lm(y ~ var.A*var.B, data = dataset))
+  c(test[1,5], test[2,5], test[3,5])
+})
+
+plot.title = 'P-values of the main effect for the variable A'
+plot.subtitle = paste0("Power of the test: ",length(p_values_interaction[1,][p_values_interaction[1,] < 0.001])/N)
+qplot(p_values_interaction[1,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+plot.title = 'P-values of the main effect for the variable B'
+plot.subtitle = paste0("Power of the test: ",length(p_values_interaction[2,][p_values_interaction[2,] < 0.001])/N)
+qplot(p_values_interaction[2,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+plot.title = 'P-values of the main effect for the interaction'
+plot.subtitle = paste0("Power of the test: ",length(p_values_interaction[3,][p_values_interaction[3,] < 0.001])/N)
+qplot(p_values_interaction[3,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+```
+
+
+### 3. Scenario 3 (both interactions and main effects).
+```{r,message=FALSE}
+p_values_both <- replicate(N, {
+  dataset <- data.frame(var.A=factor(c(rep(1,times=500), rep(0, times=500))),
+                        var.B=factor(c(rep(0, times=250), rep(1, times=500), rep(0, times=250))))
+  dataset$y <- rep(c(0.7, 2.1, 0.7, 0), each=250)  + rnorm(1000,0,1)
+  test <- anova(lm(y ~ var.A*var.B, data = dataset))
+  c(test[1,5], test[2,5], test[3,5])
+})
+
+plot.title = 'P-values of the main effect for the variable A'
+plot.subtitle = paste0("Power of the test: ",length(p_values_both[1,][p_values_both[1,] < 0.001])/N)
+qplot(p_values_both[1,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+plot.title = 'P-values of the main effect for the variable B'
+plot.subtitle = paste0("Power of the test: ",length(p_values_both[2,][p_values_both[2,] < 0.001])/N)
+qplot(p_values_both[2,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+plot.title = 'P-values of the main effect for the interaction'
+plot.subtitle = paste0("Power of the test: ",length(p_values_both[3,][p_values_both[3,] < 0.001])/N)
+qplot(p_values_both[3,], geom = "histogram") + xlim(c(0,1)) + xlab("p.values")+
+  ggtitle(bquote(atop(.(plot.title), atop(italic(.(plot.subtitle)), "")))) 
+
+```
+
