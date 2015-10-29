@@ -1,0 +1,54 @@
+1. Model diagnostic. How was it done?
+
+I guess that in the first iteration most genes do not pass diagnostic thus you have tried the ‘hack’ with sampling 50 cases from each group.
+But in the report I do not see any statistics: how many genes pass the diagnostic and how many do not.
+
+The idea to present boxplots and diagnostic for a single gene is actually a very good idea. 
+Actually you can select more than one gene (i.e. 30 genes) and present diagnostic for all of them.
+But then 30 genes x 6 plots is not best idea so instead of all 6 plots you should present one or two most important ones.
+
+
+2. List of genes. Is it included? Is it narrowed to some 'reasonable' number of genes?
+
+There is only information which gene is the most changed one. 
+Instead of head(anova.kruskal, 10) you may consider presentation top 10/30 genes with smallest p-values.
+
+
+3. Is there a structure in the report? Are there conclusions?
+
+Few small changes would improve the structure a lot:
+- add table of contents
+- I do not see any conclusions
+- short overview on the beginning would help to understand what you have accomplished (abstract)
+
+
+4. How many approaches have been tried out?
+
+Kurskal / anova / box-cox. Not bad.
+Bit actually I would like to see if results for kruskal are different than results for ANOVA. If not, what is the point with choosing a method?
+
+Kruskal test is based on ranks. So the boxcox transformation should not affect it (kruskal on original data will be equal to test after transformation).
+
+
+Others
+
+Removing 'outliers' without any visual examination is very risky.
+In this particular case it is not a good approach and it may led to deletion of the whole class (if one class would be different than 11 other classes)
+
+You should avoid constant like '16116' / '0.01'
+either derive them from data (ncol() instead of 16116) or set as parameters on the beginning of the script (alpha=0.01)
+
+Instead of tricks like 'assign(paste0("model",k), model)' you may store results in lists, like models[[k]] = model
+
+I have no idea why you are using median of p-values. 
+
+Presented boxplots do not look good. Labels are cut and in most cases I can read only 'Cancer'
+
+
+Points
+1.5/3 + 1.5/3 + 2/3 + 3/3 + 3 = 11
+
+
+
+
+

@@ -1,0 +1,60 @@
+1. Model diagnostic. How was it done?
+
+Normality and homogeneity of variance was checked twice. 
+(btw: it is not clear why you have check normality in each group separately).
+
+In both situations tests show problems. 
+You should select few genes that violate assumptions most and then see diagnostic plots for these genes.
+Right now we only know that on the level 0.01 tests finds that assumptions are not met. 
+But we do not know how serious is the problem with assumptions.
+
+
+2. List of genes. Is it included? Is it narrowed to some 'reasonable' number of genes?
+
+The line that lists gene names is commented, so the list is not included but I guess it can be easily added. This is why I give 50% of points.
+
+Names of genes are not enough. To understand how these genes differ among groups you should plot boxplots or other ‘effect-plots’
+
+
+3. Is there a structure in the report? Are there conclusions?
+
+Small changes will greatly improve the structure.
+Like: 
+- add table of contents
+- start with short overview what are the 'final results' (abstract)
+- I read the 'Conclusions' part few times but still I cannot find what is the most important conclusion.
+Is it that the 242 genes are 'the' significant genes. 
+Is there any reason to choose threshold 0.4?
+
+4. How many approaches have been tried out?
+
+First was just to calculate anova and use p-values.
+Second was to use normalized critical range and number of groups. 
+But there are no justifications why these measures should be used or any justifications why to use these cutoffs.
+
+Also we do not know what types of cancers are different (in terms of selected 434 genes).
+You may consider boxplots to present some example genes that differ between cancers
+or statistics like, these 10 genes recognize cancer BRCA from all others
+
+
+
+Others
+
+Cutoffs, like 0.01 (for p-value), should be parameterized. 
+Now, to change the cutoff I need to change it in 5 different places. 
+It's better to have it as a one parameter/variable on the beginning of script (like alpha=0.01).
+
+You are doing something like:
+for (j in 1:length(levels(CancerType))){
+  zmienna[j]<-tapply(x, CancerType, shapiro.test)[[j]]$p.value
+}
+But then for each j you are testing normality for all groups. 
+It would be enough test it only for group j (should be 12 times faster).
+
+
+
+Points
+1/3 + 1.5/3 + 2/3 + 2.5/3 + 3 = 10
+
+
+

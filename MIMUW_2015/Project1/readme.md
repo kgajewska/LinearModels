@@ -48,7 +48,7 @@ Find genetic signatures -> sets of genes that differ among cancer types.
 
 In phase 1: find genes that differ between cancer types significantly (i.e. for which genes expression differ for different cohorts of cancer).
 
-In phase 2: note that gene expression profiles are correlated. Take this correlation into account and find ‘small’ number of genes that different between cancers.
+In phase 2: note that for each patient you have not only information about type of tumor (cohort) but also gender and age of given patient. Check for interactions of these features with tumor type (e.g. tumors affect expression of given gene in a different way for male and female). Find ,,small'' list of genes (how to choose the number?) that will help to identify the type of cancer / cohort.
 
 In phase 3: note that there are 12 types of cancers. Show the information about differences / similarities of gene profiles in a human understandable way.
 
