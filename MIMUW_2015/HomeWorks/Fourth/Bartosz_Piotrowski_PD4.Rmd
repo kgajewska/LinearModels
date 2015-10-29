@@ -1,0 +1,115 @@
+---
+title: "Praca domowa 4"
+author: "Bartosz Piotrowski"
+date: "October 29, 2015"
+output:
+   html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+W celu przeprowadzenia symulacji tworzymy dwie zmienne jakościowe: levels1 oraz levels2, pierwsza przyjmuje 2 wartości, druga: trzy. Dla każdej pary zmiennych jakościowych będziemy tworzyć 100 obserwacji.
+
+```{r}
+N <- 100 #liczba obserwacji w grupie
+M <- 1000 # liczba symulacji
+
+lev1 <- c(1, 2)
+lev2 <- c(1, 2, 3)
+levProd <- expand.grid(lev1, lev2)
+levels1 <- rep(levProd[,1], N)
+levels2 <- rep(levProd[,2], N)
+```
+
+# Symulacja 1
+
+Dodajemy efekt addytywny perwszej zmiennej, mianowicie tam, gdzie zmienna levels1 przyjmuje wartość 2, dodajemy 0.7.
+
+Przeprowadzamy M=1000 powtórzeń symulacji.
+
+```{r}
+pvalues <- replicate(M, {
+  eps <- rnorm(length(levels1))
+  y <- eps + (levels1==2)*0.7
+  anova(lm(y~levels1*levels2))[[5]][c(1,2,3)]
+})
+```
+
+Otrzymujemy tabelę, w której pierwsza kolumna zawiera p-wartości testu hipotezy zerowej o braku efektu pierwszej zmiennej jakościowej, druga kolumna zawiera p-wartości testu hipotezy zerowej o braku efektu drugiej zmiennej jakościowej, a trzecia kolumna zawiera p-wartości testu hipotezy zerowej o braku interakcji.
+
+Badamy moce testów.
+
+Zgodnie z tym, czego można się spodziewać, moc testu pierwszego jest równa 1, natomiast moce testów 2. i 3. są niewielkie.
+
+```{r}
+hist(pvalues[1,], xlim = c(0,1))
+sum(pvalues[1,] < 0.05) / M
+```
+
+```{r}
+hist(pvalues[2,], xlim = c(0,1))
+sum(pvalues[2,] < 0.05) / M
+```
+
+```{r}
+hist(pvalues[3,], xlim = c(0,1))
+sum(pvalues[3,] < 0.05) / M
+```
+
+# Symulacja 2
+
+Dodajemy efekt interakcji, mianowicie tam, gdzie zmienna levels1 przyjmuje wartość 2 i zmienna levels2 przyjmuje wartość 3, dodajemy 0.7.
+
+```{r}
+pvalues <- replicate(M, {
+  eps <- rnorm(length(levels1))
+  y <- eps + (levels1==2)*(levels2==3)*0.7
+  anova(lm(y~levels1*levels2))[[5]][c(1,2,3)]
+})
+```
+
+Badamy moce testów.
+
+```{r}
+hist(pvalues[1,], xlim = c(0,1))
+sum(pvalues[1,] < 0.05) / M
+```
+
+```{r}
+hist(pvalues[2,], xlim = c(0,1))
+sum(pvalues[2,] < 0.05) / M
+```
+
+```{r}
+hist(pvalues[3,], xlim = c(0,1))
+sum(pvalues[3,] < 0.05) / M
+```
+
+# Symulacja 3
+
+Dodajemy zarówno efekt interakcji, jak i efekt addytywny pierwszej zmiennej jakościowej.
+
+```{r}
+pvalues <- replicate(M, {
+  eps <- rnorm(length(levels1))
+  y <- eps + (levels1==2)*(levels2==3)*0.7 + (levels1==2)*0.7
+  anova(lm(y~levels1*levels2))[[5]][c(1,2,3)]
+})
+```
+
+Badamy moce testów.
+
+```{r}
+hist(pvalues[1,], xlim = c(0,1))
+sum(pvalues[1,] < 0.05) / M
+```
+
+```{r}
+hist(pvalues[2,], xlim = c(0,1))
+sum(pvalues[2,] < 0.05) / M
+```
+
+```{r}
+hist(pvalues[3,], xlim = c(0,1))
+sum(pvalues[3,] < 0.05) / M
+```
