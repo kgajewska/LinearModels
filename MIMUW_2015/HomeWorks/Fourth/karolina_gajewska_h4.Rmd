@@ -1,0 +1,141 @@
+---
+title: "Praca domowa 4"
+author: "Karolina Gajewska"
+date: "29.10.2015"
+output: 
+  html_document:
+  toc: TRUE
+---
+1. Create a scenario in which some main effects (main=additive) will be of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions.
+
+W pierwszym kroku tworzê zbiór l-obserwacji, ka¿dej z obserwacji losowo (wed³ug
+wybranego rozk³adu prawdopodobieñstwa) przypisujê przynale¿noœæ do jednego z
+czterech  poziomów grupy p1 oraz analogicznie do jednego z piêciu poziomów grupy
+p2. 
+
+```{r, message=FALSE}
+set.seed(2910)
+l<-100
+N<-1000
+p1<-0
+p2<-0
+p3<-0
+for (i in 1:N){
+y<- rnorm(l)
+x1<-sample(c("a", "b", "c", "d"), size=l,replace=TRUE, prob=c(1/4,1/4,1/4,1/4))
+x2<-sample(c("I", "II", "III", "IV", "V"), size=l, replace=TRUE, prob=c(1/5, 1/5, 1/5,1/5, 1/5))
+model<-anova(lm(y~ x1*x2))
+p1[i]<-model$"Pr(>F)"[1]
+p2[i]<-model$"Pr(>F)"[2]
+p3[i]<-model$"Pr(>F)"[3]
+}
+```
+
+Poniewa¿ wartoœci ka¿dej z obserwacji pochodz¹ z rozk³adu normalnego o takich
+samych parametrach nie zaobserwujemy w tym przypadku efektu skali ani efektu interakcji. Uzyskane wartoœci s¹ zbli¿one do poziomu alfa.
+
+```{r, message=FALSE}
+
+s<-c(length(which(p1<0.05))/N,length(which(p2<0.05))/N,length(which(p3<0.05))/N)
+s
+```
+
+Zmodyfikujmy zatem nasz zbiór obserwacji, powiêkszaj¹c wartoœæ obserwacji przpisanych do poziomu "a" o 0.7. 
+
+```{r, message=FALSE}
+set.seed(2910)
+l<-100
+N<-1000
+p1<-0
+p2<-0
+p3<-0
+for (i in 1:N){
+y<- rnorm(l)
+x1<-sample(c("a", "b", "c", "d"), size=l,replace=TRUE, prob=c(1/4,1/4,1/4,1/4))
+x2<-sample(c("I", "II", "III", "IV", "V"), size=l, replace=TRUE, prob=c(1/5, 1/5, 1/5,1/5, 1/5))
+zm<-which(x1=="a")
+  y[zm]=y[zm]+0.7
+model<-anova(lm(y~ x1*x2))
+p1[i]<-model$"Pr(>F)"[1]
+p2[i]<-model$"Pr(>F)"[2]
+p3[i]<-model$"Pr(>F)"[3]
+}
+```
+
+Wówczas zauwa¿ymy, ¿e w 68% wyników symulacji wystêpuje efekt skali.
+```{r, message=FALSE}
+
+s<-c(length(which(p1<0.05))/N,length(which(p2<0.05))/N,length(which(p3<0.05))/N)
+s
+```
+
+
+
+2.Create a scenario in which some interaction effects will be of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions (since there are no main effects test for them should be on the level alpha).
+
+W kolejnym kroku wprowadŸmy efekt interakcji.
+
+```{r, message=FALSE}
+set.seed(2910)
+l<-100
+N<-1000
+p12<-0
+p22<-0
+p32<-0
+for (i in 1:N){
+y2<- rnorm(l)
+x12<-sample(c("a", "b", "c"), size=l,replace=TRUE, prob=c(1/2,1/40,19/40))
+x22<-sample(c("I", "II"), size=l, replace=TRUE, prob=c(3/4, 1/4))
+zm2<-which(x12=="b", x22=="II")
+  y2[zm2]<-y2[zm2]+0.7
+
+
+model2<-anova(lm(y2~ x12*x22))
+p12[i]<-model2$"Pr(>F)"[1]
+p22[i]<-model2$"Pr(>F)"[2]
+p32[i]<-model2$"Pr(>F)"[3]
+}
+```
+
+Wówczas zauwa¿ymy, ¿e w 16% wyników symulacji wystêpuje efekt skali. Wartoœæ parametru informuj¹ceo  o efecie interakcji nieznacznie uleg³a wzrostowi.
+```{r, message=FALSE}
+
+s2<-c(length(which(p12<0.05))/N,length(which(p22<0.05))/N,length(which(p32<0.05))/N)
+s2
+```
+
+Create a scenario in which there are main effects and interaction effects of the size 0.7. Use simulations to calculate the power of F test for main effects and power of test for interactions.
+Take any number of groups (k/m) and number of observations (n), but you should not have same parameters as other students.
+
+Na zakoñczenie zmodyfikujmy nasz zbiór w ten sposób, aby zauwa¿yæ zarówno efekty skali  dla zmiennej x1 jak i interakcji.
+
+```{r, message=FALSE}
+set.seed(2910)
+l<-100
+N<-1000
+p12<-0
+p22<-0
+p32<-0
+for (i in 1:N){
+y2<- rnorm(l)
+x12<-sample(c("a", "b", "c", "d"), size=l,replace=TRUE, prob=c(1/2,1/6,1/6,1/6))
+x22<-sample(c("I", "II", "III", "IV", "V"), size=l, replace=TRUE, prob=c(1/4, 1/2, 1/12,1/12, 1/12))
+zm2<-which(x12=="a", x22=="II")
+  y2[zm2]<-y2[zm2]+0.7
+
+zm2<-which(x1=="c")
+  y2[zm2]<-y[zm2]+0.7
+
+model<-anova(lm(y~ x1*x2))
+p1[i]<-model$"Pr(>F)"[1]
+p2[i]<-model$"Pr(>F)"[2]
+p3[i]<-model$"Pr(>F)"[3]
+}
+```
+
+Wówczas zauwa¿ymy, ¿e w 100% wyników symulacji wystêpuje efekt skali ze wzglêdu na cechê x1 oraz wystêpuje równie¿ efekt interakcji.
+```{r, message=FALSE}
+
+s<-c(length(which(p1<0.05))/N,length(which(p2<0.05))/N,length(which(p3<0.05))/N)
+s
+```
