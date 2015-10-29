@@ -1,0 +1,155 @@
+---
+title: "Praca domowa 4"
+author: "Krzysztof Rutkowski"
+output:
+  html_document:
+  toc: yes
+pdf_document:
+  toc: yes
+---
+Część 1
+
+Tworzymy dwie obserwacje z 3 grupami: a, b oraz c. W pierwszym scenariuszu dodam 0.7
+gdy pierwsza obserwacja przyjmie wartosc a. Powinnismy wiec zaobserwowac efekty dla pierwszej
+obserwacji.
+
+```{r, warning=FALSE, message=FALSE}
+rep_size <- 2000
+obs_size <- 500
+pvals <- replicate(rep_size, {
+  y <- rnorm(obs_size)
+  obs1 <- sample(c("a","b", "c"), size=obs_size, replace=TRUE, prob=c(1/3,1/3,1/3))
+  obs2 <- sample(c("a","b", "c"), size=obs_size, replace=TRUE, prob=c(1/3,1/3,1/3))
+  eff <- which(obs1=="a")
+  y[eff] <- y[eff] + 0.7
+  
+  anova(lm(y~obs1*obs2))[[5]][c(1,2,3)]
+  
+})
+```
+Hipoteza zerowa dla pierwszej obserwacji mówi, że średnie w grupach powinny być równe.
+Jako, że dodaliśmy czynnik 0.7 do jednej z grup powinniśmy się spodziewać odrzucenia hipotezy, 
+a więc w znacznej większości przypadków p-wartość powinna być mniejsza niż 0.05.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[1,] < 0.05) / rep_size
+```
+I tak w istocie jest.
+
+Hipoteza zerowa dla drugiej obserwacji mówi, że średnie w grupach powinny być równe.
+Tutaj nie dodawaliśmy czynnika, spodziewamy się więc równych średnich, 
+a więc w znacznej większości przypadków p-wartość powinna być większa niż 0.05.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[2,] < 0.05) / rep_size
+```
+I tutaj również symulacje potwierdzają teorię.
+
+Hipoteza zerowa dla interakcji mówi, że w modelu nie powinno być interakcji.
+Obserwacje były generowane niezależnie interakcji być nie powinno, 
+toteż w znacznej większości przypadków p-wartość powinna być większa niż 0.05.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[3,] < 0.05, na.rm = TRUE) / rep_size
+```
+I tu również mamy zgodność.
+
+####################################################################################
+Część 2
+
+Teraz dodamy do naszego modelu zależności między obserwacjami. Powinny więc wystąpić
+efekty interakcji. Dodamy czynnik 0.7 jeśli obie obserwacje będą miały wartość "a".
+
+```{r, warning=FALSE, message=FALSE}
+
+rep_size <- 2000
+obs_size <- 500
+pvals <- replicate(rep_size, {
+  y <- rnorm(obs_size)
+  obs1 <- sample(c("a","b", "c"), size=obs_size, replace=TRUE, prob=c(1/3,1/3,1/3))
+  obs2 <- sample(c("a","b", "c"), size=obs_size, replace=TRUE, prob=c(1/3,1/3,1/3))
+  eff <- which(obs1=="a" & obs2=="a")
+  y[eff] <- y[eff] + 0.7
+  
+  anova(lm(y~obs1*obs2))[[5]][c(1,2,3)]
+  
+})
+
+```
+Hipoteza zerowa dla pierwszej obserwacji mówi, że średnie w grupach powinny być równe.
+Tutaj nie dodawaliśmy czynnika dla tych obserwacji, ale wprowadzone efekty interakcji mogły
+zaburzyć średnie między grupami.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[1,] < 0.05) / rep_size
+```
+
+Hipoteza zerowa dla drugiej obserwacji mówi, że średnie w grupach powinny być równe.
+Tutaj nie dodawaliśmy czynnika dla tych obserwacji, ale wprowadzone efekty interakcji mogły
+zaburzyć średnie między grupami.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[2,] < 0.05) / rep_size
+```
+
+Hipoteza zerowa dla interakcji mówi, że w modelu nie powinno być interakcji.
+Dodaliśmy 0.7 jeśli w obu obserwacjach wystąpiła ta sama wartość, spodziewamy się interakcji,
+toteż w większości przypadków p-wartość powinna być mniejsz niż 0.05.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[3,] < 0.05, na.rm = TRUE) / rep_size
+```
+Spójrzmy jeszcze na histogram:
+```{r}
+hist(pvals[3,])
+```
+
+Widzimy, że faktycznie jest duże prawdopodobieństwo, że model potwierdzi wystąpienie interakcji.
+
+########################################################################################
+Część 3
+
+Teraz dodamy do naszego modelu zależności między obserwacjami oraz zaburzenie dla 
+jednej z obserwacji. Powinny więc wystąpić zarówno efekty związane z jedną obserwacją
+efekty interakcji. Dodamy czynnik 0.7 jeśli obie obserwacje będą miały wartość "a" oraz
+jeśli jedna z obserwacji będzie miała wartośc "b".
+
+```{r, warning=FALSE, message=FALSE}
+
+rep_size <- 2000
+obs_size <- 500
+pvals <- replicate(rep_size, {
+  y <- rnorm(obs_size)
+  obs1 <- sample(c("a","b", "c"), size=obs_size, replace=TRUE, prob=c(1/3,1/3,1/3))
+  obs2 <- sample(c("a","b", "c"), size=obs_size, replace=TRUE, prob=c(1/3,1/3,1/3))
+  eff_int <- which(obs1=="a" & obs2=="a")
+  eff_obs <- which(obs1=="b")
+  y[eff_int] <- y[eff_int] + 0.7
+  y[eff_obs] <- y[eff_obs] + 0.7
+  
+  anova(lm(y~obs1*obs2))[[5]][c(1,2,3)]
+  
+})
+
+```
+Hipoteza zerowa dla pierwszej obserwacji mówi, że średnie w grupach powinny być równe.
+Dodaliśmy czynnik dla jednej z grup w pierwszej obserwacji, a więc powinniśmy zaobserwować efekty.
+Spodziewamy się, że w większości przypadków p-wartośc powinna być mniejsza od 0.05.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[1,] < 0.05) / rep_size
+```
+I tak w istocie jest.
+
+Hipoteza zerowa dla drugiej obserwacji mówi, że średnie w grupach powinny być równe.
+Tutaj nie dodawaliśmy czynnika dla tych obserwacji, ale wprowadzone efekty interakcji mogły
+zaburzyć średnie między grupami.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[2,] < 0.05) / rep_size
+```
+
+Hipoteza zerowa dla interakcji mówi, że w modelu nie powinno być interakcji.
+Dodaliśmy 0.7 jeśli w obu obserwacjach wystąpiła ta sama wartość, spodziewamy się interakcji,
+toteż w większości przypadków p-wartość powinna być mniejsz niż 0.05.
+```{r, warning = FALSE, message=FALSE}
+sum(pvals[3,] < 0.05, na.rm = TRUE) / rep_size
+```
+Spójrzmy jeszcze na histogram:
+```{r}
+hist(pvals[3,])
+```
+
+Widzimy, że jest bardzo duże prawdopodobieństwo, że model potwierdzi wystąpienie interakcji.
