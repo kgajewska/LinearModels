@@ -34,11 +34,11 @@ Plan spotka&#324; MIM UW:
 * 15 X - 
 * 22 X - [Phase 1 - Project 1]
 * 29 X - 
-* 5 XI - [Phase 2 - Project 1]
-* 12 XI - 
-* 19 XI - [Phase 3 - Project 1]
+* 5 XI - 
+* 12 XI - [Phase 2 - Project 1]
+* 19 XI - 
+* 26 XI - [Phase 3 - Project 1]
 
-* 26 XI - 
 * 3 XII - 
 * 10 XII - [Phase 1 - Project 2]
 * 17 XII - 
