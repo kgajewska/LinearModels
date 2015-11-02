@@ -272,12 +272,24 @@ df$z &lt;- rnorm(nrow(df)) + ifelse(df$x == &quot;Breast&quot; &amp; df$y == &qu
 <div id="main-effects" class="section level2">
 <h2>Main effects</h2>
 <pre class="r"><code>colnames(df) &lt;- c(&quot;cancers&quot;, &quot;treatments&quot;, &quot;z&quot;)
+
+
+
 model0 &lt;- lm(z~1, data=df)
 modelC &lt;- lm(z~cancers, data=df)
 modelCT &lt;- lm(z~cancers+treatments, data=df)
 modelCTi &lt;- lm(z~cancers*treatments, data=df)
 
-anova(modelC, model0)</code></pre>
+anova(modelC)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Response: z
+##            Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
+## cancers     2  179.95  89.973  51.041 &lt; 2.2e-16 ***
+## Residuals 897 1581.19   1.763                      
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>anova(modelC, model0)</code></pre>
 <pre><code>## Analysis of Variance Table
 ## 
 ## Model 1: z ~ cancers
@@ -285,6 +297,16 @@ anova(modelC, model0)</code></pre>
 ##   Res.Df    RSS Df Sum of Sq      F    Pr(&gt;F)    
 ## 1    897 1581.2                                  
 ## 2    899 1761.1 -2   -179.95 51.041 &lt; 2.2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
+<pre class="r"><code>anova(modelCT)</code></pre>
+<pre><code>## Analysis of Variance Table
+## 
+## Response: z
+##             Df  Sum Sq Mean Sq F value    Pr(&gt;F)    
+## cancers      2  179.95  89.973  58.664 &lt; 2.2e-16 ***
+## treatments   2  208.52 104.258  67.978 &lt; 2.2e-16 ***
+## Residuals  895 1372.67   1.534                      
 ## ---
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <pre class="r"><code>anova(modelCT, model0)</code></pre>
@@ -360,11 +382,11 @@ anova(modelC, model0)</code></pre>
 <h1>Home work for 5 XI 2015</h1>
 <p>Read the chapter 2.4 from ,,Analiza danych z programem R, Modele liniowe mieszane’’ or in English (<a href="https://www.ma.utexas.edu/users/mks/384E07/nestedfactors.pdf" class="uri">https://www.ma.utexas.edu/users/mks/384E07/nestedfactors.pdf</a> + how to do this in R <a href="http://www.stat.wisc.edu/courses/st333-larget/chimps.pdf" class="uri">http://www.stat.wisc.edu/courses/st333-larget/chimps.pdf</a>).</p>
 <p>Now, imagine following scenario.</p>
-<p>You have data for n patients. For each patient you have his/her blood pressure, gender and type of diabetes (here, let’s assume that there are three types of diabetes: pre, 1 and 2). Let assume that male have blood pressure higher than female and the difference is delta1 = 1. Then let’s assume that nested effect of diabetes is delta2= (0, 0, 0.5) for male and delta3=(0, 0, 1) for female.</p>
-<p>Our goal is to find sample size, for which the test for nested effect (only effect of diabetes) has power 0.58.</p>
+<p>You have data for n patients. For each patient you have his/her blood pressure, gender and type of diabetes (here, let’s assume that there are three types of diabetes: pre, 1 and 2). Let assume that male have blood pressure is higher than female (on average) and the difference is delta1 = 1. Then let’s assume that nested effect of diabetes is delta2= (0, 0, 0.5) for male and delta3=(0, 0, 1) for female.</p>
+<p>Our goal is to find sample size, for which the test for nested effect (only effect of diabetes) has power 0.8.</p>
 <ul>
-<li>Create a simulation study in which for a given n - sample size you will calculate power for hypothesis that delta2=0 and delta3=0.</li>
-<li>Choose the smallest n in a way that you will have power not smaller than 0.5. I.e. what is the minimal number of patients that allow to detect effect of the size (0,0,0.5,0,0,1) with probability larger than 80%.</li>
+<li>Create a simulation study in which for a given n - sample size you will calculate power for hypothesis H0: delta2=0 and delta3=0.</li>
+<li>Choose the smallest n for which power is not smaller than 0.5. I.e. what is the minimal number of patients that allow to detect effect of the size (0,0,0.5,0,0,1) with probability larger than 80%.</li>
 </ul>
 </div>
 

@@ -265,11 +265,11 @@ Read the chapter 2.4 from ,,Analiza danych z programem R, Modele liniowe mieszan
 Now, imagine following scenario.
 
 You have data for n patients. For each patient you have his/her blood pressure, gender and type of diabetes (here, let's assume that there are three types of diabetes: pre, 1 and 2).
-Let assume that male have blood pressure higher than female and the difference is delta1 = 1. Then let's assume that nested effect of diabetes is delta2= (0, 0, 0.5) for male and delta3=(0, 0, 1) for female.
+Let assume that male have blood pressure is higher than female (on average) and the difference is delta1 = 1. Then let's assume that nested effect of diabetes is delta2= (0, 0, 0.5) for male and delta3=(0, 0, 1) for female.
 
-Our goal is to find sample size, for which the test for nested effect (only effect of diabetes) has power 0.58.
+Our goal is to find sample size, for which the test for nested effect (only effect of diabetes) has power 0.8.
 
-* Create a simulation study in which for a given n - sample size you will calculate power for hypothesis that delta2=0 and delta3=0. 
-* Choose the smallest n in a way that you will have power not smaller than 0.5. I.e. what is the minimal number of patients that allow to detect effect of the size (0,0,0.5,0,0,1) with probability larger than 80%.
+* Create a simulation study in which for a given n - sample size you will calculate power for hypothesis H0: delta2=0 and delta3=0. 
+* Choose the smallest n for which power is not smaller than 0.5. I.e. what is the minimal number of patients that allow to detect effect of the size (0,0,0.5,0,0,1) with probability larger than 80%.
 
 
