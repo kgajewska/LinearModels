@@ -7,13 +7,15 @@ output:
   pdf_document:
     toc: yes
 ---
-We will egzamine values of systolic blood pressure under the assumption that the mean systolic blood pressure for women diagnosed with diabetes type 1 or prediabetes is 120. 
+We will examine values of systolic blood pressure under the assumption that the mean systolic blood pressure for women diagnosed with diabetes type 1 or prediabetes is 120. 
 Let's assume that in our samples for each 100 men there are around 106.5 women (using Polish feminization rate). 
 Types of diabetes are assigned with the probabilities mentioned in the study: http://www.mz.gov.pl/__data/assets/pdf_file/0004/26851/Krzysztof-Strojek.pdf. 
 
 ```{r, warning = FALSE, message = FALSE}
 
 library(agricolae)
+
+set.seed(12)
 
 pvals <- 0
 power <- 0
