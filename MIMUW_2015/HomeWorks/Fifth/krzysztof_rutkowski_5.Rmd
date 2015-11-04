@@ -1,0 +1,53 @@
+---
+title: "Praca domowa 5"
+author: "Krzysztof Rutkowski"
+output:
+  html_document:
+  toc: yes
+pdf_document:
+  toc: yes
+---
+
+  Zakladam, ze srednie cisnienie krwi u doroslego czlowieka wynosi 120, generuje zbior
+danych zgodnie z odchyleniami podanymi w tresci zadania.
+
+```{r, warning = FALSE, message = FALSE}
+
+rep_size <- 100
+max_patients <- 150
+min_patients <- 20
+
+pvals <- function(n){
+  pvals <- replicate(rep_size, {
+  
+  # generuje srednie wartosci cisnienia dla n pacjentow
+  mean_pressure <- rep(120, n)
+  sex <- sample( c("m", "k"), n, replace = TRUE)
+  diab <- sample( c("pre", "1", "2"),  n, replace = TRUE)
+  epsilon <- rnorm(n)
+
+  # generuje srednie wartosci zgodnie z modelem podanym w tresci
+  real_pressure <- mean_pressure + (sex == "k")*(diab == "2")*1 +
+  (sex == "m")*1 + (sex == "m")*(diab == "2")*0.5 + epsilon
+
+  #zwracam p-wartosc dla modelu zagniezdzonego
+  anova(lm(real_pressure ~ sex / diab))$"Pr(>F)"[2]
+  })
+  return(sum(pvals < 0.05)/rep_size)
+}
+
+patients <- c(min_patients:max_patients)
+power <- unlist(lapply(patients, pvals))
+```
+
+Zobaczmy teraz jak ukladaja się moce testów w zależności od liczby pacjentów
+```{r, warning = FALSE, message = FALSE}
+plot(power, type="l")
+abline(h=0.8)
+```
+
+Widzimy, że moce testów mają tendencję wzrostową w zależności od liczby pacjentów co jest 
+oczekiwanym wynikiem. Próg 0.8 moc przyjmuje dla wartości ok 80 pacjentów. Zobaczmy na dokładną wartość.
+```{r, warning = FALSE, message = FALSE}
+max(which(power < 0.8))
+```
