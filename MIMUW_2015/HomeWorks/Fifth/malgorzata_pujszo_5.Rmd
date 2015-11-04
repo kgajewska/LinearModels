@@ -1,0 +1,60 @@
+---
+title: "Homework 5"
+author: "Ma³gorzata Pujszo"
+date: "Tuesday, November 03, 2015"
+output: html_document
+---
+
+In our scenario, we have n patients. I assume that number of males and females or number of patients with certain type of diabetes are as equal as possible. Another assumption is that residuals have normal distribution with mean 0 and variance 1.
+
+I create a function which depends on n and returns p-value for the hypothesis that nested effects of diabetes (0, 0, delta2) and (0, 0, delta3) are equal 0.
+
+```{r}
+delta1 <- 1
+delta2 <- 0.5
+delta3 <- 1
+
+f <- function (n) {
+  gender <- sort(rep(c("female", "male"), length.out=n))
+  diabetes <- rep(c("pre", "1", "2"), length.out=n)
+  df <- merge(gender, diabetes)
+  df$z <- rnorm(nrow(df)) + ifelse(df$x=="female" & df$y=="2", delta2, 0) + 
+    ifelse(df$x=="male" & df$y=="2", delta3, 0) + 
+    ifelse(df$x=="male", delta1, 0)
+  model <- lm(z~x/y, data=df)
+  anova(model)[2,5]
+}
+```
+
+In above notation variable x is for gender, y is for type of diabetes and z is blood pressure. As we can see the effect for gender is delta1, nested effects for types of diabetes for female are (0, 0, delta2) and for man - (0, 0, delta3).
+
+Now I replicate this function M times and calculate power of the test (probability that we reject false null hypothesis). I obtain a function of n and alpha which denotes signicance level.
+
+```{r}
+M <- 1000
+f.power <- function (n, alpha) {
+  pvals <- replicate(M, f(n))
+  mean(pvals < alpha)
+}
+```
+
+What is left is to find the smallest number of patients such that the power of the test is not less than 80%. Let's now fix significance level alpha=0.05.
+
+```{r}
+alpha <- 0.05
+Ns <- seq(3, 20, 1)
+power <- sapply(Ns, function (x) f.power(x, alpha))
+Ns[min(which(power>0.8))]
+```
+
+It turns out that only 10 patients are needed to have a power 80%. Let's check how the situation looks if we lower the significance level to 0.001.
+
+```{r}
+alpha2 <- 0.001
+power2 <- sapply(Ns, function (x) f.power(x, alpha2))
+Ns[min(which(power2>0.8))]
+```
+
+We need only 4 more patients. 
+
+To conclude we might say that our test works really well. We need less than 20 patients and our tests will detect nested effects given above with high probability.
