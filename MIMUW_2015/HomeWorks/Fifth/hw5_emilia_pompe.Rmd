@@ -1,0 +1,111 @@
+---
+title: "Untitled"
+author: "Emilia Pompe"
+date: "Wednesday, November 04, 2015"
+output: html_document
+---
+### Emilia Pompe
+### Homework 5
+
+I assume that gender and diabetes type are independent random variables. The function dataSimulation creates a dataset of n observations and 3 variables: gender, diabetes type and blood pressure. The dataset is created in a way to follow the instructions given in the homework description. There are 3 argument of this function: n - number of observations, probs.gender - probabilities of "woman"/ "man" set by default to NULL and probs.diabetes - probabilities of simulating each diabetes type (also set by default to NULL).
+
+```{r}
+library(ggplot2)
+
+dataSimulation <- function(n, probs.gender = NULL, probs.diabetes = NULL){
+  gender <- sample(c("man", "woman"), size = n, replace = TRUE, prob = probs.gender)
+  diabetes <- sample(c("pre", "1", "2"), size = n, replace = TRUE, prob = probs.diabetes)
+  dataset <- data.frame(gender = factor(gender), diabetes = factor(diabetes))
+  dataset$blood.pressure <- 120 + rnorm(n)
+  dataset$blood.pressure <- dataset$blood.pressure + 1*(gender == "man") + 
+    1*(gender == "woman" & diabetes == "2") + 0.5*(gender == "man" & diabetes == "2")
+  return(dataset)
+}
+```
+
+The function below, testPower depends on 5 parameters: n, probs.gender and probs.diabetes - as in the function dataSimulation, and alpha - significance level, N - how many times the experiment is repeated. The function creates a dataset with n observations, as it was explained before. Then, it calculates p-value of the ANOVA test for the nested effect. The procedure is repeated N times and empirical power of this test is calculated as the percentage of p-values lower than alpha.
+```{r}
+testPower <- function(N, alpha, n, probs.gender = NULL, probs.diabetes = NULL){
+ p.values <- replicate(N, {
+    dataset <- dataSimulation(n, probs.gender = probs.gender, probs.diabetes = probs.diabetes)
+    model <- aov(blood.pressure ~ gender/diabetes, data = dataset)
+    summary(model)[[1]][[5]][2]
+    })
+  sum(p.values < alpha)/N
+}
+```
+
+I used the function to find the minimal sample size needed to obtain the test power greater than or equal to 0.8. I created 4 different scenarios. In first two of them all  3 diabetes types are equally probable in population. The difference is in the significance level (0.05 or 0.01).
+```{r}
+set.seed(7)
+
+alpha = 0.05
+N = 1000
+powers<- sapply(20:220, function(i){
+  testPower(N, alpha, i)
+})
+```
+
+The minimal required sample size is in this case equal to:
+```{r}
+min(19+(which(powers>=0.8)))
+qplot(x = 20:220, y = powers) + geom_line() + xlab("sample size") +
+  ylab("test power") + geom_abline(intercept = 0.8, slope = 0, color = "red") +
+  ggtitle("Test power: alpha = 0.05, diabetes types equally probable")
+```
+
+The same analysis for different significance level.
+```{r}
+alpha = 0.01
+N = 1000
+powers<- sapply(20:220, function(i){
+  testPower(N, alpha, i)
+})
+```
+
+The minimal required sample size is in this case equal to:
+```{r}
+min(19+(which(powers>=0.8)))
+qplot(x = 20:220, y = powers) + geom_line() + xlab("sample size") +
+  ylab("test power") + geom_abline(intercept = 0.8, slope = 0, color = "red") +
+  ggtitle("Test power: alpha = 0.01, diabetes types equally probable")
+```
+
+Clearly the minimal required sample size is higher. This result seems quite logical: probability of rejecting the null hypothesis is smaller, hence the power of the test is lower for a given sample size. It is worth noting that it may be observed from the plots that the higher the sample size, the greater the test power.
+I tried the same analysis but with different probabilities vector for the diabetes type.
+```{r}
+set.seed(7)
+
+alpha = 0.05
+N = 1000
+powers<- sapply(20:220, function(i){
+  testPower(N, alpha, i, probs.diabetes = c(0.5, 0.3, 0.2))
+})
+```
+
+The minimal required sample size is in this case equal to:
+```{r}
+min(19+(which(powers>=0.8)))
+qplot(x = 20:220, y = powers) + geom_line() + xlab("sample size") +
+  ylab("test power") + geom_abline(intercept = 0.8, slope = 0, color = "red") +
+  ggtitle("Test power: alpha = 0.05, diabetes types not equally probable")
+```
+
+Let us change again the significance level.
+```{r}
+alpha = 0.01
+N = 1000
+powers<- sapply(20:220, function(i){
+  testPower(N, alpha, i, probs.diabetes = c(0.5, 0.3, 0.2))
+})
+```
+
+The minimal required sample size is in this case equal to:
+```{r}
+min(19+(which(powers>=0.8)))
+qplot(x = 20:220, y = powers) + geom_line() + xlab("sample size") +
+  ylab("test power") + geom_abline(intercept = 0.8, slope = 0, color = "red") +
+  ggtitle("Test power: alpha = 0.01, diabetes types not equally probable")
+```
+
+The conclusion from the results are similar to those obtained in case of equally probable diabetes types.
