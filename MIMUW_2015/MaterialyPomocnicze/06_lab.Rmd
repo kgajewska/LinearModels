@@ -1,0 +1,32 @@
+---
+title: "Two-way ANOVA + MHT"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Intro
+
+In the `schizophrenia` dataset you will find genotypes and phenotypes for 98 patients with schizophrenia disorder.
+
+Dikeos scores for 5 domains are used to assess the mental health (see `http://bjp.rcpsych.org/content/189/4/346`). Let's see if there is relation between genetic factors (NfkB, CD28, IFN) and these domains.
+
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+head(schizophrenia)
+```
+
+# What to do
+
+1. Work in small groups (2-3 people).
+
+2. For each trait (manic, depression, reality distortion, ...) find if there is a link between the train and genetic variables. Try one-dimensional model and multi-dimensional models. Check for interactions.
+
+3. Take into account number of tests that you have performed. Should you use FDR or FWER correction?
+
+4. Decide (in the group) what are your final conclusions.
+
+5. Talk with the teacher about your results.
+
