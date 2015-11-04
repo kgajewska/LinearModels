@@ -1,0 +1,60 @@
+---
+title: "Homework 5"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+We will examine values of systolic blood pressure under the assumption that the mean systolic blood pressure for women diagnosed with diabetes type 1 or prediabetes is 120. 
+Let's assume that in our samples for each 100 men there are around 106.5 women (using Polish feminization rate). 
+Types of diabetes are assigned with the probabilities mentioned in the study: http://www.mz.gov.pl/__data/assets/pdf_file/0004/26851/Krzysztof-Strojek.pdf. 
+
+```{r, warning = FALSE, message = FALSE}
+
+library(agricolae)
+
+set.seed(12)
+
+pvals <- 0
+power <- 0
+M <- 200
+
+for (N in 50: 1000){ 
+      
+      pvals <- replicate(M, {
+            
+            #generating dataset
+            mean_systolic_blood_pressure <- rep(120, times = N)
+            epsilon <- rnorm(N)
+            gender <- sample(c("men", "women"), N, replace = TRUE, prob = c(0.484, 0.516))
+            diabetes <- sample( c("pre", "1", "2"),  N, replace = TRUE, prob = c(0.52, 0.05, 0.43))
+            
+            #creating a model for the decribed scenario
+            real_systolic_blood_pressure <- mean_systolic_blood_pressure + 
+                  (gender == "men") * 1 + (gender == "men") * (diabetes == "2") * 0.5 + 
+                  (gender == "women") * (diabetes == "2") * 1 + epsilon
+            model <- lm(real_systolic_blood_pressure ~ gender / diabetes)
+            
+            summary(aov(model))[[1]][[5]][2] })
+      
+      power[N] <- sum(pvals < 0.05) / M
+            
+         
+}
+
+
+plot(power, main = "Power function", xlab = "population size", ylab = "power of a test for nested effects")
+abline(h = 0.8, col = "blue")
+abline(v = max(which(power < 0.8)) + 1 , col = "blue")
+```
+
+
+As it is seen in the plot, power as a function of a sample size is not stricly increasing. However, it fluctuates around the positive trend. So, for a minimal number of patients that allow to detect effect of the size (0,0,0.5,0,0,1) with probability larger than 80% I will take the number $N$ such that for any $n \geq  N$ the power of a test for nested effects is greater than 0.8.
+```{r, message= FALSE, warning=FALSE}
+
+max(which(power < 0.8)) + 1 
+
+
+```
