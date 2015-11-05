@@ -47,7 +47,7 @@ abline(h=0.8)
 ```
 
 Widzimy, że moce testów mają tendencję wzrostową w zależności od liczby pacjentów co jest 
-oczekiwanym wynikiem. Próg 0.8 moc przyjmuje dla wartości ok 80 pacjentów. Zobaczmy na dokładną wartość.
+oczekiwanym wynikiem. Próg 0.8 moc przyjmuje dla wartości ok 70 pacjentów. Zobaczmy na dokładną wartość.
 ```{r, warning = FALSE, message = FALSE}
-max(which(power < 0.8))
+min(which(power >= 0.8))
 ```
