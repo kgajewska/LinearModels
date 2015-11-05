@@ -1,0 +1,182 @@
+---
+title: "Analysis of covariance (ANCOVA)"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Contrasts
+
+This is a copy of the last section of lecture `02_oneway`.
+
+Consider a categorical variable with some number of levels.
+
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+
+head(vaccination)
+summary(vaccination)
+
+boxplot(response ~ dose, data=vaccination)
+```
+
+## List of contrasts
+
+We have to code the categorical variable somehow. And the coding is important.
+
+```{r, warning=FALSE, message=FALSE}
+
+t(contr.treatment(5))
+
+t(contr.helmert(5))
+
+t(contr.poly(5))
+
+t(contr.sdif(5))
+
+model.matrix(response~dose, vaccination)[1:5,]
+
+model.matrix(response~dose, vaccination,
+ contrasts=list(dose=contr.helmert))[1:5,]
+
+model.matrix(response~dose, vaccination,
+ contrasts=list(dose=contr.poly))[1:5,]
+```
+
+## Contrasts in action
+
+```{r, warning=FALSE, message=FALSE}
+summary(lm(response~dose, data = vaccination))
+
+kontr = contr.sdif(5)
+summary(lm(response ~ dose, data = vaccination, contrasts=list(dose=kontr)))
+
+model.va.7 <- lm(response~ordered(dose), data=vaccination)
+summary(model.va.7)
+```
+
+## Compare all contrasts
+
+```{r, warning=FALSE, message=FALSE}
+options()$contrasts
+
+contrs <- apropos("contr\\.")
+coefs <- sapply(contrs, function(i)
+ lm(response~dose, data = vaccination,
+ contrasts=list(dose=get(i)))$coefficients
+)
+t(coefs)
+```
+
+
+## Your turn
+
+In small groups, 2-3 people each, find an example application for each type of contrast.
+
+
+# Order of tests
+
+
+Let us consider a simple model with two variables `X` and `Z`. Note that they are correlated and both have some relation with variable `Y`.
+
+```{r}
+library(PBImisc)
+head(YXZ)
+cor(YXZ)
+```
+
+## What we are testing?
+
+There is a lot of approaches to test the relation between X/Z and Y. Let's check them.
+
+```{r}
+# this is quite often
+# type III - marginal
+summary(lm(Y~X+Z, data=YXZ))
+
+# is it a surprise?
+# type I - sequential
+anova(lm(Y~X+Z, data=YXZ))
+anova(lm(Y~Z+X, data=YXZ))
+
+# What about this?
+anova(lm(Y~X, data=YXZ))
+anova(lm(Y~Z, data=YXZ))
+
+```
+
+!(YXZ2.png)
+
+## Your turn
+
+In small groups, 2-3 people each, explain what has happen. 
+Why this has happened?
+
+Find example in which one would like to use type I test. And when type III test would be more useful?
+
+# Nested or crossed?
+
+Let's play with data about prices of apartments in Warsaw.
+
+```{r}
+library(PBImisc)
+head(apartments)
+```
+
+Let's select 7 variables that look like factors.
+
+```{r}
+head(apartments[,c(1,2,5,6,7,10,14)])
+```
+
+## Your turn
+
+In small groups, 2-3 peoples each, choose how to code each variable.
+What kind of contrast should / might be used?
+
+For pairs of variables like type/condition, district/street, year/month, discuss if they should be coded as nested or crossed variables?
+
+## Try with R
+
+What will be the difference between
+
+```{r}
+model1 <- lm(m2.price ~ factor(year)+factor(month), data=apartments)
+
+model2 <- lm(m2.price ~ factor(year)/factor(month), data=apartments)
+
+model3 <- lm(m2.price ~ factor(year)*factor(month), data=apartments)
+
+summary(model1)
+summary(model2)
+summary(model3)
+
+# What about: type/condition, district/street
+
+```
+
+# Home works
+
+Let's see home works `agnieszka_sitko_05.html`, `hw5_emilia_pompe.html`.
+
+
+## Home work for 12 XI 2015
+
+Read the chapter 2.5 from ,,Analiza danych z programem R, Modele liniowe mieszane'' or in English (http://www.statisticshell.com/docs/ancova.pdf + how to do this in R http://www.stat.columbia.edu/~martin/W2024/R8.pdf).
+
+Now consider scenario with ,,unequal slopes'' - an interaction between continuous and categorical variable. We are going to check when such interaction can be detected.
+
+Create following scenarios:
+
+Generate continuous variable `X_1` from distribution `U[0,1]`. Generate categorical variable `X_2` with 2 levels with equal frequency). Generate Y in a way that it depends on interaction of `X_1` and `X_2`.
+
+1. Add random noise from N(0,1), all ANCOVA assumptions are met. 
+2. Choose other distribution for epsilons, find a distribution with the same scale as N(0,1) for which you will get drop in power.
+3. Choose other distribution for epsilons in a way that the test for residual will not keep I type error rate.
+
+For all these scenarios, produce plot that will compare power as a function of sample size. Moreover on this plot is should be visible that power for scenario 2 is lower than for scenario 1. And that I type error rate is different for scenario 3 and scenario 1.
+
+
+
