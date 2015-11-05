@@ -5,11 +5,11 @@ date: "November 5, 2015"
 output: html_document
 ---
 
-Tworzymy symulację następującej postaci: dla każdej liczby pacjentów n z przedziału [20:500] tworzymy 100 modeli z efektami zagnieżdżonymi (takimi, jak każe treść zadania) i na tej podstawie liczymy moc testu dla efektów zagnieżdżonych. 
+Tworzymy symulację następującej postaci: dla każdej liczby pacjentów n z przedziału [20:500] tworzymy 400 modeli z efektami zagnieżdżonymi (takimi, jak każe treść zadania) i na tej podstawie liczymy moc testu dla efektów zagnieżdżonych. 
 ```{r}
 N1 <- 20
 N2 <- 500
-M <- 100
+M <- 400
 
 powers <- sapply(N1:N2, function(n) {
   pvals <- replicate(M, {
@@ -29,6 +29,8 @@ Spójrzmy, jak wygląda wykres mocy testu w zależności od liczby pacjentów n:
 ```{r}
 plot(powers)
 ```
+
+
 Widać wyraźnie, że moc testu dla n od 20 do ok. 100 rośnie, po czym dla n > 100 widać wyraźnie, że prawdopodobieństwo, że test poprawnie wykryje efekt zagnieżdżony stabilizuje się na 1.
 
 
