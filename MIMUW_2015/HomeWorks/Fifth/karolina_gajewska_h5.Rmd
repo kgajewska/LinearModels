@@ -1,0 +1,63 @@
+---
+title: "Praca domowa 5"
+author: "Karolina Gajewska"
+date: "05.11.2015"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+```{r, warning=FALSE, message=FALSE}
+#install.packages("agricolae")
+library(agricolae)
+#install.packages("reshape")
+library("reshape")
+library(ggplot2)
+
+set.seed(411)
+p <- 0
+power_0.05 <- 0
+power_0.1 <- 0
+power_0.2 <- 0
+M <- 100
+k<- 300
+```
+
+Szacuje się, że w Polsce żyje ponad 5.2 mil osób ze stanem przedcukrzycowym. W Polsce na cukrzyce choruje około 1.5 miliona osób, z czego aż 89%(1.335) na cukrzyce typu II oraz 9% (0.135) typu I. 
+Zachowując proporcje pomiędzy powyższymi wartościami oraz założenia z treści zadania wykonujemy następującą symulację z hierarchiczną analizą wariancji:
+
+```{r, warning=FALSE, message=FALSE}
+for(N in 50: k){   
+  p <- replicate(M, {    
+    cisnienie <- 120 + rnorm(N)
+    plec <- sample(c("xy", "xx"), N, replace = TRUE, prob = c(0.48, 0.52))
+    typ_cukrzyca <- sample( c("pre", "1", "2"),  N, replace = TRUE, prob = c(0.78, 0.02, 0.2))
+    cisnienie <- 120 +rnorm(N) + 1*(plec == "xy") + 1*(plec == "xx" & typ_cukrzyca == "2") + 0.5*(plec == "xy" & typ_cukrzyca == "2")
+    model <- lm(cisnienie ~ plec/typ_cukrzyca)
+    summary(aov(model))[[1]][[5]][2]
+    })
+  power_0.05[N] <- sum(p < 0.05)/M
+  power_0.1[N] <- sum(p < 0.1)/M
+  power_0.2[N]<-sum(p< 0.2)/M
+}
+```
+
+Uzyskane wyniki prezentuję w formie graficznej:
+```{r, warning=FALSE, message=FALSE}
+wielkosc_proby<-c(1:300)
+data<-data.frame(wielkosc_proby, power_0.05, power_0.1, power_0.2)
+g <- melt(data, id.vars = "wielkosc_proby")
+
+ggplot(g, aes(x = wielkosc_proby, y = value, colour = variable)) + geom_line()+ geom_abline(intercept = 0.8, slope = 0, color = "red")
+```
+
+Na podstawie powyższego wykresu wnioskować możemy, że im większy poziom istotności alfa przyjmniemy tym w celu osiągnięcia zadowalającej mocy testu tj 80% możemy do badania wziąć wiąć próbkę o mniejszej liczebności. Niezależnie od przyjętego poziomu ufności alfa moc testu wzrasta wraz z liczbenością próby. Zadowalające wyniki otrzymamy odpowiednio dla prób o następujących wielkościach:
+
+```{r, warning=FALSE, message=FALSE}
+min(which(power_0.05 > 0.8)) + 1 
+min(which(power_0.1 > 0.8)) + 1 
+min(which(power_0.2 > 0.8)) + 1 
+```
+
+Tak więc dla przykładu: W celu osiągnięcia zadowalających wyników na poziomie istotności 0.05 powinniśmy przyjąć liczebność grupy równą 112. 
+
