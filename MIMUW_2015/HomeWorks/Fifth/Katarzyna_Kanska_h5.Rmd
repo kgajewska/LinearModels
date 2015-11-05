@@ -1,0 +1,163 @@
+---
+title: "Homework 5"
+author: "Katarzyna Kanska"
+date: "05.11.2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+We have data for n patients. For each patient we have his/her blood pressure, gender and type of diabetes (here, let's assume that there are three types of diabetes: pre, 1 and 2). Let assume that male have blood pressure is higher than female (on average) and the difference is delta1 = 1. Then let's assume that nested effect of diabetes is delta2= (0, 0, 0.5) for male and delta3=(0, 0, 1) for female.
+
+Our goal is to find sample size, for which the test for nested effect (only effect of diabetes) has power 0.8.
+
+### Create a simulation study in which for a given n - sample size you will calculate power for hypothesis H0: delta2=0 and delta3=0.
+
+We will consider a balanced case, where each group is equaly representated. We assume that residuals $\varepsilon \sim \mathcal{N}(0,1)$. Let $n=6m$ for simplicity.
+
+
+```{r, warning=FALSE, message=FALSE}
+# difference in blood pressure caused by gender
+delta1 <- 1
+# differences in blood pressure caused by diabetes type
+delta2 <- c(0, 0, 0.5)
+delta3 <- c(0, 0, 1)
+
+GenData <- function(M){
+  '
+  Function generates a data set containing 6*M observations of 3 variables:
+    blood.pressure - "normalized" level of blood pressure (negative values are possible)
+    sex - indicates gender (male or female)
+    diabetes - indicates type of diabetes (pre, type1, type2)
+  
+  Input: M - numeric (1/6 of sample size)
+  Output: df - data frame (data set described above)
+  '
+  
+  # generate only residuals
+  blood.pressure <- rnorm(6*M)
+  # make groups
+  sex <- rep(c("female","male"), times=3*M)
+  diabetes.type <- c("pre","type1", "type2")
+  diabetes <- rep(diabetes.type, times=2*M)
+  
+  # differ the means in groups
+  blood.pressure[sex=="male"] <- blood.pressure[sex=="male"] + delta1
+  
+  for (i in 1:3){
+    blood.pressure[sex=="male" & diabetes==diabetes.type[i]] <- blood.pressure[sex=="male" & diabetes==diabetes.type[i]] + delta2[i]
+    blood.pressure[sex=="female" & diabetes==diabetes.type[i]] <- blood.pressure[sex=="female" & diabetes==diabetes.type[i]] + delta3[i]
+  }
+  
+  df <- data.frame(blood.pressure, sex = factor(sex), diabetes = factor(diabetes))
+  
+  return(df)
+}
+
+CalcPower <- function(N, M){
+  '
+  Function calculate the power of F test used in diagnostics of a linear model with two categorical variables (one nested effect).
+  The significance level is set to 0.05.
+  
+  Input:
+    N - numeric (number of simulations)
+    M - numeric (1/6 of sample size)
+  Output:
+    power - numeric (power of the F test for nested effect)
+  '
+  
+  alpha <- 0.05
+  
+  pvals <- replicate(N,
+                     {
+                       df <- GenData(M)  
+                       model <- anova(lm(blood.pressure ~ sex/diabetes, data=df))
+                       model[2,5]
+                     })
+
+  power <- round(100*mean(pvals < alpha),1)
+  
+  return(power)
+}
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+# 1/6 of the size of whole sample
+m <- 20
+
+df <- GenData(m)
+
+library("ggplot2")
+ggplot(df, aes(x=sex, y=blood.pressure, fill=diabetes)) + geom_boxplot()
+```
+
+We can see that gender has an effect on blood pressure. Also type2 of diabetes seem to make blood pressure higher. These conclusions are as expected, therefore data set is generated correcly.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+# number of simulations used to calculate power of F test
+N <- 100
+
+CalcPower(N, m)
+
+```
+
+The power of F test is 94% for sample size $n=120$.
+
+### Choose the smallest n for which power is not smaller than 0.8. I.e. what is the minimal number of patients that allow to detect effect of the size (0,0,0.5,0,0,1) with probability larger than 80%.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+powers <- sapply(2:m, function(x) CalcPower(N,x))
+
+powers.df <- data.frame(sample.size = 6*(2:m), test.power = powers)
+
+ggplot(powers.df, aes(x=sample.size, y=test.power, color=test.power)) +
+  geom_point() +
+  xlim(0, 6*m) +
+  ylim(0, 100)
+
+tmp <- min(which(powers>=80))
+
+powers[(tmp-1):tmp]
+
+# minimal sample size
+6*tmp
+
+```
+
+From this analysis we may conclude that the minimal sample size is $72$ to get the test power larger than 80%. But we have to remember that we are constrained by our assumption of balanced case (we can choose only multiples of 6). The real minimum lies somewhere between $n=66$ and $n=72$.
+
+What is interesting, test power as a function of sample size is not monotonic. Maybe we should do more simulations for estimating the power of F test to get more stable results.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+# number of simulations used to calculate power of F test
+N <- 1000
+
+powers <- sapply(2:m, function(x) CalcPower(N,x))
+
+powers.df <- data.frame(sample.size = 6*(2:m), test.power = powers)
+
+ggplot(powers.df, aes(x=sample.size, y=test.power, color=test.power)) +
+  geom_point() +
+  xlim(0, 6*m) +
+  ylim(0, 100)
+
+tmp <- min(which(powers>=80))
+
+powers[(tmp-1):tmp]
+
+# minimal sample size
+6*tmp
+```
+
+The result is much better - our function is nearly monotonic. Moreover, up to some point it looks linear. Then its slope slightly decreases, which is intuitive, because we know that the power of test may be equal at most 100%, so it cannot increase infinitely with the sample size.
+
+Now we can approximate the minimal sample size by $n=84$, keeping in mind that the real value lies somewhere between $n=78$ and $n=84$.
