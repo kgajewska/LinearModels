@@ -1,0 +1,114 @@
+---
+title: "Homework 4"
+author: "Magdalena Bogdańska"
+date: "Linear and mixed models with examples for biological and medical data"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Task
+Load the dataset.
+
+Plot graphical summaries for the dataset (show either distribution of spine’s length in each group or mean+/-sd).
+
+Perform one-way ANOVA and post-hoc tests. Are there differences among different post hoc tests? Compare different approaches and discuss results.
+
+Choose suitable contrasts and test them. Prepare graphical summaries and discuss results.
+
+Create a knitr report that summarises the story/relation for spine’s length and groups of mice.
+
+
+-------------------------------------------------------------------------------------------
+## Data
+```{r, warning=FALSE, message=FALSE}
+load("17df9d1fc4f43962a91b9ab14b7b8e6f.rda")
+head(spines)
+attach(spines)
+unique(Group)
+```
+
+## Descriptive statistics and graphical summary
+```{r, warning=FALSE, message=FALSE}
+by(length,Group,summary)
+
+qqplot(length,Group)
+
+boxplot(length~Group)
+abline(h=mean(length), col='grey', lwd=2)
+```
+
+## One-way ANOVA
+```{r, warning=FALSE, message=FALSE}
+anova(lm(length~Group))
+```
+Results of one-way ANOVA suggest that differences between means in groups of mice are significant statistically.
+
+
+##Post-hoc tests
+One can observe that number of elements in each group is different, thus we should not use neither Tukey nor HSD test, however I will do it only for comparison.
+```{r, warning=FALSE, message=FALSE}
+sum(spines$Group=="TG +")
+sum(spines$Group=="TG -")
+sum(spines$Group=="TG -")
+sum(spines$Group=="WT -")
+
+model.anova<-aov(length~Group)
+TukeyHSD(model.anova)
+
+plot(TukeyHSD(model.anova))
+```
+
+I have plotted differences in means between pairs of groups with confidence intervals. If confidence interval for difference between two means doesn't contain 0, then those means are different (with significance level 0.05). In this case group TG+ is different from all other groups.
+
+```{r, warning=FALSE, message=FALSE}
+library(agricolae)
+HSD.test(model.anova,"Group", console = TRUE)
+
+SNK.test(model.anova, "Group", console = TRUE)
+```
+In LSD and Scheffe test there is no assumption of equal sizes of groups.
+```{r, warning=FALSE, message=FALSE}
+LSD.test(model.anova, "Group", p.adj="bonferroni", console = TRUE)
+
+scheffe.test(model.anova, "Group", console = TRUE)
+```
+Result of all test is then the following: group "TG +"" is different from other groups. Groups "TG -", "WT -"" and "WT +" are not significantly different.
+
+
+## Contrasts
+```{r, warning=FALSE, message=FALSE}
+(k<-length(levels(Group)))
+t(contr.treatment(k))
+```
+Successive differences contrasts:
+```{r, warning=FALSE, message=FALSE}
+library("MASS")
+t(contr.sdif(k))
+```
+Helment contrasts:
+```{r, warning=FALSE, message=FALSE}
+t(contr.helmert(k))
+```
+Result of regression with default contrasts: 
+```{r, warning=FALSE, message=FALSE}
+summary(lm(length~Group))
+```
+Response in groups TG-, WT+, WT- is significantly different from mean.
+
+Result of regression using successive differences contrasts: 
+```{r, warning=FALSE, message=FALSE}
+summary(lm(length~Group, contrasts=list(Group=t(contr.sdif(k+1)))))
+```
+In order to have qualitative ordered variable, I use function ordered.
+```{r, warning=FALSE, message=FALSE}
+summary(lm(length~ordered(Group)))
+```
+Both linear and quadratic contrast is statistically significant, showing possible linear or quadratic relation between group and length of spine.
+
+One can also compare all contrasts in the following way:
+```{r, warning=FALSE, message=FALSE}
+contrs <- apropos("contr\\.")
+coeffs <- sapply(contrs, function(i) lm(length~Group,contrasts=list(Group=get(i)))$coefficients)
+t(coeffs)
+```

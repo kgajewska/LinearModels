@@ -1,0 +1,134 @@
+---
+title: "Homework 4"
+author: "Annanina Koster"
+date: "27 oktober 2015"
+output: html_document
+---
+
+https://github.com/pbiecek/LinearModels/blob/master/MIMUW_2015/MaterialyPomocnicze/04_two_way_anova.Rmd
+
+First, a dataset has to be created where the main and side effect differ with 0.7 and there is no interaction effect. Then the power of the F-test is calculated by counting how many times the p-value is smaller than 0.05 (rejecting the null hypothesis that beta equals zero (insignificant effect)).
+
+```{r}
+set.seed(124)
+
+N <- 7000
+M <- 700
+
+pvals <- replicate(N, {
+  eps <- rnorm(M)
+  alpha <- sample(c(rep(0, 0.95 * M), rep(1, 0.05 * M)))
+  beta <- sample(c(rep(0, 0.95 * M), rep(1, 0.05 * M)))
+  y <- alpha * 0.7 + eps #creating the difference of 0.7
+  anova(lm(y~alpha*beta))[[5]][c(1,2,3)] #obtaining only the p-values of the anova
+})
+
+pvals[is.na(pvals)] <- 1 #changing NA's into 1's (not giving more counts)
+
+count.alpha <- 0
+for(i in 1:N){
+  if(pvals[1,i]<0.05){count.alpha <- count.alpha+1}
+}
+power.alpha <- count.alpha/N #finding the power
+power.alpha
+
+count.beta <- 0
+for(i in 1:N){
+  if(pvals[2,i]<0.05){count.beta <- count.beta+1}
+}
+power.beta <- count.beta/N
+power.beta
+
+count.interaction <- 0
+for(i in 1:N){
+  if(pvals[3,i]<0.05){count.interaction <- count.interaction+1}
+}
+power.interaction <- count.interaction/N
+power.interaction
+```
+    
+For the main effect, the power of the test is 98%. For the side effect and interaction effect this is only about 4-5%. Just as I expected (since there was only a difference in mean between the main and side effect and no interaction effect created)!
+
+Now, a dataset has been created that only displays an interaction effect of 0.7, and the powers have been calculated.
+
+```{r}    
+pvals1 <- replicate(N, {
+  eps1 <- rnorm(M)
+  alpha1 <- sample(c(rep(0, 0.95 * M), rep(1, 0.05 * M)))
+  beta1 <- sample(c(rep(0, 0.95 * M), rep(1, 0.05 * M)))
+  y1 <- alpha1 * beta1 * 0.7 + eps1 #creating an interaction effect of 0.7
+  anova(lm(y1~(alpha1 * beta1)))[[5]][c(1,2,3)]
+})
+
+nr.na <- sum(is.na(pvals1[3,]))
+nr.na #these many observations are not available!
+pvals1[is.na(pvals1)] <- 1
+
+count.alpha1 <- 0
+for(i in 1:N){
+  if(pvals1[1,i]<0.05){count.alpha1 <- count.alpha1+1}
+}
+power.alpha1 <- count.alpha1/N
+power.alpha1
+
+count.beta1 <- 0
+for(i in 1:N){
+  if(pvals1[2,i]<0.05){count.beta1 <- count.beta1+1}
+}
+power.beta1 <- count.beta1/N
+power.beta1
+
+count.interaction1 <- 0
+for(i in 1:N){
+  if(pvals1[3,i]<0.05){count.interaction1 <- count.interaction1+1}
+}
+power.interaction1 <- count.interaction1/N
+power.interaction1
+
+count.interaction1.2 <- 0
+for(i in 1:N){
+  if(pvals1[3,i]<0.05){count.interaction1.2 <- (count.interaction1.2)+1}
+}
+power.interaction1.2 <- count.interaction1.2/(N-nr.na) #adjust for the NA's
+power.interaction1.2
+```
+
+This time, the power of the main effect is found to be 5%, as expected (the level of the test)! The same for the side effect. The interaction effect has a power of 13%, which is a bit lower than I expected. This is probably because 1126 entries are not counted, but used in the fraction. That is why I calculated the power again without the NA's counted for, but it only increases by 2.5%...
+
+Finally, I created a dataset with both main effects and interaction effects of the size 0.7 and I calculated the powers.
+
+```{r}
+pvals2 <- replicate(N, {
+  eps2 <- rnorm(M)
+  alpha2 <- sample(c(rep(0, 0.95 * M), rep(1, 0.05 * M)))
+  beta2 <- sample(c(rep(0, 0.95 * M), rep(1, 0.05 * M)))
+  y2 <- alpha2 * 0.7 + alpha2 * beta2 * 0.7 + eps2
+  anova(lm(y2~alpha2 * beta2))[[5]][c(1,2,3)]
+})
+
+nr.na2 <- sum(is.na(pvals2[3,]))
+pvals2[is.na(pvals2)] <- 1
+
+count.alpha2 <- 0
+for(i in 1:N){
+  if(pvals2[1,i]<0.05){count.alpha2 <- count.alpha2+1}
+}
+power.alpha2 <- count.alpha2/N
+power.alpha2
+
+count.beta2 <- 0
+for(i in 1:N){
+  if(pvals2[2,i]<0.05){count.beta2 <- count.beta2+1}
+}
+power.beta2 <- count.beta2/N
+power.beta2
+
+count.interaction2 <- 0
+for(i in 1:N){
+  if(pvals2[3,i]<0.05){count.interaction2 <- (count.interaction2)+1}
+}
+power.interaction2 <- count.interaction2/(N-nr.na) #adjust for the NA's
+power.interaction2
+```
+
+The power for the main effect is almost 99%, just as expected. For the side effect it is approximately 6% and for the interaction effect 16%. As these results combine these of the past two (which it was supposed to), I think we can say the simulation was a succes!

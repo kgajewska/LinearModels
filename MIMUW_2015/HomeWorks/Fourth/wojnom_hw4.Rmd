@@ -1,0 +1,91 @@
+---
+title: "Homework"
+author: "Marcin Wojno"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+```{r}
+set.seed(1)
+```
+As I got inspired by the book ''Practical Regression and Anova using R'' by Julian J. Faraway, (the rat example) let's assume we have two types of pills (Medicament vs. Placebo) and each type of pill has a few kinds. To be more specific let's fix A, B, C, D and E as different kinds of Medicaments whereas X, Y and Z are different kinds of Placebo pills:
+
+```{r}
+Lek <- c("A", "B", "C", "D", "E")
+Placebo <- c("X","Y","Z")
+```
+
+To create a model, we assume there is (N=)600 patients in the hospital taking those pills. We are measuring some health parameter of each patients after taking pills. Initially, health parameter is distributed normally and we change the model accordingly to each task. 
+
+```{r}
+N <- 600
+Nlek <- N/5
+Npla <- N/3
+M <- 1000
+ModelLek <- rep(Lek, times=Nlek)
+ModelPlacebo <- rep(Placebo, times=Npla)
+```
+
+Firstly, let's create a function that calculate p-values for us after replicating the model a few times:
+
+```{r}
+showMeTheValues <- function(frame){
+
+anovaModels <- apply(frame, 2, function(x){ anova(lm(x ~ ModelLek*ModelPlacebo)) })
+
+LekPValues <- t(data.frame(lapply(anovaModels, function(x){x$"Pr(>F)"[1]})))
+
+PlaceboPValues <- t(data.frame(lapply(anovaModels, function(x){x$"Pr(>F)"[2]})))
+
+InterPValues <- t(data.frame(lapply(anovaModels, function(x){x$"Pr(>F)"[3]})))
+
+results <- data.frame(rbind(c("P-Value for Lek", "P-Value for Placebo", "P-Value for Interactions"),c(sum(LekPValues<0.05)/M,sum(PlaceboPValues<0.05)/M,sum(InterPValues<0.05)/M)))
+results
+}
+```
+
+Now we may proceed with the first Scenario.
+We add 0.7 to the measured health parameter for patients taking real medicaments (pills B and E) and patients taking placebo in the form of pill Z. As we change parameters separately for separate factors (Lek vs Placebo) interaction should be low.
+
+```{r}
+Y <- rnorm(M*N)
+frame<- data.frame(matrix(Y, ncol=M))
+
+frame[ModelLek=="B",] <- frame[ModelLek=="B",] + 0.7
+frame[ModelLek=="E",] <- frame[ModelLek=="E",] + 0.7
+frame[ModelPlacebo=="Z",] <- frame[ModelPlacebo=="Z",] + 0.7
+
+showMeTheValues(frame)
+```
+
+Now we add 0.7 to values corresponding to patients that took pills from both types, e.g. Lek of kind B and Placebo of kind Y. Expected is high p-value for interaction:
+
+```{r}
+Y <- rnorm(M*N)
+frame<- data.frame(matrix(Y, ncol=M))
+
+frame[(ModelLek=="B") & (ModelPlacebo=="Y"),] <- frame[(ModelLek=="B") & (ModelPlacebo=="Y"),] + 0.7
+frame[(ModelLek=="A") & (ModelPlacebo=="X"),] <- frame[(ModelLek=="A") & (ModelPlacebo=="X"),] + 0.7
+
+showMeTheValues(frame)
+```
+Putting together first and second scenarios we should get all the p-values close to 100%
+```{r}
+Y <- rnorm(M*N)
+frame<- data.frame(matrix(Y, ncol=M))
+
+frame[(ModelLek=="B") & (ModelPlacebo=="Y"),] <- frame[(ModelLek=="B") & (ModelPlacebo=="Y"),] + 0.7
+frame[(ModelLek=="A") & (ModelPlacebo=="X"),] <- frame[(ModelLek=="A") & (ModelPlacebo=="X"),] + 0.7
+frame[ModelLek=="E",] <- frame[ModelLek=="E",] + 0.7
+frame[ModelPlacebo=="X",] <- frame[ModelPlacebo=="X",] + 0.7
+
+showMeTheValues(frame)
+```
+
+
+
+
+
+
