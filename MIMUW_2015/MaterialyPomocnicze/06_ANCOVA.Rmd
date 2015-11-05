@@ -159,8 +159,9 @@ summary(model3)
 
 # Home works
 
-Let's see home works `agnieszka_sitko_05.html`, `hw5_emilia_pompe.html`.
+Let's see home works `agnieszka_sitko_05.html`, `hw5_emilia_pompe.html`, `Katarzyna_Kanska_h5.Rmd`.
 
+https://rawgit.com/kgajewska/LinearModels/c9db0bc8cdd4cdd3c5187ee8ebea680a17292670/MIMUW_2015/HomeWorks/Fifth/karolina_gajewska_h5.html
 
 ## Home work for 12 XI 2015
 
