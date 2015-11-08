@@ -1,0 +1,140 @@
+---
+title: "Praca domowa 6"
+author: "Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+Generate continuous variable X_1 from distribution U[0,1]. Generate categorical variable X_2 with 2 levels with equal frequency). Generate Y in a way that it depends on interaction of X_1 and X_2.
+
+```{r}
+
+x_1<-runif(100)
+x_2<-rep(c(0, 1), 50)
+x_1<-sort(x_1)
+Y<-sort(runif(100))
+Y[seq(1, 50, 2)]<-Y[seq(1, 50, 2)]-sort(runif(25), decreasing=TRUE)
+Y[seq(52, 100, 2)]<-Y[seq(52, 100, 2)]-sort(runif(25))
+plot(Y~x_1)
+summary(aov(Y~x_1*x_2))
+```
+
+Zatem widzimy, że interakcja jest istotna.
+
+Teraz definiujemy funkcje dla scenariusza 1. tj. dodajemy do Y błędy z rozkładu $\mathcal{N}(0,1)$.
+```{r}
+simulation1<-function(n) {
+  x_1<-runif(2*n)
+  x_2<-rep(c(0, 1), n)
+  x_1<-sort(x_1)
+  Y<-sort(runif(2*n))
+  Y[seq(1, n, 2)]<-Y[seq(1, n, 2)]-sort(runif(length(seq(1,n,2))), decreasing=TRUE)
+  Y[seq(ceiling(n/2)*2, 2*n, 2)]<-Y[seq(ceiling(n/2)*2, 2*n, 2)]-sort(runif(length(seq(ceiling(n/2)*2,2*n,2))))
+  Y<-Y+rnorm(2*n)
+  model<-anova(lm(Y~x_1*x_2))
+  shapiro.test(rstandard(lm(Y~x_1*x_2)))$p.value
+  return(c(model$"Pr(>F)"[3], shapiro.test(rstandard(lm(Y~x_1*x_2)))$p.value))
+}
+power1<-function(n, p) {
+  pvalues<-replicate(100, simulation1(n))
+  c(length(which(pvalues[1,]<p))/100,
+  length(which(pvalues[2,]<p))/100)
+}
+power1(50, 0.05)
+p1<-0
+normalnosc1<-0
+for(i in 10:150) {
+  a<-0
+  a<-power1(i, 0.05)
+  p1[i]<-a[1]
+  normalnosc1[i]<-a[2]
+}
+plot(p1[10:150]~c(10:150))
+plot(normalnosc1[10:150]~c(10:150))
+```
+
+Powyżej otrzymaliśmy wykres mocy testu dla efektu interakcji oraz wielkości błędu typu I w zależności od wielkości próbki.
+
+Teraz scenariusz 2. Jako błąd zostały dodane zmienne ze standardowego rozkładu Cauchyego.
+```{r}
+simulation2<-function(n) {
+  x_1<-runif(2*n)
+  x_2<-rep(c(0, 1), n)
+  x_1<-sort(x_1)
+  Y<-sort(runif(2*n))
+  Y[seq(1, n, 2)]<-Y[seq(1, n, 2)]-sort(runif(length(seq(1,n,2))), decreasing=TRUE)
+  Y[seq(ceiling(n/2)*2, 2*n, 2)]<-Y[seq(ceiling(n/2)*2, 2*n, 2)]-sort(runif(length(seq(ceiling(n/2)*2,2*n,2))))
+  Y<-Y+rcauchy(2*n, 0, 1)
+  model<-anova(lm(Y~x_1*x_2))
+  return(c(model$"Pr(>F)"[3], shapiro.test(rstandard(lm(Y~x_1*x_2)))$p.value))
+}
+power2<-function(n, p) {
+  pvalues<-replicate(100, simulation2(n))
+  c(length(which(pvalues[1,]<p))/100,
+  length(which(pvalues[2,]<p))/100)
+  }
+power2(50, 0.05)
+p2<-0
+normalnosc2<-0
+for(i in 10:150) {
+  a<-0
+  a<-power2(i, 0.05)
+  p2[i]<-a[1]
+  normalnosc2[i]<-a[2]
+}
+plot(p2[10:150]~c(10:150))
+plot(normalnosc2[10:150]~c(10:150))
+```
+
+Powyżej wykresy mocy testu dla interakcji oraz moc testu na normalność reszt w zależności od liczności próbki.
+
+W tym scenariusz jako błąd zostały dodane zmienne z rozkładu normalnego $\mathcal{N}(0, 0.01)$.
+```{r}
+simulation3<-function(n) {
+  x_1<-runif(2*n)
+  x_2<-rep(c(0, 1), n)
+  x_1<-sort(x_1)
+  Y<-sort(runif(2*n))
+  Y[seq(1, n, 2)]<-Y[seq(1, n, 2)]-sort(runif(length(seq(1,n,2))), decreasing=TRUE)
+  Y[seq(ceiling(n/2)*2, 2*n, 2)]<-Y[seq(ceiling(n/2)*2, 2*n, 2)]-sort(runif(length(seq(ceiling(n/2)*2,2*n,2))))
+  Y<-Y+rnorm(2*n)*0.1
+  model<-anova(lm(Y~x_1*x_2))
+  shapiro.test(rstandard(lm(Y~x_1*x_2)))$p.value
+  return(c(model$"Pr(>F)"[3], shapiro.test(rstandard(lm(Y~x_1*x_2)))$p.value))
+}
+power3<-function(n, p) {
+  pvalues<-replicate(100, simulation3(n))
+  c(length(which(pvalues[1,]<p))/100,
+  length(which(pvalues[2,]<p))/100)
+}
+power3(50, 0.05)
+p3<-0
+normalnosc3<-0
+for(i in 10:150) {
+  a<-0
+  a<-power3(i, 0.05)
+  p3[i]<-a[1]
+  normalnosc3[i]<-a[2]
+}
+```
+
+Jak poprzednio, mamy wykresy dla mocy testu dla interakcji oraz dla błędu typu I dla testu na normalność reszt.
+```{r}
+plot(p3[10:150]~c(10:150))
+plot(normalnosc3[10:150]~c(10:150))
+```
+
+###Wykresy zbiorcze.
+Wykres dla mocy testów.
+```{r}
+plot(p1[10:150]~c(10:150), type="l",col="red", ylim=c(0, 1))
+lines(p2[10:150]~c(10:150), col="green")
+lines(p3[10:150]~c(10:150), col="yellow")
+```
+
+Wykres wielkości błędu typu I dla normalności rozkładu reszt (scenariusz 1. i scenariusz 3.).
+```{r}
+boxplot(normalnosc1[10:150], normalnosc3[10:150])
+abline(0.05, 0)
+```
