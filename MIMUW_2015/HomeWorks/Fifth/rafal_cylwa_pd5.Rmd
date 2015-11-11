@@ -1,0 +1,55 @@
+---
+title: "pd5"
+author: "Rafał Cylwa"
+date: "4 listopada 2015"
+output: html_document
+---
+
+Simulation of desired scenrio:
+
+```{r}
+mean <- 120
+delta1 <- 1
+delta2 <- 0.5
+delta3 <- 1
+```
+
+```{r}
+simulate <- function(N){
+  eps <- rnorm(N)
+  
+  gender <- sort(rep(c("male", "female"), length.out = N))
+  
+  diabetes <- rep(c("pre", "1", "2"), length.out=N)
+  
+  y <- mean + (gender == "male")*1 + (gender == "male")*(diabetes == "2")*delta2 + (gender == "female")*(diabetes == "2")*delta3 + eps
+
+  data <- data.frame(y, gender, diabetes)
+
+  model <- lm(y~gender/diabetes, data = data)
+
+  anova(model)[2,5]
+}
+```
+
+We calculate the power of a test (for nested effects) for different numbers of patients (narrowed by previous calculations).
+
+```{r}
+power <- c()
+for(nr_of_patients in 50:200){
+  pvals <- replicate(1000, simulate(nr_of_patients))
+  power[nr_of_patients] <- length(which(pvals < 0.05))/1000
+}
+```
+
+Finally, we plot the power of a test as a function of number of patients.
+
+```{r}
+plot(power[50:200])
+```
+
+The minimal number of patients, for which the power exceeds 0.8 is:
+
+```{r}
+min(which(power >=0.8))
+```
