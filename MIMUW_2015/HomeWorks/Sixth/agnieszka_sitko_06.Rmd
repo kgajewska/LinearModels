@@ -1,0 +1,70 @@
+---
+title: "Homework 5"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+#Normally distributed random noise
+
+```{r, warning = FALSE, message = FALSE}
+set.seed(32)
+
+M <- 100
+power <- 0
+
+
+for (N in 10:1000){
+      
+      pvals <- replicate(M, {
+            
+            X_1 <- runif(N)
+            X_2 <- c(rep(c("first level"), times = round(N/2)), rep(c("second level"), times = N - round(N/2)))
+            epsilon <- rnorm(N)
+            Y <- 1 * (X_2 == "first level") * X_1  + 2 * (X_2 == "second level") * X_1 + epsilon
+            model <- aov(lm(Y ~ X_1 * X_2))
+            summary(model)[[1]][[5]][3]
+      })
+      
+      power[N] <- sum(pvals < 0.05) / M
+}
+
+plot(power, xlab = "sample size")
+
+
+```
+
+```{r, warning = FALSE, message = FALSE}
+power2 <- 0
+M <-10
+for (N in 10:1000){
+      
+      pvals2 <- replicate(M, {
+            
+            X_1 <- runif(N)
+            X_2 <- c(rep(c("first level"), times = round(N/2)), rep(c("second level"), times = N - round(N/2)))
+            #epsilon <- sort(rnorm(N), TRUE)
+            Y <- 1 * (X_2 == "first level") * X_1  + 2 * (X_2 == "second level") * X_1 + epsilon
+            model <- aov(lm(Y ~ X_1 * X_2))
+            summary(model)[[1]][[5]][3]
+      })
+      
+      power2[N] <- sum(pvals2 < 0.05) / M
+}
+
+plot(power2, xlab = "sample size")
+
+
+
+```
+
+```{r, warning = FALSE, message = FALSE}
+df <- data.frame(x = 1:1000, power, power2)
+g <- ggplot(df, aes(x))
+g <- g + geom_point(aes(y = power), col = "blue")
+g <- g + geom_point(aes(y = power2), col = "red")
+g
+
+```
