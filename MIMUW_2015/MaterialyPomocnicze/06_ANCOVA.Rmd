@@ -36,6 +36,8 @@ t(contr.poly(5))
 
 t(contr.sdif(5))
 
+t(contr.sum(5))
+
 model.matrix(response~dose, vaccination)[1:5,]
 
 model.matrix(response~dose, vaccination,
@@ -143,11 +145,9 @@ For pairs of variables like type/condition, district/street, year/month, discuss
 What will be the difference between
 
 ```{r}
-model1 <- lm(m2.price ~ factor(year)+factor(month), data=apartments)
-
-model2 <- lm(m2.price ~ factor(year)/factor(month), data=apartments)
-
-model3 <- lm(m2.price ~ factor(year)*factor(month), data=apartments)
+anova(lm(m2.price ~ factor(year)+factor(month), data=apartments))
+anova(lm(m2.price ~ factor(year)/factor(month), data=apartments))
+anova(lm(m2.price ~ factor(year)*factor(month), data=apartments))
 
 summary(model1)
 summary(model2)
