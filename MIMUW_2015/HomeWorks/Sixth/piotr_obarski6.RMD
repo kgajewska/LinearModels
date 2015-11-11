@@ -138,3 +138,8 @@ Wykres wielkości błędu typu I dla normalności rozkładu reszt (scenariusz 1.
 boxplot(normalnosc1[10:150], normalnosc3[10:150])
 abline(0.05, 0)
 ```
+
+## Wnioski
+Pierwszy wniosek: melduję wykonanie zadania.
+Drugi wniosek: jeśli rozrzucimy obserwacje zbyt słabo mimo wydaję się poprawnych wskazań modelu i wysokiej mocy, diagnostyka modelu może wypaść słabo.
+Wniosek trzeci: jeśli residua nie są z rozkładu normalnego, (w szczególności mają ciężki ogon tak jak rozkład Cauchyego) moc testu nie polepsza się wraz ze zwiększaniem próbki i pozostaje mała.
