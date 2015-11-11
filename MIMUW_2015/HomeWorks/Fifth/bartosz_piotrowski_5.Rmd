@@ -1,0 +1,41 @@
+---
+title: "Praca domowa 5"
+author: "Bartosz Piotrowski"
+date: "November 5, 2015"
+output: html_document
+---
+
+Tworzymy symulację następującej postaci: dla każdej liczby pacjentów n z przedziału [20:500] tworzymy 400 modeli z efektami zagnieżdżonymi (takimi, jak każe treść zadania) i na tej podstawie liczymy moc testu dla efektów zagnieżdżonych. 
+```{r}
+N1 <- 20
+N2 <- 500
+M <- 400
+
+powers <- sapply(N1:N2, function(n) {
+  pvals <- replicate(M, {
+    gender <- sample(c("men", "women"), n, replace=T)
+    diabetes <- sample( c("pre", "1", "2"), n, replace=T)
+    blood_pressure <- 120 + rnorm(n) + (gender == "men") * 1 + 
+      (gender == "men") * (diabetes == "2") * 0.5 +
+      (gender == "women") * (diabetes == "2") * 1
+    
+    summary(aov(blood_pressure~gender/diabetes))[[1]][2,5]
+  })
+  sum(pvals < 0.05)/M
+})
+```
+
+Spójrzmy, jak wygląda wykres mocy testu w zależności od liczby pacjentów n:
+```{r}
+plot(powers)
+```
+
+
+Widać wyraźnie, że moc testu dla n od 20 do ok. 100 rośnie, po czym dla n > 100 widać wyraźnie, że prawdopodobieństwo, że test poprawnie wykryje efekt zagnieżdżony stabilizuje się na 1.
+
+
+Sprawdźmy, dla jakiej najmniejszej liczby pacjentów moc test jest nie mniejsza, niż 0.8:
+```{r}
+min(which(powers >= 0.8))
+```
+
