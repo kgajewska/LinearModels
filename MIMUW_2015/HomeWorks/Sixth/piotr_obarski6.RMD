@@ -140,6 +140,6 @@ abline(0.05, 0)
 ```
 
 ## Wnioski
-Pierwszy wniosek: melduję wykonanie zadania.
-Drugi wniosek: jeśli rozrzucimy obserwacje zbyt słabo mimo wydaję się poprawnych wskazań modelu i wysokiej mocy, diagnostyka modelu może wypaść słabo.
+Pierwszy wniosek: melduję wykonanie zadania.</br>
+Drugi wniosek: jeśli rozrzucimy obserwacje zbyt słabo mimo, wydaję się, poprawnych wskazań modelu i wysokiej mocy, diagnostyka modelu może wypaść słabo.</br>
 Wniosek trzeci: jeśli residua nie są z rozkładu normalnego, (w szczególności mają ciężki ogon tak jak rozkład Cauchyego) moc testu nie polepsza się wraz ze zwiększaniem próbki i pozostaje mała.
