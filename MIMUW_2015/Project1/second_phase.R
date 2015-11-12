@@ -95,19 +95,15 @@ length(best3)
 best4 <- names(which((pvalues[,5] < 0.01)==1))
 length(best4)
 
-show_plots <- function(names){
-  par(mfrow=c(1,1))
-  for (i in names){
-    plot(lm(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
-    cat (i, "   ", which(i==names), "   ")
-    cat ("Press [enter] to continue.")
-    line <- readline()
-  }
-}
-
 #looking for genes with good qqnorm plot
-##show_plots(best1)
-##show_plots(best2)
+#qqnorm plot for some genes from good_shapiro_3 and good_shapiro_4
+par(mfrow=c(2,3))
+plot(lm(cleaned_table[,best1[1]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,best1[2]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,best1[3]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,best2[1]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,best2[2]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,best2[3]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
 
 #genes, which have nice qqnorm plot
 good_qq_1 <- best1[c(2, 8, 12, 14, 16, 18, 31, 32, 37, 41, 64, 66, 69, 72)]
@@ -145,9 +141,3 @@ cancer_age_sex <- good_qq_1[BP_1>=0.04]
 cancer_age_AND_cancer_sex <- good_qq_2[BP_2>=0.05]
 cancer_age <- good_shapiro_3[BP_3>=0.05]
 cancer_sex <- good_shapiro_4[BP_4>=0.05]
-
-#CO DALEJ:
-# *tukey
-# *interaction plot
-# *kontrasty
-# *wykresy (boxplot)
