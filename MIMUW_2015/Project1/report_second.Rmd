@@ -224,7 +224,80 @@ cancer_age_sex <- good_qq_1[BP_1>=0.04]
 cancer_age_AND_cancer_sex <- good_qq_2[BP_2>=0.05]
 cancer_age <- good_shapiro_3[BP_3>=0.05]
 cancer_sex <- good_shapiro_4[BP_4>=0.05]
+```
 
+#TODO, mam jakies bledy w tym
+```{r, warning = FALSE, message = FALSE}
+library(MASS)
+
+age_for_cancer <- function(GEN_nr,NAME_nr){
+  cat(GEN_nr,NAME_nr,"\n")
+  count <- length(levels(cleaned_table$discrete_age))
+  cancer_name <- levels(GX_cohort)[NAME_nr]
+  if(sum(GX_cohort==as.character(cancer_name)&
+           !is.na(cleaned_table[,cancer_age[GEN_nr]]))>0){
+    
+    form <- paste(cancer_age[GEN_nr],"discrete_age", sep="~")
+    result_table <- summary(lm(as.formula(form),
+                               data=cleaned_table[GX_cohort==as.character(cancer_name)&
+                                                    !is.na(cleaned_table[,cancer_age[GEN_nr]]),],
+                               contrasts=list(dose=contr.sdif( count )) ))$coef[-1,c(1,4)]
+    which_age <-rownames(result_table)[result_table[,2]<=0.05]
+    result_table <- result_table[result_table[,2]<=0.05,]
+    if(length(which_age)>0){  
+      if(length(which_age)>1){
+        result_table <- as.data.frame(result_table)
+      }else{
+        result_table <-as.data.frame(t(as.matrix(result_table)))
+      }
+      result_table$cancer <- cancer_name
+      result_table$discrete_age <- which_age
+      result_table$gen <- cancer_age[GEN_nr]
+    }else{
+      result_table <- NULL
+    }
+    result_table
+  }else{
+    NULL
+  }
+}
+#For example
+age_for_cancer(4,9)
+
+n <- length(cancer_age)
+m <- length(levels(GX_cohort))
+risk_age <- lapply(1:(n*m),function(x) {age_for_cancer(x %% n +1,x %% m +1)})
+
+saveRDS(risk_age,"risk_age.rds")
+
+library(plyr)
+nonempty <- sapply(1:length(risk_age),function(x) class(risk_age[[x]])=="data.frame")
+final_df <- rbind.fill(risk_age[nonempty])
+
+substrRight <- function(x, n){
+  substr(x, nchar(x)-n+1, nchar(x))
+}
+
+names(final_df)[2] <- "p.value"
+final_df$discrete_age <-
+  sapply(1:127,function(x)substrRight(final_df$discrete_age[x],2))
+
+final_df[final_df$discrete_age==72,]
+
+#saveRDS(final_df,"age_risk_table.rds")
+```
+
+#Testy post-hoc
+
+Na koniec wykonamy jeszcze test post-hoc Tukeya, by sprawdzic jakie konkretnie mamy interakcje pomiedzy grupami, sprawdzamy kolejno dla plci, plci i wieku oraz wieku.
+```{r, warning = FALSE, message = FALSE}
+#post hoc testing using Tukey HSD test
+par(mfrow=c(1,1))
+plot(TukeyHSD(aov(cleaned_table[,1000]~X_cohort*gender, data=cleaned_table)))
+plot(TukeyHSD(aov(cleaned_table[,good_shapiro_3[1]]~X_cohort*gender, data=cleaned_table)))
+plot(TukeyHSD(aov(cleaned_table[,good_shapiro_3[2]]~X_cohort*discrete_age*gender, data=cleaned_table)))
+plot(TukeyHSD(aov(cleaned_table[,good_shapiro_3[3]]~X_cohort*discrete_age, data=cleaned_table)))
+```
 #CO DALEJ:
 # *tukey
 # *interaction plot
