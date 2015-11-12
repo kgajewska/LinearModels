@@ -31,13 +31,6 @@ colnames(merged_table) <- gsub("\\?\\|","G", colnames(merged_table))
 colnames(merged_table) <- gsub("\\-","", colnames(merged_table))
 colnames(merged_table) <- gsub("\\,","", colnames(merged_table))
 colnames(merged_table) <- gsub(" ","", colnames(merged_table))
-#colnames(merged_table) <- paste("G", colnames(merged_table), sep="")
-
-##dim(merged_table) #checking
-##merged_table[1:5, 1:5] #checking
-##merged_table[1:5, 16110:16117] #checking
-##colnames(merged_table)[1:5] #checking
-##colnames(merged_table)[16110:length(colnames(merged_table))] #checking
 
 merged_table[,"X_cohort"] <- as.factor(merged_table[,"X_cohort"])
 merged_table[,"gender"] <- as.factor(merged_table[,"gender"])
@@ -66,27 +59,26 @@ pvalue_row <- function(i){
   anova(lm(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table))[1:7,5]  
 }
 
-#pvalues <- matrix(unlist(lapply(2:(ncol(cleaned_table)-4),pvalue_row)),ncol=7,byrow=T)
-load("pvalues2.RData")
+##pvalues <- matrix(unlist(lapply(2:(ncol(cleaned_table)-4),pvalue_row)),ncol=7,byrow=T)
+load("pvalues.RData")
 
 #naming pvalues matrix
 colnames(pvalues) <- rownames(anova(lm(cleaned_table[,1000]~X_cohort*discrete_age*gender, data=cleaned_table)))[1:7]
-rownames(pvalues) <- colnames(cleaned_table)[2:(ncol(cleaned_table)-5)]
+rownames(pvalues) <- colnames(cleaned_table)[2:(ncol(cleaned_table)-4)]
 
 #cleaning pvalues matrix
 pvalues <- pvalues[-which(is.na(pvalues[,7])),]
 
 head(pvalues)
 
+par(mfrow=c(2,3))
+
 hist(pvalues[,1])
 hist(pvalues[,2])
 hist(pvalues[,3])
 hist(pvalues[,4])
-hist(pvalues[,5])
 hist(pvalues[,6])
 hist(pvalues[,7])
-
-#save(pvalues, file="pvalues2.Rdata")
 
 #extracting genes with low pvalues
 rownames(anova(lm(cleaned_table[,1000]~X_cohort*discrete_age*gender, data=cleaned_table)))[1:7]
@@ -114,8 +106,8 @@ show_plots <- function(names){
 }
 
 #looking for genes with good qqnorm plot
-#show_plots(best1)
-#show_plots(best2)
+##show_plots(best1)
+##show_plots(best2)
 
 #genes, which have nice qqnorm plot
 good_qq_1 <- best1[c(2, 8, 12, 14, 16, 18, 31, 32, 37, 41, 64, 66, 69, 72)]
@@ -127,21 +119,22 @@ shapiro <- function(i){
   shapiro.test(lm(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table)$residuals)$p.value
 }
 
-good_shapiro_3 <- best3[lapply(best3, shapiro) > 0.05]
-good_shapiro_4 <- best4[lapply(best4, shapiro) > 0.05]
+##good_shapiro_3 <- best3[lapply(best3, shapiro) > 0.05]
+##good_shapiro_4 <- best4[lapply(best4, shapiro) > 0.05]
 
-lapply(good_qq_1, function(i) bptest(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table))
-lapply(good_qq_2, function(i) bptest(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table))
-lapply(good_shapiro_3, function(i) bptest(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table))
-lapply(good_shapiro_4, function(i) bptest(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table))
-
-#show_plots(good_shapiro_3)
-#show_plots(good_shapiro_4)
+#qqnorm plot for some genes from good_shapiro_3 and good_shapiro_4
+par(mfrow=c(2,3))
+plot(lm(cleaned_table[,good_shapiro_3[1]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,good_shapiro_3[2]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,good_shapiro_3[3]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,good_shapiro_4[1]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,good_shapiro_4[2]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
+plot(lm(cleaned_table[,good_shapiro_4[3]]~X_cohort*discrete_age*gender, data=cleaned_table), which=2)
 
 par(mfrow=c(1,1))
-interaction.plot(cleaned_table$gender, cleaned_table$X_cohort, cleaned_table$C21orf34)
+interaction.plot(cleaned_table$gender, cleaned_table$X_cohort, cleaned_table$ADAMTS14)
 interaction.plot(cleaned_table$gender, cleaned_table$X_cohort, cleaned_table$DTNA)
-interaction.plot(cleaned_table$gender, cleaned_table$X_cohort, cleaned_table$OTX1)
+interaction.plot(cleaned_table$gender, cleaned_table$X_cohort, cleaned_table$IER3)
 
 BP_1 <- sapply(good_qq_1, function(i) bptest(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table)$p.value)
 BP_2 <- sapply(good_qq_2, function(i) bptest(cleaned_table[,i]~X_cohort*discrete_age*gender, data=cleaned_table)$p.value)
