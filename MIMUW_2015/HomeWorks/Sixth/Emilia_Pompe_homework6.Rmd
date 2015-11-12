@@ -1,0 +1,122 @@
+---
+title: "Untitled"
+author: "Emilia Pompe"
+date: "Thursday, November 12, 2015"
+output: html_document
+---
+### Emilia Pompe
+### Homework 6
+### Thursday, November 12, 2015
+The aim of the study is to check what is the influence of different distributions for epsilons on power and type I error rate in test for interactions between a continuous variable and a factor.
+```{r}
+library(ggplot2)
+
+set.seed(7)
+sample.size <- seq(from=20, to=200, by=5)
+power.sc1 <- c()
+alpha <- 0.05
+N <- 400
+
+for (n in sample.size){
+  result <- replicate(N, {
+    x1 <- runif(n)
+    x2 <- factor(sample(c("A", "B"), n, replace = TRUE))
+    y <- sapply(1:n, function(i) ifelse(x2[i]=="A", 5*x1[i], 2*x1[i]))
+    y <- y + rnorm(n)
+    d <- data.frame(y=y, x1=x1, x2=x2)
+    p1 <- anova(lm(y ~ x1*x2,data=d))[3,5]
+    return(p1)
+  })
+ power.sc1 <- c(power.sc1, sum(result<alpha)/length(result))
+}
+```
+
+The R-code above (Scenario1) creates a dataset with a continuous variable x1, a factor x2 with 2 levels and a continuous variable y. The 'slope' is equal to 5 for x2 at the level A and it is equal to 5 for x2 ath the level B. Hence, the null hypothesis for interaction between x1 and x2 should be rejected - there exists such an interaction. Here epsilons were taken from the standard normal distribution. The experiment was repeated N times for different sample sizes. I also calculated power of the tests for interaction for different sample sizes.
+
+For the whole study I assumed significance level alpha = 0.05.
+```{r}
+set.seed(7)
+sample.size <- seq(from=20, to=200, by=5)
+power.sc2 <- c()
+alpha <- 0.05
+N <- 400
+
+for (n in sample.size){
+  result <- replicate(N, {
+    x1 <- runif(n)
+    x2 <- factor(sample(c("A", "B"), n, replace = TRUE))
+    y <- sapply(1:n, function(i) ifelse(x2[i]=="A", 5*x1[i], 2*x1[i]))
+    y <- y + rcauchy(n, location=0, scale=1)
+    d <- data.frame(y=y, x1=x1, x2=x2)
+    p1 <- anova(lm(y ~ x1*x2,data=d))[3,5]
+    return(p1)
+  })
+  power.sc2 <- c(power.sc2, sum(result<alpha)/length(result))
+}
+```
+
+The code above (Scenario 2) does exactly the same with one slight difference: epsilons follow the Cauchy distribution with location 0 and scale parameter 1. Let us compare results of scenario 1 and scenario 2
+```{r, fig.height=6, fig.width=8}
+power.data <- data.frame(sample_size=rep(sample.size, times=2),
+                         power=c(power.sc1, power.sc2),
+                         scenario=rep(c("scenario_1", "scenario_2"), each=length(sample.size)))
+
+ggplot(power.data, aes(x=sample_size, y=power, group=scenario, colour=scenario)) + geom_line(size=1) + 
+  ggtitle("Power of tests for interactions for epsilons with different distributions") 
+```
+
+It is clear from the plot that the power of the test is much higher when epsilons follow the normal distribution than in case when they follow the Cauchy distribution. The reason why the power is is so low in the second scenario may be the fact that this distribution is heavy-tailed. A conclusion from this example is that we should not make inference for ANCOVA when epsilons follow the Cauchy distribution as the probability of the Type II error is very high. 
+
+Now let us come back to Scenario 1. I created a similar example as in the first chunk, but this time the null hypothesis is true because both 'slopes' are equal to 5. I needed this to calculate the type I error which is the probability of rejecting a true null hypothesis.
+```{r}
+sample.size <- seq(from=20, to=200, by=5)
+type.one.error.sc1 <- c()
+alpha <- 0.05
+N <- 400
+
+for (n in sample.size){
+  result <- replicate(N, {
+    x1 <- runif(n)
+    x2 <- factor(sample(c("A", "B"), n, replace = TRUE))
+    y <- sapply(1:n, function(i) ifelse(x2[i]=="A", 5*x1[i], 5*x1[i]))
+    y <- y + rnorm(n)
+    d <- data.frame(y=y, x1=x1, x2=x2)
+    p1 <- anova(lm(y ~ x1*x2,data=d))[3,5]
+    return(p1)
+  })
+  type.one.error.sc1 <- c(type.one.error.sc1, sum(result<alpha)/length(result))
+}
+```
+
+The code below (scenario 3) creates a very similar example, but this time epsilons do not follow the normal distribution - they follow a 'transformed' Poisson distribution with lambda equal to 10. In this case 'transformed' means that I subtracted 10 because I wanted to have a distribution with expected value equal to 0.
+```{r}
+sample.size <- seq(from=20, to=200, by=5)
+type.one.error.sc3 <- c()
+alpha <- 0.05
+N <- 400
+
+for (n in sample.size){
+  result <- replicate(N, {
+    x1 <- runif(n)
+    x2 <- factor(sample(c("A", "B"), n, replace = TRUE))
+    y <- sapply(1:n, function(i) ifelse(x2[i]=="A", 5*x1[i], 5*x1[i]))
+    y <- y + rpois(n, lambda=10) - 10
+    d <- data.frame(y=y, x1=x1, x2=x2)
+    p1 <- anova(lm(y ~ x1*x2,data=d))[3,5]
+    return(p1)
+  })
+  type.one.error.sc3 <- c(type.one.error.sc3, sum(result<alpha)/length(result))
+}
+```
+
+Let us compare the type I errors calculated for both scenarios for significance level alpha = 0.05.
+```{r, fig.width=8, fig.height=6}
+error.data <- data.frame(sample_size=rep(sample.size, times=2),
+                         type_I_error=c(type.one.error.sc1, type.one.error.sc3),
+                         scenario=rep(c("scenario_1", "scenario_3"), each=length(sample.size)))
+
+ggplot(error.data, aes(x=sample_size, y=type_I_error, group=scenario, colour=scenario)) + geom_line(size=1) + 
+  ggtitle("Type I errors of tests for interactions for epsilons with different distributions") + geom_abline(slope=0, intercept=alpha) 
+```
+
+It can be observed from the plot that when the assumption of normality for ANCOVA does not hold, type I error is often higher than the significance level. It means that we do not control the type I error and we should we very cautious with making inference.
