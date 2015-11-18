@@ -1,0 +1,33 @@
+---
+title: "Beyond BLUE and MLE: model fitting and selection"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Intro
+
+Let's use the `prostate` dataset to identify which variables are linked with PSA (prostate specific antigen), known diagnostic marker.
+
+In this dataset the `lpsa` describes logarithm of PSA.
+
+```{r}
+library(faraway)
+head(prostate)
+```
+
+# What to do
+
+1. Work in small groups (2-3 people).
+
+2. The goal of this exercise is to identify the relation between `lpsa` and other variables from `prostate` dataset.
+
+3. Consider following strategies:  a stepwise model selection, the LASSO model selection. If VIF are large then consider ridge regression. If some observations are influential consider robust regression.
+
+4. Decide (in the group) what is the 'best' model.
+
+5. Compare models across groups.
+
+
