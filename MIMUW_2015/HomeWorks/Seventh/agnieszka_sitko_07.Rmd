@@ -1,0 +1,186 @@
+---
+title: "Homework 7"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+#Scenario I - AIC 
+
+Let's consider a situation where all variables in a model are important, but their effects on a dependent variable are different (the first five variables have much less impact on $y$ than the other five).  
+In this case we should observe that F statistic for a full model and for a model with the last five variables are similar. Therefore, it is likely that test based on the F statistic will be misleading.
+There may be also some troubles with BIC test, while it penalizes models with more parameters.
+
+```{r, warning = FALSE, message = FALSE}
+library(e1071)
+set.seed(321)
+n <- 100
+p <- 10
+M <- 100
+important <- 10
+beta <- c(rep(0.1, important / 2), rep(1, important / 2), rep(0, p - important))
+
+chosenModel <- matrix( rep(NA, 3*M), M, 3)
+colnames(chosenModel) <- c("AIC", "BIC", "F")
+
+comb <- bincombinations(p)[-1,]
+      
+rightCombination <- NA
+      
+for (i in 1:nrow(comb)) {
+      if(all.equal(comb[i,], rep(1, 10)) == TRUE) rightCombination <- i
+}
+      
+crit <- matrix(0, nrow(comb), 3)
+
+for (j in 1:M) {
+      
+      X <- matrix(rnorm(n*p),n,p)
+      colnames(X) <- paste0("var", 1:p)
+      
+      y <- X %*% t(t(beta)) + rnorm(n)
+      
+      dat <- data.frame(y,X)
+      
+      model <- lm(y ~ ., data=dat)
+      
+      
+      for (i in 1:nrow(comb)) {
+            form <- paste0("y ~ ",
+                       paste0("var", which(comb[i, ] == 1), collapse = "+"))
+            model <- lm(as.formula(form), data=dat)
+            crit[i, 1] <- AIC(model)
+            crit[i, 2] <- BIC(model)
+            crit[i, 3] <- summary(model)$fstatistic[1]
+      }
+      
+      crit <- data.frame(crit)
+      
+      chosenModel[j,1] <- (which(crit[, 1] == min(crit[, 1])) == rightCombination)
+      chosenModel[j,2] <- (which(crit[, 2] == min(crit[, 2])) == rightCombination)
+      chosenModel[j,3] <- (which(crit[, 3] == max(crit[, 3])) == rightCombination)
+}
+
+statisticsI <- apply(chosenModel, 2, sum ) / M 
+statisticsI
+
+```
+
+So in fact results of all tests are poor.
+
+#Scenario II - BIC 
+
+BIC statistic penalizes the number of parameters in a model more strongly than AIC. Therefore, it should be better in detecting models with only a few parameters.
+```{r, warning = FALSE, message = FALSE}
+
+n <- 100
+p <- 10
+M <- 100
+important <- 2
+beta <- c(10, 1, rep(0, p - important))
+
+chosenModel <- matrix( rep(NA, 3*M), M, 3)
+colnames(chosenModel) <- c("AIC", "BIC", "F")
+
+comb <- bincombinations(p)[-1,]
+      
+rightCombination <- NA
+      
+for (i in 1:nrow(comb)) {
+      if(all.equal(comb[i,], c(1, 1, rep(0, p - important))) == TRUE) rightCombination <- i
+}
+      
+crit <- matrix(0, nrow(comb), 3)
+
+for (j in 1:M) {
+
+      X <- matrix(rnorm(n*p),n,p)
+      colnames(X) <- paste0("var", 1:p)
+      
+      y <- X %*% t(t(beta)) + rnorm(n)
+      
+      dat <- data.frame(y,X)
+      
+      model <- lm(y ~ ., data=dat)
+      
+      
+      for (i in 1:nrow(comb)) {
+            form <- paste0("y ~ ",
+                       paste0("var", which(comb[i, ] == 1), collapse = "+"))
+            model <- lm(as.formula(form), data=dat)
+            crit[i, 1] <- AIC(model)
+            crit[i, 2] <- BIC(model)
+            crit[i, 3] <- summary(model)$fstatistic[1]
+      }
+      
+      crit <- data.frame(crit)
+      
+      chosenModel[j,1] <- (which(crit[, 1] == min(crit[, 1])) == rightCombination)
+      chosenModel[j,2] <- (which(crit[, 2] == min(crit[, 2])) == rightCombination)
+      chosenModel[j,3] <- (which(crit[, 3] == max(crit[, 3])) == rightCombination)
+}
+
+statisticsII <- apply(chosenModel, 2, sum ) / M 
+statisticsII
+
+```
+
+#Scenario III - F statistic
+
+After reducing the number of observations, the penalty given in BIC will be smaller. In this case both AIC and BIC will have some problems to detect models with just a few parameters. Let's look how F statistic will react in this scenario. 
+```{r, warning = FALSE, message = FALSE}
+n <- 15
+p <- 10
+M <- 100
+important <- 2
+beta <- c(rep(1, important), rep(0, p - important))
+
+chosenModel <- matrix( rep(NA, 3*M), M, 3)
+colnames(chosenModel) <- c("AIC", "BIC", "F")
+
+comb <- bincombinations(p)[-1,]
+      
+rightCombination <- NA
+      
+for (i in 1:nrow(comb)) {
+      if(all.equal(comb[i,], beta) == TRUE) rightCombination <- i
+}
+      
+crit <- matrix(0, nrow(comb), 3)
+
+for (j in 1:M) {
+
+      X <- matrix(rnorm(n*p),n,p)
+      colnames(X) <- paste0("var", 1:p)
+      
+      y <- X %*% t(t(beta)) + rnorm(n)
+      
+      dat <- data.frame(y,X)
+      
+      model <- lm(y ~ ., data=dat)
+      
+      
+      for (i in 1:nrow(comb)) {
+            form <- paste0("y ~ ",
+                       paste0("var", which(comb[i, ] == 1), collapse = "+"))
+            model <- lm(as.formula(form), data=dat)
+            crit[i, 1] <- AIC(model)
+            crit[i, 2] <- BIC(model)
+            crit[i, 3] <- summary(model)$fstatistic[1]
+      }
+      
+      crit <- data.frame(crit)
+      
+      chosenModel[j,1] <- (which(crit[, 1] == min(crit[, 1])) == rightCombination)
+      chosenModel[j,2] <- (which(crit[, 2] == min(crit[, 2])) == rightCombination)
+      chosenModel[j,3] <- (which(crit[, 3] == max(crit[, 3])) == rightCombination)
+}
+
+statisticsIII <- apply(chosenModel, 2, sum ) / M 
+statisticsIII
+```
+
+It looks like if the number of observations and the number of parameters are close to each other then the best model is chosen by F statistic.
