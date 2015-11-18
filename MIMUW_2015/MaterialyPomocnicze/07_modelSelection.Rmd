@@ -1,0 +1,187 @@
+---
+title: " Criteria for model selection"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Five variables in simulation study
+
+Let's start with simulation study.
+We are going to simulate an artificial dataset with 5 significant variables, 1000 observations and 10 non significant variables.
+
+```{r}
+set.seed(1313)
+n <- 500
+p <- 15
+imp <- 5
+# coefficients
+beta <- c(rep(1,imp),rep(0,p-imp))
+
+# variables
+X <- matrix(rnorm(n*p),n,p)
+colnames(X) <- paste0("var", 1:p)
+
+# outcome variable
+y <- X %*% t(t(beta)) + rnorm(n)
+
+dat <- data.frame(y,X)
+
+# let'ss see the model
+summary(lm(y ~ ., data=dat))
+```
+
+# Model selection criteria
+
+Akaike information criterion (AIC) and Bayesian information criterion
+ (BIC) are two coefficients from family of Generalized Information Criterion.
+Other popular measures of model fit are: R square, adjusted R square or Cp Mallows (this one we are going to discuss next week).
+
+Let’s see how to calculate them.
+
+```{r}
+model <- lm(y ~ ., data=dat)
+
+AIC(model)
+BIC(model)
+summary(model)$r.squared
+summary(model)$adj.r.squared
+
+```
+
+# Model selection strategies
+
+## Exhaustive search
+
+If the number of variables is not larger than 20 one can consider full 
+/ exhaustive search. For larger model one can consider the stepwise algorithm.
+
+```{r, warning=FALSE, message=FALSE}
+# Full search
+library(e1071)
+
+comb <- bincombinations(p)[-1,]
+crit <- matrix(0, nrow(comb), 5)
+
+for (i in 1:nrow(comb)) {
+  form <- paste0("y~",
+                 paste0("var",which(comb[i,]==1), collapse="+"))
+  model <- lm(as.formula(form), data=dat)
+  crit[i,1] <- AIC(model)
+  crit[i,2] <- BIC(model)
+  crit[i,3] <- summary(model)$r.squared
+  crit[i,4] <- summary(model)$adj.r.squared
+  crit[i,5] <- sum(comb[i,]==1)
+}
+colnames(crit) <- c("AIC", "BIC", "R2", "R2adj","p")
+crit <- data.frame(crit)
+
+```
+
+## BIC
+
+Which model is the best one when it comes to BIC?
+
+```{r, warning=FALSE, message=FALSE}
+# How it looks like for BIC
+library(ggplot2)
+ggplot(crit, aes(p,BIC)) + 
+  geom_point() +
+  geom_point(data=crit[which.min(crit$BIC),], color="red", size=5)
+
+```
+
+## AIC
+
+Which model is the best one when it comes to AIC?
+
+```{r, warning=FALSE, message=FALSE}
+# How it looks like for AIC
+library(ggplot2)
+ggplot(crit, aes(p,AIC)) + 
+  geom_point() +
+  geom_point(data=crit[which.min(crit$AIC),], color="red", size=5)
+
+```
+
+## R2
+
+Which model is the best one when it comes to R square?
+
+```{r, warning=FALSE, message=FALSE}
+# How it looks like for R2
+library(ggplot2)
+ggplot(crit, aes(p,R2)) + 
+  geom_point() +
+  geom_point(data=crit[which.max(crit$R2),], color="red", size=5)
+
+```
+
+## R2-adj
+
+Which model is the best one when it comes to adjusted R square?
+
+
+```{r, warning=FALSE, message=FALSE}
+# How it looks like for R2
+library(ggplot2)
+ggplot(crit, aes(p,R2adj)) + 
+  geom_point() +
+  geom_point(data=crit[which.max(crit$R2adj),], color="red", size=5)
+
+```
+
+## Stepwise strategies
+
+The `step()` function performs a stepwise search. Good starting point is a key.
+
+```{r}
+tmpFun = function(fit, aic) {
+  list(size = length(fit$coefficients), bic = BIC(fit))
+  }
+
+path <- step(model, direction="backward", keep=tmpFun, k=log(n))
+
+library(ggplot2)
+pathDF <- data.frame(size = unlist(path$keep[1,]),
+            bic = unlist(path$keep[2,]))
+
+ggplot(crit, aes(p,BIC)) + 
+  geom_point() +
+  geom_point(data=crit[which.min(crit$BIC),], color="red", size=5) +
+  geom_point(data=pathDF, aes(size-1, bic), color="blue", size=3)+
+  geom_line(data=pathDF, aes(size-1, bic), color="blue")
+
+```
+
+# Task for lab classes
+
+Use ` apartments ` data from `PBImisc` package.
+
+Create a single large model with as many variables as you can imagine (plus interactions or transformations) that will predict price per square meter. 
+Use model selection techniques to find smallest reasonable model.
+
+Check if this model is the best one according to all criteria?
+
+Work in pairs and be prepared to compare your models with others.
+
+# Home work for 19 XI 2015
+
+Read the chapter 2.6.3 from ,,Analiza danych z programem R, Modele liniowe mieszane'' or in English (http://www.stat.umn.edu/geyer/5931/mle/sel.pdf).
+
+Consider three approaches to variable selection:
+
+* choose model with best BIC,
+* choose model with best AIC,
+* choose model with significant variables (i.e. marginal F test).
+
+Generate three scenarios in such a way that in the first scenario the BIC will choose the right model in most cases, in the second scenario the AIC will be the best one and in the third scenario the selection with significant variables will find the right model most often.
+
+In all scenarios the number of variables should be equal 10. The number of observations is up to you. The noise should be generated from N(0,1) distribution. For each variable you should decide if the variable effect is equal to 0 (if variable is not related with outcome) of is different than 0 (variable is important).
+
+In your homework present results from 100 (or more) replications. For each criteria calculate the fraction of times that the criteria choose the right model.
+
+
+

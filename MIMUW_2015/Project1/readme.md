@@ -51,6 +51,9 @@ In phase 1: find genes that differ between cancer types significantly (i.e. for 
 In phase 2: note that for each patient you have not only information about type of tumor (cohort) but also gender and age of given patient. Check for interactions of these features with tumor type (e.g. tumors affect expression of given gene in a different way for male and female). Find ,,small'' list of genes (how to choose the number?) that will help to identify the type of cancer / cohort.
 
 In phase 3: note that there are 12 types of cancers. Show the information about differences / similarities of gene profiles in a human understandable way.
+The ultimate goal of these analyses is to show relation between cancer types and genes. 
+Could you prepare a small set of ,,characteristic'' gene profiles for each cancer type? 
+Could you say which cancer types are more similar than others (share similar gene expressions)?
 
 
 # Other requirements

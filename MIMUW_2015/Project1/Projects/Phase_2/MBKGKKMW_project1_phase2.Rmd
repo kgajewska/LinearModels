@@ -1,0 +1,368 @@
+---
+title: "Project1_phase2"
+author: "Magdalena Bogdańsa, Karolina Gajewska, Katarzyna Kańska, Marcin Wojno"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+## 1. Introduction
+
+```{r, warning=FALSE, message=FALSE}
+load("p.values.interactions.rda")
+load("expression.rda")
+load("clinical.rda")
+load("pValueNormalnosciGrupShapiro.rda")
+load("pValuesNormalnoscLillyforse.rda")
+library("ggplot2")
+library("grid")
+library("gridExtra")
+
+#tabela z wybranymi już podczas analizy genami
+cancerData_k2 <- na.omit(data.frame (t(expression["TMED4",]), t(expression["SART1",]), t(expression["C6orf145",]),t(expression["PSTK",]), t(expression["HSPE1",]), t(expression["CPNE5",]),as.factor(t(clinical[1,])), as.factor(t(clinical[2,])), as.factor(t(clinical[3,]))))
+colnames(cancerData_k2) <- c("TMED4","SART1", "C6orf145", "PSTK", "HSPE1", "CPNE5", "cancer", "wiek", "plec")
+
+```
+
+
+In conslusion from Phase 1, we said that after performing ANOVA for all genes qwe obtain that means for all 16115 genes are different among groups of cancers while all residuals are not normally distributed with significance level 5%).
+
+Yet we wish to choose ,,small'' list of genes that will help to identify the type of cancer / cohort in the best way.
+
+In first step, we select genes, which comply with base ANOVAs' assumtions. Our analysis is based on Shapiro-Wilk and Lillforse tests for groups normality and Fligner-Killeen as well as Bartlett's Test of Homogeneity of Variances.
+
+## 2. Normality in cohorts and variance homogenity for each gene
+
+Firstly, we calculate p-values of Shapiro/Lilliforse test for normality among cancer cohorts.
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+library(nortest)
+
+ramkaLilly <-as.data.frame(matrix(NA, nrow = 16115, ncol = 13))
+start <- 1
+end <- 16115
+
+for(N in start:end)
+{
+    cancerData_k <- na.omit(data.frame ( t(expression[N,]),as.factor(t(clinical[1,])),as.factor(t(clinical[2,])),as.factor(t(clinical[3,]))))
+    colnames(cancerData_k) <- c("gene", "cancer", "wiek", "plec")
+    groups <- list()
+    resultscancerShapiro <- list()
+    resultscancerLilly <- list()
+    ile<-list()
+    for(i in 1:nlevels(cancerData_k$cancer))
+    {
+      groups[[i]] <- cancerData_k$gene[cancerData_k$cancer==levels(cancerData_k$cancer)[i]]
+      ile[i] <- length(groups[[i]])
+      if (ile[i]>4){ resultscancerLilly[[i]] <- lillie.test(groups[[i]])
+      } else { resultscancerLilly[[i]] <- NA }
+      if (ile[i]>2){ resultscancerShapiro[[i]] <- shapiro.test(groups[[i]])
+      } else { resultscancerShapiro[[i]] <- NA }
+    }
+    ramkaLilly[N,] <- data.frame(t(sapply(resultscancerLilly, function(x) ifelse(length(x)>1, x$p.value, NA))))
+    ramkaShapiro[N,] <- data.frame(t(sapply(resultscancerShapiro, function(x) ifelse(length(x)>1, x$p.value, NA))))
+}
+save(ramkaLilly, file="pVauesNormalnoscLilly.rda")
+save(ramkaShapiro, file="pValueNormalnosciGrupShapiro.rda")
+```
+
+Now, we check variances, but only for genes that has some decent number of cancer cohorts that we may expect are normal basing on presious simulations.
+
+This function for a given gene calculates p-value of null hypothesis of variance homogenity
+
+```{r, warning=FALSE, message=FALSE}
+pValueVarianceEquality <- function(gen)
+{
+    df <- data.frame(t(gen), t(clinical[1,])[,1])
+    colnames(df) <- c("gene", "cancer")
+    df2 <- df[!is.na(df$gene),]
+    grupy <- list()
+    for(i in 1:nlevels(df$cancer))
+    {
+      grupy[[i]] <- df2$gene[df2$cancer==levels(df2$cancer)[i]]
+    }
+    ktoreOk <- lapply(grupy, length)>2
+    # bartlett.test(grupy[ktoreOk])$p.value
+    fligner.test(grupy[ktoreOk])$p.value
+}
+
+```
+
+That function for a given matrix with p-values of null hypo for normality among cancer cohorts finds genes that has at least poziomNormalnosci of normal (as per Shapiro/Lilli tests discussed before) groups and for those genes finds p-value of Bartlett and Fligner tests for variance homogenity
+
+```{r, warning=FALSE, message=FALSE}
+dajListeGenowZpWartoscia <- function(Model, poziomNormalnosci)
+{
+    tempModel <- apply(Model[,-2]>0.05, 1, sum)
+    
+    genyZwymaganymPoziomemNormalnosci <- tempModel[!is.na(tempModel)]>poziomNormalnosci
+    nazwyGenowZMin10NormGrupamiModel <- rownames(expression[which(genyZwymaganymPoziomemNormalnosci==TRUE),])
+    ramkaNormalniejszychGenowDlaTegoModelu <- expression[genyZwymaganymPoziomemNormalnosci, ]
+    wariancjeWybrancowModelu <- matrix(NA, nrow = sum(genyZwymaganymPoziomemNormalnosci))
+
+    for(N in 1:sum(genyZwymaganymPoziomemNormalnosci))
+    {
+        wariancjeWybrancowModelu[N] <- pValueVarianceEquality(ramkaNormalniejszychGenowDlaTegoModelu[N,])
+    }
+    rownames(wariancjeWybrancowModelu) <- nazwyGenowZMin10NormGrupamiModel
+    wariancjeWybrancowModelu
+}
+```
+
+And here we have the first gene that we are interested in:
+
+```{r, warning=FALSE, message=FALSE}
+modelShapiro <- pValuesGroupsNormalityShapiro
+shapiroWariancje <- dajListeGenowZpWartoscia(modelShapiro, 11)
+
+modelLilly <- pValuesNormalnoscLillyforse
+lillyWariancje <- dajListeGenowZpWartoscia(modelLilly, 11)
+which(lillyWariancje[,1]>0.01)
+```
+
+Now, we can see that, gene called "PSTK" give the best result for ANOVAs' assumtions.
+
+## 3. One-way ANOVA for PSTK
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(cancerData_k2, aes(cancer,PSTK)) + geom_boxplot() + coord_flip()
+```
+
+We can see that some of cohort created small group. For example Rectal Cancer has very similiar value of expansion PSTK like Loung Squamous or Acute Myeloid. So in the next step we should find other gene which help us distinguish this cohort.
+But before,  let's discuss  ANOVA results for PSTK.
+
+```{r, warning=FALSE, message=FALSE}
+model1 = aov(PSTK~cancer, data=cancerData_k2)
+summary(model1)
+```
+
+Creating graphs:
+
+```{r, warning=FALSE, message=FALSE}
+#install.packages("grid")
+library("grid")
+#install.packages("gridExtra")
+library("gridExtra")
+
+require(ggplot2)
+diagPlot<-function(model){
+  p1<-ggplot(model, aes(.fitted, .resid))+geom_point()
+  p1<-p1+stat_smooth(method="loess")+geom_hline(yintercept=0, col="red", linetype="dashed")
+  p1<-p1+xlab("Fitted values")+ylab("Residuals")
+  p1<-p1+ggtitle("Residual vs Fitted")+theme_bw()
+  
+  p2<-ggplot(model, aes(qqnorm(.stdresid)[[1]], .stdresid))+geom_point(na.rm = TRUE)
+  p2<-p2+geom_abline(aes(qqline(.stdresid)))+xlab("Theoretical Quantiles")+ylab("Standardized Residuals")
+  p2<-p2+ggtitle("Normal Q-Q")+theme_bw()
+  
+  p3<-ggplot(model, aes(.fitted, sqrt(abs(.stdresid))))+geom_point(na.rm=TRUE)
+  p3<-p3+stat_smooth(method="loess", na.rm = TRUE)+xlab("Fitted Value")
+  p3<-p3+ylab(expression(sqrt("|Standardized residuals|")))
+  p3<-p3+ggtitle("Scale-Location")+theme_bw()
+  
+  p4<-ggplot(model, aes(seq_along(.cooksd), .cooksd))+geom_bar(stat="identity", position="identity")
+  p4<-p4+xlab("Obs. Number")+ylab("Cook's distance")
+  p4<-p4+ggtitle("Cook's distance")+theme_bw()
+  
+  p5<-ggplot(model, aes(.hat, .stdresid))+geom_point(aes(size=.cooksd), na.rm=TRUE)
+  p5<-p5+stat_smooth(method="loess", na.rm=TRUE)
+  p5<-p5+xlab("Leverage")+ylab("Standardized Residuals")
+  p5<-p5+ggtitle("Residual vs Leverage Plot")
+  p5<-p5+scale_size_continuous("Cook's Distance", range=c(1,5))
+  p5<-p5+theme_bw()+theme(legend.position="bottom")
+  
+  p6<-ggplot(model, aes(.hat, .cooksd))+geom_point(na.rm=TRUE)+stat_smooth(method="loess", na.rm=TRUE)
+  p6<-p6+xlab("Leverage hii")+ylab("Cook's Distance")
+  p6<-p6+ggtitle("Cook's dist vs Leverage hii/(1-hii)")
+  p6<-p6+geom_abline(slope=seq(0,3,0.5), color="gray", linetype="dashed")
+  p6<-p6+theme_bw()
+  
+  return(list(rvfPlot=p1, qqPlot=p2, sclLocPlot=p3, cdPlot=p4, rvlevPlot=p5, cvlPlot=p6))
+}
+
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+g<-diagPlot(model1)
+do.call(grid.arrange, c(g, list(ncol=3)))
+```
+
+
+In the chart "Residuals vs Fitted" we see that the residuals of the model are characterized by the same mean independent of the theoretical value of dependent variable. Based on Theoretical Quantiles chart for normal distribution we see that the rest of the model is characterized by a normal distribution. In turn, based on the chart "Scale Location" we find that the variance of the residuals of the model is homogeneous. The graph "Cook's Distance" show that the cook measure is less than 0.005, indicating no abnormal observation.
+
+## 3. Multi-way ANOVA for PSTK
+
+
+```{r, warning=FALSE, message=FALSE}
+qplot(cancer, PSTK, fill=factor(plec), data=cancerData_k2, geom="boxplot", position="dodge") + theme_bw() + coord_flip()
+```
+
+We can  see  difference between men and women. 
+
+```{r, warning=FALSE, message=FALSE}
+coplot(PSTK ~ cancer | plec, data=cancerData_k2, panel=panel.smooth)
+```
+
+The same results give ANOVA model.
+
+```{r, warning=FALSE, message=FALSE}
+aov.out = aov(PSTK ~ plec * cancer, data=cancerData_k2)
+kruskal.test(PSTK ~ plec, data=cancerData_k2)
+options(show.signif.stars=T)
+summary(aov.out)
+#TukeyHSD(aov.out)
+#TukeyHSD(aov.out, which=c("cancer"), conf.level=.99)
+plot(TukeyHSD(aov.out))
+#with(cancerData_k2, pairwise.t.test(PSTK, cancer, p.adjust.method="bonferroni"))
+```
+
+Age doesn't have a significant infuence:
+
+```{r, warning=FALSE, message=FALSE}
+aov.out.w = aov(PSTK ~ wiek * cancer, data=cancerData_k2)
+options(show.signif.stars=T)
+kruskal.test(PSTK ~ wiek, data=cancerData_k2)
+summary(aov.out.w)
+plot(TukeyHSD(aov.out.w))
+#with(cancerData_k2, pairwise.t.test(PSTK, cancer, p.adjust.method="bonferroni"))
+```
+
+Age and gender:
+
+```{r, warning=FALSE, message=FALSE, eval=FALSE}
+aov.out.wa = aov(PSTK ~ wiek * cancer*plec, data=cancerData_k2)
+options(show.signif.stars=T)
+summary(aov.out.wa)
+```
+
+## 4. Other type of gene - C6orf145
+
+Other type of gene which give good results for Shapiro Test is C6orf145. Unfortunately it do not comply with Test of Homogeneity of Variances. 
+Let's check correlation between this gene.
+
+```{r, warning=FALSE, message=FALSE}
+policzKowariancjeGenow <- function(gen1 , gen2)
+{
+   genA <- t(expression[which(rownames(expression)==gen1),])
+   genB <- t(expression[which(rownames(expression)==gen2),])
+   ktoreLiczyc <- !is.na(genA) & !is.na(genB)
+   cor(genA[ktoreLiczyc,], genB[ktoreLiczyc,])
+}
+policzKowariancjeGenow("PSTK", "C6orf145")
+```
+
+It is ok. 
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(cancerData_k2, aes(cancer,C6orf145)) + geom_boxplot()+coord_flip()
+
+model2 = aov(C6orf145~cancer, data=cancerData_k2)
+kruskal.test(C6orf145~cancer, data = cancerData_k2)
+
+g<-diagPlot(model2)
+do.call(grid.arrange, c(g, list(ncol=3)))
+```
+
+Charts "Residuals vs Fitted" and "Normal Q-Q" are very similar to pervious gene. What is interesting, based on the chart "Scale Location" we find that the variance of the residuals of the model is  NOT homogeneous. It is cause of negative result of finger test. In this case, we also have not abnormal observation.
+
+
+```{r, warning=FALSE, message=FALSE}
+aov.out.wc <- aov(C6orf145 ~ wiek, data=cancerData_k2)
+options(show.signif.stars=T)
+summary(aov.out.wc)
+kruskal.test(C6orf145 ~ wiek, data=cancerData_k2)
+```
+
+Expresion of C6orf145 is connected also witch age, but not gender.
+
+```{r, warning=FALSE, message=FALSE}
+qplot(cancer, C6orf145, fill=factor(plec), data=cancerData_k2, geom="boxplot", position="dodge")+theme_bw()+coord_flip()
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+aov.out.wac = aov(C6orf145 ~ wiek * cancer*plec, data=cancerData_k2)
+options(show.signif.stars=T)
+summary(aov.out.wac)
+```
+
+## 5. Other  genes - HSPE1; CPNE5;
+
+HSPE1 and CPNE5 also give good result, if we look on normality distribution in each kind of cancer.
+
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(cancerData_k2, aes(cancer,HSPE1)) + geom_boxplot()+coord_flip()
+model3 = aov(HSPE1~cancer, data=cancerData_k2)
+g<-diagPlot(model3)
+do.call(grid.arrange, c(g, list(ncol=3)))
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+aov.outh = aov(HSPE1 ~ cancer * plec, data=cancerData_k2)
+summary(aov.outh)
+options(show.signif.stars=F)
+summary(aov.outh)
+```
+
+
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(cancerData_k2, aes(cancer,CPNE5)) + geom_boxplot()+coord_flip()
+model3 = aov(HSPE1~cancer, data=cancerData_k2)
+g<-diagPlot(model3)
+do.call(grid.arrange, c(g, list(ncol=3)))
+#as.data.frame(p.values.interactions.rda)
+```
+
+
+## 6. Genes in view of interaction gender*cances - SART1; TMED4
+
+We prepared also data frame with pvalue from dwo-way ANOVA models for interaction gender*cances.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(cancerData_k2, aes(cancer,SART1)) + geom_boxplot()+coord_flip()
+qplot(cancer, SART1, fill=factor(plec), data=cancerData_k2, geom="boxplot", position="dodge")+theme_bw()+coord_flip()
+
+model3 = aov(SART1~cancer, data=cancerData_k2)
+g<-diagPlot(model3)
+do.call(grid.arrange, c(g, list(ncol=3)))
+#as.data.frame(p.values.interactions.rda)
+```
+
+
+```{r, warning=FALSE, message=FALSE}
+qplot(cancer, TMED4, fill=factor(plec), data=cancerData_k2, geom="boxplot", position="dodge")+theme_bw()+coord_flip()
+```
+
+
+## 7. To sum up
+
+PSTK show that:
+-TCGA Rectal are similar to Gliobastoma Cancer
+-One group created ovarian, Head and Neck, Colon and Acute Myeloid Leukemia Cancer
+
+C6orf145:
+-find different between TCGA Rectal and Gliobastoma Cancer
+-extract Colon and Acute Myeloid Leukemia from previous group
+-show different expresion of genes in ages' group
+
+HSPE1:
+-find different between Ovarian and Head and Neck Cancer
+
+CPNE5:
+-extract Gliobastoma Cancer
+
+SART1:
+-have similar expresion for each age
+
+
+
+
+
+
+
+
+
