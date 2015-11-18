@@ -1,0 +1,323 @@
+---
+title: "Homework 7"
+author: "Katarzyna Kanska"
+date: "19.11.2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Goals
+
+Consider three approaches to variable selection:
+
+* choose model with best BIC,
+* choose model with best AIC,
+* choose model with significant variables (i.e. marginal F test).
+
+Generate three scenarios in such a way that in the first scenario the BIC will choose the right model in most cases, in the second scenario the AIC will be the best one and in the third scenario the selection with significant variables will find the right model most often.
+
+In all scenarios the number of variables should be equal 10. The number of observations is up to you. The noise should be generated from `N(0,1)` distribution. For each variable you should decide if the variable effect is equal to 0 (if variable is not related with outcome) of is different than 0 (variable is important).
+
+In your homework present results from 100 (or more) replications. For each criteria calculate the fraction of times that the criteria choose the right model.
+
+## Solution
+
+### Preparing first dataset
+
+Firstly, we write a function which simulate a fake dataset, consisting mainly of categorical variables.
+
+```{r, warning=FALSE, message=FALSE}
+
+GenData <- function(N, myCoeff){
+  '
+    N is a sample size
+
+    This function generates the dataset with
+    * 1 "dependent variable"
+    * 5 explanatory variables (with linear relation with "dependent variable")
+    * 5 other variables, independent with "dependent variable"
+
+    To make this less abstract, we will try to simulate the dataset about cunsumer finances.
+    The variable to be explained will be the total debt of respondent.
+    Choice of significant and insignificant variables is based on analysis of data
+    gathered in The Survey of Consumer Finances (SCF) 2007 available at
+    http://www.federalreserve.gov/econresdata/scf/scfindex.htm
+    
+    Significant variables (characteristics of respondent):
+    * total net income from last year
+    * age
+    * education (1 - have at least Bachelors Degree, 0 - otherwise)
+    * marital status (1 - married, 0 - not married)
+    * currently employed (1 - employed, 0 - unemployed)
+
+    Insignificant variables (characteristics of respondent):
+    * gender
+    * expecting huge expense
+    * eye color ("brown", "other")
+    * height
+    * catlover (1 - is a catlover, 0 - otherwise)
+    (Last three variables are not based on SCF 2007.
+    Turns out that it is not that easy to find 5 insignificant variables.)
+
+    Random noise is normally distributed with mean=0, sd=1.
+  '
+
+  income <- log(rexp(N, 1/(12*3.5)))
+  age <- runif(N, min = 25, max = 55)
+  education <- sample(c(0,1), size=N, replace=TRUE, prob=c())
+  married <- sample(c(0,1), size=N, replace=TRUE, prob=c(1/3, 2/3))
+  employed <- sample(c(0,1), size=N, replace=TRUE, prob=c(0.25, 0.75))
+
+  gender <- sample(c("male","female"), size=N, replace=TRUE)
+  expect.expense <- sample(c(0,1), size=N, replace=TRUE)
+  eyecolor <- sample(c("brown", "other"), size=N, replace=TRUE, prob=c(0.6, 0.4))
+  height <- rnorm(N, mean = 170, sd = 3)
+  catlover <- sample(c(0,1), size=N, replace=TRUE, prob=c(0.6, 0.4))
+  
+  debt <- myCoeff[1]*income +
+          myCoeff[2]*age +
+          myCoeff[3]*education +
+          myCoeff[4]*married +
+          myCoeff[5]*employed +
+          rnorm(N)
+  
+  df <- data.frame(debt,
+                   age,
+                   catlover=factor(catlover),
+                   education=factor(education),
+                   employed=factor(employed),
+                   expect.expense=factor(expect.expense),
+                   eyecolor=factor(eyecolor),
+                   gender=factor(gender),
+                   height,
+                   income,
+                   married=factor(married))
+  
+  return(df)
+}
+
+```
+
+We set sample size `N` = 400.
+
+To find the model with the best AIC or BIC we need to do exhaustive search, that is consider $2^{10} - 1 = 1023$ models.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+# sample size
+N <- 400
+
+# number of replications
+M <- 100
+
+# framework needed for exhaustive search
+library(e1071)
+comb <- bincombinations(10)[-1,]
+
+# every row of comb denotes a separate model
+# the true model is "1011000011"
+codes <- apply(comb, 1, function(x) paste0(x, collapse=""))
+whichTRUE <- which(codes == "1011000011")
+
+findGIC <- function(x,df,Y){
+  # function finds AIC and BIC for given formula (coded by x) and data frame df
+  form <- paste0(Y,"~",
+                 paste0(colnames(df[,-1])[x==1], collapse="+"))
+  model <- lm(as.formula(form), data=df)
+  return(c(AIC(model), BIC(model)))
+}
+
+results <- replicate(M, {
+  # generate data
+  df <- GenData(N, c(0.3, 0.04, 0.7, 0.5, 2))
+
+  crit <- t(apply(comb, 1, function(x) findGIC(x, df, "debt")))
+  colnames(crit) <- c("AIC", "BIC")
+  crit <- data.frame(crit)
+  
+  # get p-value for each variable
+  # see which ones are smaller that 0.05 (choice of important variables)
+  # generate a code of this selestion
+  code <- paste0(as.numeric(summary(lm(debt~. , data=df))[[4]][2:11,4] < 0.05), collapse="")
+  # see which model this code indicates
+  whichFtest <- which(codes == code)
+  
+  as.numeric(c(which.min(crit$AIC), which.min(crit$BIC), whichFtest) == whichTRUE)
+})
+
+results <- t(results)
+conclusion <- data.frame(t(apply(results,2,mean)))
+colnames(conclusion) <- c("AIC", "BIC", "marginal F-test")
+rownames(conclusion) <- c("")
+conclusion
+
+```
+
+So this is a scenario in which BIC criterion performs best. (For this particular type of dataset this holds for other vectors of coefficients, which is not shown here.)
+
+### Preparing second dataset
+
+In this section we look for datasets for which AIC of marginal F tests will choose the right model more often than BIC.
+
+```{r, warning=FALSE, message=FALSE}
+
+GenData2 <- function(N, myCoeff, distribution){
+  '
+    N is a sample size.
+
+    This function generates the dataset with
+    * 1 "dependent variable",
+    * 5 explanatory variables (with linear relation with "dependent variable"),
+    * 5 other variables, independent with "dependent variable".
+
+    Random noise is normally distributed with mean=0, sd=1.
+  '
+  
+  # independent variables
+  X <- matrix(switch(distribution,
+                      normal=rnorm(N*10),
+                      uniform=runif(N*10, min = -3, max = 3)
+                      ),
+              N,
+              10)
+  
+  colnames(X) <- paste0("var", 1:10)
+  
+  # outcome variable
+  Y <- X[,1:5] %*% t(t(myCoeff)) + rnorm(N)
+  
+  df <- data.frame(Y,X)
+  
+  return(df)
+}
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+whichTRUE2 <- which(codes == "1111100000")
+
+results2 <- replicate(M, {
+  # generate data
+  df <- GenData2(N, c(0.1, 0.1, 2, 2, 2), "normal")
+
+  crit <- t(apply(comb, 1, function(x) findGIC(x, df, "Y")))
+  colnames(crit) <- c("AIC", "BIC")
+  crit <- data.frame(crit)
+  
+  # get p-value for each variable
+  # see which ones are smaller that 0.05 (choice of important variables)
+  # generate a code of this selestion
+  code <- paste0(as.numeric(summary(lm(Y~. , data=df))[[4]][2:11,4] < 0.05), collapse="")
+  # see which model this code indicates
+  whichFtest <- which(codes == code)
+  
+  as.numeric(c(which.min(crit$AIC), which.min(crit$BIC), whichFtest) == whichTRUE2)
+})
+
+results2 <- t(results2)
+conclusion2 <- data.frame(t(apply(results2,2,mean)))
+colnames(conclusion2) <- c("AIC", "BIC", "marginal F-test")
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+results3 <- replicate(M, {
+  # generate data
+  df <- GenData2(N, c(0.01, 3, 2, 2, 2), "normal")
+
+  crit <- t(apply(comb, 1, function(x) findGIC(x, df, "Y")))
+  colnames(crit) <- c("AIC", "BIC")
+  crit <- data.frame(crit)
+  
+  # get p-value for each variable
+  # see which ones are smaller that 0.05 (choice of important variables)
+  # generate a code of this selestion
+  code <- paste0(as.numeric(summary(lm(Y~. , data=df))[[4]][2:11,4] < 0.05), collapse="")
+  # see which model this code indicates
+  whichFtest <- which(codes == code)
+  
+  as.numeric(c(which.min(crit$AIC), which.min(crit$BIC), whichFtest) == whichTRUE2)
+})
+
+results3 <- t(results3)
+conclusion3 <- data.frame(t(apply(results3,2,mean)))
+colnames(conclusion3) <- c("AIC", "BIC", "marginal F-test")
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+results4 <- replicate(M, {
+  # generate data
+  df <- GenData2(N, c(0.1, 0.1, 2, 2, 2), "uniform")
+
+  crit <- t(apply(comb, 1, function(x) findGIC(x, df, "Y")))
+  colnames(crit) <- c("AIC", "BIC")
+  crit <- data.frame(crit)
+  
+  # get p-value for each variable
+  # see which ones are smaller that 0.05 (choice of important variables)
+  # generate a code of this selestion
+  code <- paste0(as.numeric(summary(lm(Y~. , data=df))[[4]][2:11,4] < 0.05), collapse="")
+  # see which model this code indicates
+  whichFtest <- which(codes == code)
+  
+  as.numeric(c(which.min(crit$AIC), which.min(crit$BIC), whichFtest) == whichTRUE2)
+})
+
+results4 <- t(results4)
+conclusion4 <- data.frame(t(apply(results4,2,mean)))
+colnames(conclusion4) <- c("AIC", "BIC", "marginal F-test")
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+results5 <- replicate(M, {
+  # generate data
+  df <- GenData2(N, c(0.01, 3, 2, 2, 2), "uniform")
+
+  crit <- t(apply(comb, 1, function(x) findGIC(x, df, "Y")))
+  colnames(crit) <- c("AIC", "BIC")
+  crit <- data.frame(crit)
+  
+  # get p-value for each variable
+  # see which ones are smaller that 0.05 (choice of important variables)
+  # generate a code of this selestion
+  code <- paste0(as.numeric(summary(lm(Y~. , data=df))[[4]][2:11,4] < 0.05), collapse="")
+  # see which model this code indicates
+  whichFtest <- which(codes == code)
+  
+  as.numeric(c(which.min(crit$AIC), which.min(crit$BIC), whichFtest) == whichTRUE2)
+})
+
+results5 <- t(results5)
+conclusion5 <- data.frame(t(apply(results5,2,mean)))
+colnames(conclusion5) <- c("AIC", "BIC", "marginal F-test")
+
+conc <- rbind(conclusion, conclusion2, conclusion3, conclusion4, conclusion5)
+rownames(conc) <- c("heterogenous data",
+                    "normally distr. (2var. with small coef)",
+                    "normally distr. (1var. with small coef)",
+                    "uniformly distr. (2var. with small coef)",
+                    "uniformly distr. (1var. with small coef)")
+conc
+
+```
+
+Scenario with independent variables normally distributed and one or two variables with small coefficients made AIC criterion outperform BIC and marginal F tests (however all of these criteria performed poorly).
+Scenario with independent variables uniformly distributed and two variables with small coefficients made BIC criterion and marginal F tests equally good.
+
+## Conclusions
+
+* It seems that models with all true coefficients significantly different from zero in most cases are chosen correctly by BIC criterion.
+* In situations when one or more parameters in the true model are small, but not equal to zero, AIC criterion performs better than the other two criteria, as it favours bigger models.
+* It stays unclear to me when marginal F tests are the most effective criteria. I only managed to find a dataset for which marginal F test were as good as BIC criterion. That was a scenario with uniformly distributed variables, that is with almost equally representated observations for each value of dependent variable.
