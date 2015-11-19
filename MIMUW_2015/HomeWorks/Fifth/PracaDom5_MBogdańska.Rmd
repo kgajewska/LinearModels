@@ -1,0 +1,68 @@
+---
+title: "PracaDom5_MBogdańska"
+author: "Magdalena Bogdańska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+Task:
+
+You have data for n patients. For each patient you have his/her blood pressure, gender and type of diabetes (here, let's assume that there are three types of diabetes: pre, 1 and 2). Let assume that male have blood pressure higher than female (on average) and the difference is delta1 = 1. Then let's assume that nested effect of diabetes is delta2= (0, 0, 0.5) for male and delta3=(0, 0, 1) for female.
+
+Our goal is to find sample size, for which the test for nested effect (only effect of diabetes) has power 0.8.
+
+## Part 1
+Create a simulation study in which for a given n - sample size you will calculate power for hypothesis H0: delta2=0 and delta3=0.
+
+-------------------------------------------------------------------------------------------
+```{r, warning=FALSE, message=FALSE}
+mean_pressure<-120
+
+delta1<-1 #difference between blood pressure in men and women
+delta2<-0.5 #nested effect for men with diabetes 2
+delta3<-1 #nested effect for woman with diabetes 2
+
+# function which extracts p-values 
+pvals <- function(n){
+    sex<-rep(c("m","w"), length.out=n)
+    diabetes <- rep(c("pre", "1", "2"), length.out=n)
+    data <- merge(sex, diabetes)
+    names(data)<-c("sex","diabetes")
+    
+    data$b_pressure<-rnorm(n,mean_pressure,1) + ifelse(data$sex=="m"& data$diabetes=="2",delta1+delta2,delta1)
+    +ifelse(data$sex=="w"& data$diabetes=="2",delta3,0)
+        summary(aov(b_pressure~sex/diabetes, data))[[1]][1,5]
+}
+
+# function calculating power of the test for selected numer of replications (H)
+power <- function (n, alpha) {
+  p_vals <- replicate(H, pvals(n))
+  mean(p_vals < alpha)
+}
+
+```
+
+## Part 2
+Choose the smallest n for which power is not smaller than 0.8. I.e. what is the minimal number of patients that allows to detect effect of the size (0,0,0.5,0,0,1) with probability larger than 80%.
+```{r, warning=FALSE, message=FALSE}
+set.seed(77)
+
+H<-1000
+alpha<-0.05 #significance level
+
+n_patients <- seq(5, 50, 1)
+power1 <- sapply(n_patients, function (x) power(x, alpha))
+n_patients[min(which(power1>0.8))]
+```
+
+Using standard significance level (0.05), the power of test constructed is returned by command "n_patients[min(which(power1>0.8))]" and in this simulation setting equals 39.
+
+Using the same signifiane level 
+```{r, warning=FALSE, message=FALSE}
+n = seq(5,120, by=1)
+y = sapply(n, function (x) power(x, alpha))
+plot(n, y, main = "Relation between power of test and sample size", type = "l")
+abline(h=0.8)
+```
