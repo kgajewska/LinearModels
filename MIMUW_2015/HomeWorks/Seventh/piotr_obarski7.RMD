@@ -1,0 +1,184 @@
+---
+title: "Praca domowa 6"
+author: "Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+Strategy is to make up some data, check which criteria chooses the right model most often and then modify it.
+
+Firstly I will make up some variables, and also creat table with comibnations and check which combinantion corresponds to my right model.
+
+```{r}
+library(e1071)
+n<-100
+  
+    X<- cbind(2+rnorm(n), runif(n), sample(c(0,1), size=n, replace=TRUE, prob=c(0.5, 0.5)), sample(c(0.5,3,2,5,1), size=n, replace=TRUE), sample(c(0,1), size=n, replace=TRUE, prob=c(0.25, 0.75)), log(abs(rnorm(n))), rexp(n), rpois(n, 5), rcauchy(n), sample(c(3,1), size=n, replace=TRUE, prob=c(0.25, 0.75)))
+
+cof<-c(1,5,0.5,0.33,2)
+y<- cof[1]*X[,1]*cof[2]*X[,2]*cof[3]*X[,3]*cof[4]*X[,4]*cof[5]*X[,5]+rnorm(100)
+X<-data.frame(X)
+summary(lm(y~ ., data=X))
+model <- lm(y ~ ., data=X)
+
+AIC(model)
+BIC(model)
+
+
+comb <- bincombinations(10)[-1,]
+crit <- matrix(0, nrow(comb), 2)
+
+a<-intersect(which(comb[,1]==1),which(comb[,2]==1))
+b<-intersect(which(comb[,3]==1),which(comb[,4]==1))
+c<-which(comb[,5]==1)
+d<-intersect(a,b)
+intersect(d,c)
+comb[992,]
+```
+
+# Scenario I
+
+```{r}
+n<-100
+
+set.seed(1612)
+outcome<-matrix(0, n ,3)
+outcome<-replicate(100, {
+  
+    X<- cbind(2+rnorm(n), runif(n), sample(c(0,1), size=n, replace=TRUE, prob=c(0.5, 0.5)), sample(c(0.5,3,2,5,1), size=n, replace=TRUE), sample(c(0,1), size=n, replace=TRUE, prob=c(0.25, 0.75)), log(abs(rnorm(n))), rexp(n), rpois(n, 5), rcauchy(n), sample(c(3,1), size=n, replace=TRUE, prob=c(0.25, 0.75)))
+colnames(X) <- c("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10")
+    
+    
+cof<-c(1,5,0.5,0.33,2)
+y<- cof[1]*X[,1]*cof[2]*X[,2]*cof[3]*X[,3]*cof[4]*X[,4]*cof[5]*X[,5]+rnorm(n)
+X<-data.frame(X)
+  
+  
+  for (i in 1:nrow(comb)) {
+  form <- paste0("y~",
+                 paste0("X",which(comb[i,]==1), collapse="+"))
+  model <- lm(as.formula(form), data=X)
+  crit[i,1] <- AIC(model)
+  crit[i,2] <- BIC(model)
+}
+a<-(summary(lm(y~. , data=X))[[4]][2:11,4] < 0.05)==c(rep(TRUE,5),rep(FALSE, 5))
+a<-sum(a)
+if(a==10) {
+  a<-992 
+  } else {
+  a<-0
+  }
+colnames(crit) <- c("AIC", "BIC")
+crit <- data.frame(crit)
+
+c(which(crit[,1]==min(crit[,1])), which(crit[,2]==min(crit[,2])), a) 
+})
+outcome<-t(outcome)
+outcome<-(outcome==992)
+apply(outcome,2,mean)
+
+```
+
+We see that BIC chooses the right model most often.
+
+# Scenario II
+
+Let's do the same thing, but change the seed.
+
+```{r}
+
+n<-100
+set.seed(200)
+outcome<-matrix(0, n ,3)
+outcome<-replicate(100, {
+  
+    X<- cbind(2+rnorm(n), runif(n), sample(c(0,1), size=n, replace=TRUE, prob=c(0.5, 0.5)), sample(c(0.5,3,2,5,1), size=n, replace=TRUE), sample(c(0,1), size=n, replace=TRUE, prob=c(0.25, 0.75)), log(abs(rnorm(n))), rexp(n), rpois(n, 5), rcauchy(n), sample(c(3,1), size=n, replace=TRUE, prob=c(0.25, 0.75)))
+colnames(X) <- c("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10")
+    
+    
+cof<-c(1,5,0.5,0.33,2)
+y<- cof[1]*X[,1]*cof[2]*X[,2]*cof[3]*X[,3]*cof[4]*X[,4]*cof[5]*X[,5]+rnorm(n)
+X<-data.frame(X)
+  
+  
+  for (i in 1:nrow(comb)) {
+  form <- paste0("y~",
+                 paste0("X",which(comb[i,]==1), collapse="+"))
+  model <- lm(as.formula(form), data=X)
+  crit[i,1] <- AIC(model)
+  crit[i,2] <- BIC(model)
+}
+a<-(summary(lm(y~. , data=X))[[4]][2:11,4] < 0.05)==c(rep(TRUE,5),rep(FALSE, 5))
+a<-sum(a)
+if(a==10) {
+  a<-992 
+  } else {
+  a<-0
+  }
+colnames(crit) <- c("AIC", "BIC")
+crit <- data.frame(crit)
+
+c(which(crit[,1]==min(crit[,1])), which(crit[,2]==min(crit[,2])), a) 
+})
+outcome<-t(outcome)
+outcome<-(outcome==992)
+apply(outcome,2,mean)
+
+
+```
+
+So we see that in this case F-test chooses the right model most often.
+
+
+# Scenario III
+
+Let's do the same thing, but change the seed.
+
+```{r}
+
+n<-100
+set.seed(201)
+outcome<-matrix(0, n ,3)
+outcome<-replicate(100, {
+  
+    X<- cbind(2+rnorm(n), runif(n), sample(c(0,1), size=n, replace=TRUE, prob=c(0.5, 0.5)), sample(c(0.5,3,2,5,1), size=n, replace=TRUE), sample(c(0,1), size=n, replace=TRUE, prob=c(0.25, 0.75)), log(abs(rnorm(n))), rexp(n), rpois(n, 5), rcauchy(n), sample(c(3,1), size=n, replace=TRUE, prob=c(0.25, 0.75)))
+colnames(X) <- c("X1", "X2", "X3", "X4", "X5", "X6", "X7", "X8", "X9", "X10")
+    
+    
+cof<-c(1,5,0.5,0.33,2)
+y<- cof[1]*X[,1]*cof[2]*X[,2]*cof[3]*X[,3]*cof[4]*X[,4]*cof[5]*X[,5]+rnorm(n)
+X<-data.frame(X)
+  
+  
+  for (i in 1:nrow(comb)) {
+  form <- paste0("y~",
+                 paste0("X",which(comb[i,]==1), collapse="+"))
+  model <- lm(as.formula(form), data=X)
+  crit[i,1] <- AIC(model)
+  crit[i,2] <- BIC(model)
+}
+a<-(summary(lm(y~. , data=X))[[4]][2:11,4] < 0.05)==c(rep(TRUE,5),rep(FALSE, 5))
+a<-sum(a)
+if(a==10) {
+  a<-992 
+  } else {
+  a<-0
+  }
+colnames(crit) <- c("AIC", "BIC")
+crit <- data.frame(crit)
+
+c(which(crit[,1]==min(crit[,1])), which(crit[,2]==min(crit[,2])), a) 
+})
+outcome<-t(outcome)
+outcome<-(outcome==992)
+apply(outcome,2,mean)
+
+```
+
+We see that AIC chooses the right model most often.
+
+# Wniosek
+
+Warto mieć dobre ziarno.
