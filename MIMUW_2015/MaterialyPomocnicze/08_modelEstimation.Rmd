@@ -130,11 +130,11 @@ There is a dual representation of this problem that imposes constraints over est
 In order to illustrate this we will start with model with four unstable estimates.
 
 ```{r}
-x <- rnorm(100)
-x1 <- x + rnorm(100)/10^3
-x2 <- x + rnorm(100)/10^3
-x3 <- x + rnorm(100)/10^3
-y <- x + x1 + x2 + x3  + rnorm(100)
+x <- rnorm(1000)
+x1 <- x + rnorm(1000)/10^3
+x2 <- x + rnorm(1000)/10^3
+x3 <- x + rnorm(1000)/10^3
+y <- x + x1 + x2 + x3  + rnorm(1000)
 df <- data.frame(x,y,x1, x2, x3)
 
 lm(y~., data=df)

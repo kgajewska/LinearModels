@@ -1,0 +1,50 @@
+Overall experience
+
+What I like most: you are trying to do more deep analysis of selected genes. This is a good direction, go deeper, find some gold.
+
+What I do not like: It is not really a report, just a combination of output from R and some loose thoughts/comments.
+I do not see any conclusions. The section 'to sum up' is hard to understand. 
+
+Maybe you have did a lot of analyses but it looks like you have not bother to read results and comment them properly.
+
+
+1. Is there a (small) list of genes?
+
+There is small list of 6 genes. 
+Selected genes are interesting due to some selected criteria. 
+However: it is unlikely that 6 genes can explain differences between 12 cancers. Maybe it is true but I do not see any proof.
+
+After reading all 35 pages I do not know which genes are different between which cancers.
+
+Your comment 'CPNE5: -extract Gliobastoma Cancer', how to read it?
+Extract from what?
+
+
+2. Is there progress between phase 1 and phase 2?
+
+The very positive thing in this report is the detailed and graphical diagnostic for selected genes.
+
+But also this point may be significantly improved. Right now, attached plots for confidence intervals across all pairs is non informative.
+They are messy, there is a lot of them, there is no short informative summary.
+
+It looks like you have done it but then do not know what to do with results, therefore leave raw outputs without any comments.
+
+It is a very bad solution. If you do not know how to interpret results, do not include them in the report.
+If results cannot be read (due to resolution or orientation of text) then do not include them in the report.
+
+
+3. Does it fit the 10 pages limit?
+
+I've tried to print this html page in chrome and it showed 25 pages.
+
+
+
+Others
+
+Again, there is no table of contents. I do not see clear structure (it looks more as a history of R commands than real report) there is no real overview/summary of the report.
+
+
+Points
+5/6 + 4/6 + 2/6 + 2 = 13
+
+
