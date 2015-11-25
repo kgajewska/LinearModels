@@ -1,0 +1,148 @@
+---
+title: "Homework 7"
+author: "Ma³gorzata Pujszo"
+date: "Monday, November 16, 2015"
+output: html_document
+---
+
+###1. Scenario with AIC working the best
+
+In first scenario, we would like AIC to choose the right model in majority of cases. I created dataset and dependent variable in the following way:
+
+```{r}
+data.sim <- function (n, p) {
+  beta <- c(1, 1, 1, 1, 1, 0.5, 0.2, 0.2, 0.1, 0.1)
+  X <- matrix(rnorm(n*p),n,p)
+  colnames(X) <- paste0("x", 1:p)
+  y <- X %*% t(t(beta)) + rnorm(n)
+  dataset <- data.frame(X, y)
+  list("dataset"=dataset, "beta"=beta)
+}
+```
+
+Let's see how our criteria works. I created a function which search all possible models and returns a vector of length 2. First coordinate is equal to 1 if AIC chooses the true model, 0 if not. Second coordinate works the same but for BIC. 
+
+```{r, message=FALSE, error=FALSE}
+library(e1071)
+aic.bic <- function (n, p) {
+  results <- vector(length=2)
+  comb <- bincombinations(p)[-1,]
+  crit <- matrix(0, nrow(comb), 2)
+  dataset <- as.data.frame(data.sim(n, p)$dataset)
+  for (i in 1:nrow(comb)) {
+    form <- paste0("y~",
+                   paste0("x",which(comb[i,]==1), collapse="+"))
+    model <- lm(as.formula(form), data=dataset)
+    crit[i,1] <- AIC(model)
+    crit[i,2] <- BIC(model)
+  }
+  colnames(crit) <- c("AIC", "BIC")
+  crit <- data.frame(crit)
+  beta2 <- ifelse(data.sim(n, p)$beta==0, 0, 1)
+  if (mean(comb[which.min(crit$AIC),]==beta2)==1) {
+    results[1] <- 1
+  } else { 
+    results[1] <- 0
+  }
+  if (mean(comb[which.min(crit$BIC),]==beta2)==1) {
+    results[2] <- 1
+  } else { 
+    results[2] <- 0
+  }
+  results
+}
+```
+
+f.test function performs F-tests and returns 1 if correct variables are chosen as significant (on the level of 0.05), 0 - otherwise.
+
+```{r}
+f.test <- function (n, p) {
+  dataset <- as.data.frame(data.sim(n, p)$dataset)
+  model <- lm(y~., data=dataset)
+  sign <- ifelse(anova(model)[,5]<=0.05, 1, 0)[1:10]
+  beta2 <- ifelse(data.sim(n, p)$beta==0, 0, 1)
+  if (mean(sign==beta2)==1) {
+    return (1)
+  } else { 
+    return(0)
+  }
+}
+```
+
+Now, I replicated simulation m times for number of observation equal to n and number of variables equal to p.
+
+```{r}
+n <- 400
+p <- 10
+m <- 100
+criter <- as.matrix(replicate(m, aic.bic(n,p)), nrow=2, ncol=m)
+(frac.aic <- mean(criter[1,]))
+(frac.bic <- mean(criter[2,]))
+(frac.marg <- mean(replicate(m, f.test(n, p))))
+```
+
+frac.aic returns fraction of times that AIC chooses the true model, frac.bic - fraction of times that BIC chooses the true model and frac.marg - fraction of times that F-test chooses the right model. 
+In about half cases AIC chooses the right model whereas the results of remaining criteria are much worse.
+
+###2. Scenario with BIC working the best
+
+For this scenario dataset is the following:
+
+```{r}
+data.sim <- function (n, p) {
+  beta <- c(1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+  X <- matrix(rnorm(n*p),n,p)
+  colnames(X) <- paste0("x", 1:p)
+  y <- X %*% t(t(beta)) + rnorm(n)
+  dataset <- data.frame(X, y)
+  list("dataset"=dataset, "beta"=beta)
+}
+```
+
+I used the same functions as before to obtain the results in this case. I changed n to 100.
+
+```{r}
+n <- 100
+p <- 10
+m <- 100
+criter <- as.matrix(replicate(m, aic.bic(n,p)), nrow=2, ncol=m)
+(frac.aic <- mean(criter[1,]))
+(frac.bic <- mean(criter[2,]))
+(frac.marg <- mean(replicate(m, f.test(n, p))))
+```
+
+As we can see in this scenario BIC chooses the true model most often.
+
+###3. Scenario with F-test working the best
+
+The last dataset look like that:
+
+```{r}
+data.sim <- function (n, p) {
+  beta <- c(1, 1, 1, 1, 1, 1, 0.1, 0, 0, 0)
+  X <- matrix(rnorm(n*p),n,p)
+  colnames(X) <- paste0("x", 1:p)
+  y <- X %*% t(t(beta)) + rnorm(n)
+  dataset <- data.frame(X, y)
+  list("dataset"=dataset, "beta"=beta)
+}
+```
+
+Similarly, I calculated the fraction of times that the criterion correctly chooses the model for each three criteria.
+
+```{r}
+n <- 1000
+p <- 10
+m <- 100
+criter <- as.matrix(replicate(m, aic.bic(n,p)), nrow=2, ncol=m)
+(frac.aic <- mean(criter[1,]))
+(frac.bic <- mean(criter[2,]))
+(frac.marg <- mean(replicate(m, f.test(n, p))))
+```
+
+I managed to find such dataset that F-test works slightly better than the other criteria.
+
+###4. Conclusions
+
+When number of significant variables is small or the coefficients are far from 0, BIC criterion gives good results.
+When there are many independend variables in the model, AIC criterion works best.

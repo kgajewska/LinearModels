@@ -1,0 +1,30 @@
+Overall experience
+
+I like the structure of the report.
+The abstract is informative; you have presented the list of genes.
+
+Two things that you should improve: 
+There is no need to present all R commands and output from R code. R code is in Rmd file, no need to waste space for it in the report.
+There is just one plot but I can barely read anything out of it. Present 4 panels instead of 6 and it will be easier to read anything. Also I think that the last interaction plots/boxplots might be interesting. Why you have commented them out?
+
+1. Is there a (small) list of genes?
+
+There is clearly stated list of 32 genes.
+In phase 3 try to show how these genes behave for different cancers.
+
+
+2. Is there progress between phase 1 and phase 2?
+
+The structure is a lot better.
+I have cut a single point because you may include more graphical summaries.
+
+3. Does it fit the 10 pages limit?
+
+Yes.
+
+
+Points
+6/6 + 5/6 + 6/6 + 2 = 19
+
+
+

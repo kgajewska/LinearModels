@@ -1,0 +1,53 @@
+---
+title: "Homework 8"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+```{r, warning = FALSE, message = FALSE}
+library(PBImisc)
+library(ggplot2)
+attach(Drosophila)
+library(reshape)
+library(lasso2)
+library(glmnet)
+```
+
+#MLE estimator
+```{r, message = FALSE, warning = FALSE}
+standardModel <- lm(pc1 ~ ., data = bs[, 1:42])
+summary(standardModel)
+```
+
+Results of this regression show that some 10 - 20 (depending on a significance level we choose) have a noticeable impact on the dependent variable.
+
+#Ridge regression
+
+I will use `glmnet` package created by Hastie and Tibshirani as both ridge regression and LASSO are special cases of the elastic net regularization.
+```{r, message = FALSE, warning = FALSE}
+modelRidge  <- glmnet(as.matrix(bs[, 1:41]), as.matrix(bs[, 42]), lambda = 2^((-20):10), alpha = 0)
+plot(modelRidge, "lambda", main = "Ridge regression")
+
+```
+
+It can be seen that coefficients shrink while we increase lambda. Eventually, all of them are close (but not equal) to zero. 
+
+
+#LASSO
+
+```{r, message = FALSE, warning = FALSE}
+
+modelLasso  <- glmnet(as.matrix(bs[, 1:41]), as.matrix(bs[, 42]), lambda = 2^((-20):-4))
+plot(modelLasso, "lambda", main = "LASSO")
+
+```
+
+Similalry, coefficients decrease with the penalty parameter increase in LASSO. In contrast to the previous regression, some of the coefficient were set to zero. 
+
+#Conclusions
+
+- both ridge regression and LASSO result in parameters shrinkage,
+- as Lasso uses $l_1$ penalty and ridge regression $l_2$ penalty, the former penalizes non-zero parameters more than the latter. Thus, using LASSO regularization we gain more paramaters set to zero than if we use ridge regression. Morover, parameters decrease is faster in LASSO than in ridge regression.
