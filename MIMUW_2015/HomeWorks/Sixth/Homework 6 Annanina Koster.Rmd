@@ -1,0 +1,215 @@
+---
+title: "Homework 6"
+author: "Annanina Koster"
+date: "8 november 2015"
+output: html_document
+---
+
+Home work for 12 XI 2015
+
+Read the chapter 2.5 from ,,Analiza danych z programem R, Modele liniowe mieszane'' or in English (http://www.statisticshell.com/docs/ancova.pdf + how to do this in R http://www.stat.columbia.edu/~martin/W2024/R8.pdf).
+
+Now consider scenario with ,,unequal slopes'' - an interaction between continuous and categorical variable. We are going to check when such interaction can be detected.
+
+Create following scenarios:
+
+Generate continuous variable X_1 from distribution U[0,1]. Generate categorical variable X_2 with 2 levels with equal frequency). Generate Y in a way that it depends on interaction of X_1 and X_2.
+
+Add random noise from N(0,1), all ANCOVA assumptions are met.
+Choose other distribution for epsilons, find a distribution with the same scale as N(0,1) for which you will get drop in power.
+Choose other distribution for epsilons in a way that the test for residual will not keep I type error rate.
+For all these scenarios, produce plot that will compare power as a function of sample size. Moreover on this plot is should be visible that power for scenario 2 is lower than for scenario 1. And that I type error rate is different for scenario 3 and scenario 1.
+
+- - -
+
+First, for the first case, the variables are created as said in the description of the task. An anova model is created, and the p-value for interaction of x_1 and x_2 are obtained as well as p-values for the normality of the error term. The function in which this happens depends on the sample size n.
+
+```{r}
+
+case1 <- function(n){ 
+ 
+  x_1 <- runif(n)
+  x_2 <- rep(0,n)
+  vector <- sample(1:n, n/2)
+  x_2[vector] <- 5
+  x_2[-vector] <- 10
+  y <- 0.5*x_1 + 0.7*x_2 + 0.3*x_1*x_2
+
+  y_1 <- y + rnorm(n)
+  
+  model1 <- lm(y_1~x_1*x_2)
+  anova1 <- anova(model1)
+  pvalue1 <- shapiro.test(rstandard(model1))$p.value
+  pvalues1 <- c(anova1[[3,5]], pvalue1)
+}
+
+```
+
+Then, a function is created which calculates the power of these tests for sample size n for the first case.
+
+```{r}
+
+m <- 100
+pvals1 <- 0
+
+power1 <- function(n){
+  pvals1 <- replicate(100, case1(n))
+  count.pvals1 <- 0
+    for(i in 1:100){
+      if(pvals1[1,i]<0.05){ #check for interaction effects between x_1 and x_2
+        count.pvals1 <- count.pvals1+1
+      }
+    }
+  count.pvals2 <- 0
+  for(i in 1:100){
+    if(pvals1[2,i]>0.05){ #check for normality of the error term
+      count.pvals2 <- count.pvals2+1
+    }
+  }
+  power.pvals1 <- count.pvals1/100
+  power.pvals2 <- count.pvals2/100
+  c(power.pvals1, power.pvals2)
+}
+
+```
+
+Then, the power for both tests are plotted for different sample sizes.
+
+```{r}
+
+z <- 500
+
+p.interact1 <- 0
+p.normal1 <- 0
+for(i in 100:z) {
+  a1 <- 0
+  a1 <- power1(i)
+  p.interact1[i] <- a1[1]
+  p.normal1[i] <- a1[2]
+}
+plot(p.interact1[100:z]~c(100:z))
+plot(p.normal1[100:z]~c(100:z))
+
+```
+
+Now, I will do the same, but change the random noise from a standard normal distribution to a standard Gaussian distribution.
+
+```{r}
+
+case2 <- function(n){ 
+ 
+  x_1 <- runif(n)
+  x_2 <- rep(0,n)
+  vector <- sample(1:n, n/2)
+  x_2[vector] <- 5
+  x_2[-vector] <- 10
+  y <- 0.5*x_1 + 0.7*x_2 + 0.3*x_1*x_2
+
+  y_2 <- y + rcauchy(n,0,1)
+  
+  model2 <- lm(y_2~x_1*x_2)
+  anova2 <- anova(model2)
+  pvalue2 <- shapiro.test(rstandard(model2))$p.value
+  pvalues2 <- c(anova2[[3,5]], pvalue2)
+}
+
+
+m <- 100
+pvals2 <- 0
+
+power2 <- function(n){
+  pvals2 <- replicate(100, case2(n))
+  count.pvals1.2 <- 0
+    for(i in 1:100){
+      if(pvals2[1,i]<0.05){ #check for interaction effects between x_1 and x_2
+        count.pvals1.2 <- count.pvals1.2+1
+      }
+    }
+  count.pvals2.2 <- 0
+  for(i in 1:100){
+    if(pvals2[2,i]>0.05){ #check for normality of the error term
+      count.pvals2.2 <- count.pvals2.2+1
+    }
+  }
+  power.pvals1.2 <- count.pvals1.2/100
+  power.pvals2.2 <- count.pvals2.2/100
+  c(power.pvals1.2, power.pvals2.2)
+}
+
+z <- 500
+
+p.interact2 <- 0
+p.normal2 <- 0
+for(i in 100:z) {
+  a2 <- 0
+  a2 <- power2(i)
+  p.interact2[i] <- a2[1]
+  p.normal2[i] <- a2[2]
+}
+plot(p.interact2[100:z]~c(100:z))
+plot(p.normal2[100:z]~c(100:z))
+
+```
+
+Now, I will do the same, but change the random noise from a standard normal distribution to a normal distribution with 0 mean and 0.1 variance.
+
+```{r}
+
+case3 <- function(n){ 
+ 
+  x_1 <- runif(n)
+  x_2 <- rep(0,n)
+  vector <- sample(1:n, n/2)
+  x_2[vector] <- 5
+  x_2[-vector] <- 10
+  y <- 0.5*x_1 + 0.7*x_2 + 0.3*x_1*x_2
+
+  y_3 <- y + rnorm(n)*0.1
+  
+  model3 <- lm(y_3~x_1*x_2)
+  anova3 <- anova(model3)
+  pvalue3 <- shapiro.test(rstandard(model3))$p.value
+  pvalues3 <- c(anova3[[3,5]], pvalue3)
+}
+
+
+m <- 100
+pvals3 <- 0
+
+power3 <- function(n){
+  pvals3 <- replicate(100, case3(n))
+  count.pvals1.3 <- 0
+    for(i in 1:100){
+      if(pvals3[1,i]<0.05){ #check for interaction effects between x_1 and x_2
+        count.pvals1.3 <- count.pvals1.3+1
+      }
+    }
+  count.pvals2.3 <- 0
+  for(i in 1:100){
+    if(pvals3[2,i]>0.05){ #check for normality of the error term
+      count.pvals2.3 <- count.pvals2.3+1
+    }
+  }
+  power.pvals1.3 <- count.pvals1.3/100
+  power.pvals2.3 <- count.pvals2.3/100
+  c(power.pvals1.3, power.pvals2.3)
+}
+
+z <- 500
+
+p.interact3 <- 0
+p.normal3 <- 0
+for(i in 100:z) {
+  a3 <- 0
+  a3 <- power3(i)
+  p.interact3[i] <- a3[1]
+  p.normal3[i] <- a3[2]
+}
+plot(p.interact3[100:z]~c(100:z))
+plot(p.normal3[100:z]~c(100:z))
+
+```
+
+From these plots it can be seen that for case 2. power is lower than for case 1. Moreover, the type I error rate is different for case 3 and case 1.
+
+

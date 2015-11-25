@@ -1,0 +1,441 @@
+---
+title: "Homework 7"
+author: "Annanina Koster"
+date: "17 november 2015"
+output: html_document
+---
+
+Home work for 19 XI 2015
+Read the chapter 2.6.3 from ,,Analiza danych z programem R, Modele liniowe mieszane'' or in English (http://www.stat.umn.edu/geyer/5931/mle/sel.pdf).
+
+Consider three approaches to variable selection:
+
+choose model with best BIC,
+choose model with best AIC,
+choose model with significant variables (i.e. marginal F test).
+Generate three scenarios in such a way that in the first scenario the BIC will choose the right model in most cases, in the second scenario the AIC will be the best one and in the third scenario the selection with significant variables will find the right model most often.
+
+In all scenarios the number of variables should be equal 10. The number of observations is up to you. The noise should be generated from N(0,1) distribution. For each variable you should decide if the variable effect is equal to 0 (if variable is not related with outcome) of is different than 0 (variable is important).
+
+In your homework present results from 100 (or more) replications. For each criteria calculate the fraction of times that the criteria choose the right model.
+
+- - -
+
+For the first situation, I will choose quite a small number of observations (n), because the BIC model is then more likely to select the correct model (because the value will be small). 
+
+```{r}
+
+situation1 <- function(n, imp.par){
+
+par <- 10
+# coefficients
+beta <- c(rep(1,imp.par),rep(0,par-imp.par))
+
+# variables
+X <- matrix(rnorm(n*par),n,par)
+colnames(X) <- paste0("var", 1:par)
+
+# outcome variable
+y <- X %*% t(t(beta)) + rnorm(n)
+
+dat <- data.frame(y,X)
+
+# let's see the model
+model1.0 <- lm(y ~ 1, data=dat)
+model1.1 <- lm(y ~ var1, data=dat)
+model1.2 <- lm(y ~ var1 + var2, data=dat)
+model1.3 <- lm(y ~ var1 + var2 + var3, data=dat)
+model1.4 <- lm(y ~ var1 + var2 + var3 + var4, data=dat)
+model1.5 <- lm(y ~ var1 + var2 + var3 + var4 + var5, data=dat)
+model1.6 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6, data=dat)
+model1.7 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7, data=dat)
+model1.8 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8, data=dat)
+model1.9 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8 + var9, data=dat)
+model1.10 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8 + var9 + var10, data=dat)
+
+BIC1.0 <- BIC(model1.0)
+BIC1.1 <- BIC(model1.1)
+BIC1.2 <- BIC(model1.2)
+BIC1.3 <- BIC(model1.3)
+BIC1.4 <- BIC(model1.4)
+BIC1.5 <- BIC(model1.5)
+BIC1.6 <- BIC(model1.6)
+BIC1.7 <- BIC(model1.7)
+BIC1.8 <- BIC(model1.8)
+BIC1.9 <- BIC(model1.9)
+BIC1.10 <- BIC(model1.10)
+
+AIC1.0 <- AIC(model1.0)
+AIC1.1 <- AIC(model1.1)
+AIC1.2 <- AIC(model1.2)
+AIC1.3 <- AIC(model1.3)
+AIC1.4 <- AIC(model1.4)
+AIC1.5 <- AIC(model1.5)
+AIC1.6 <- AIC(model1.6)
+AIC1.7 <- AIC(model1.7)
+AIC1.8 <- AIC(model1.8)
+AIC1.9 <- AIC(model1.9)
+AIC1.10 <- AIC(model1.10)
+
+CP1.0 <- sum(model1.0$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.0$rank -
++ 100
+CP1.1 <- sum(model1.1$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.1$rank -
++ 100
+CP1.2 <- sum(model1.2$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.2$rank -
++ 100
+CP1.3 <- sum(model1.3$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.3$rank -
++ 100
+CP1.4 <- sum(model1.4$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.4$rank -
++ 100
+CP1.5 <- sum(model1.5$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.5$rank -
++ 100
+CP1.6 <- sum(model1.6$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.6$rank -
++ 100
+CP1.7 <- sum(model1.7$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.7$rank -
++ 100
+CP1.8 <- sum(model1.8$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.8$rank -
++ 100
+CP1.9 <- sum(model1.9$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.9$rank -
++ 100
+CP1.10 <- sum(model1.10$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.10$rank -
++ 100
+
+values1 <- c(BIC1.0, BIC1.1, BIC1.2, BIC1.3, BIC1.4, BIC1.5, BIC1.6, BIC1.7, BIC1.8, BIC1.9, BIC1.10, AIC1.0, AIC1.1, AIC1.2, AIC1.3, AIC1.4, AIC1.5, AIC1.6, AIC1.7, AIC1.8, AIC1.9, AIC1.10, CP1.0, CP1.1, CP1.2, CP1.3, CP1.4, CP1.5, CP1.6, CP1.7, CP1.8, CP1.9, CP1.10)
+
+return(values1)
+
+}
+
+set.seed(124)
+
+imp.par <- 5
+
+count1 <- replicate(100, situation1(100, imp.par))
+
+count1.bic <- matrix(0,11,100)
+count1.aic <- matrix(0,11,100)
+count1.cp <- matrix(0,11,100)
+for(i in 1:100){
+  for(j in 1:11){
+    count1.bic[j,i] <- count1[j,i]
+  }
+  for(j in 12:22){
+    count1.aic[j-11,i] <- count1[j,i]
+  }
+  for(j in 23:33){
+    count1.cp[j-22,i] <- count1[j,i]
+  }
+}
+
+best.model.bic <- 0
+best.model.aic <- 0
+best.model.cp <- 0
+for(i in 1:100){
+  best.model.bic[i] <- which.min(count1.bic[,i]) #BIC
+  best.model.aic[i] <- which.min(count1.aic[,i]) #AIC
+  best.model.cp[i] <- which.min(count1.cp[,i]) #marginal F test
+}
+
+count.bic <- 0
+count.aic <- 0
+count.cp <- 0
+
+for(i in 1:100){
+  if(best.model.bic[i]==(imp.par+1)){
+    count.bic <- count.bic + 1
+  }
+  if(best.model.aic[i]==(imp.par+1)){
+    count.aic <- count.aic + 1
+  }
+  if(best.model.cp[i]==(imp.par+1)){
+    count.cp <- count.cp + 1
+  }
+}
+
+count.bic #97
+count.aic #75
+count.cp #78
+
+
+```
+
+AIC will be a better model than BIC if n is large.
+
+```{r}
+
+situation2 <- function(n, imp.par){
+
+par <- 10
+# coefficients
+beta <- c(rep(1,imp.par),rep(0,par-imp.par))
+
+# variables
+X <- matrix(rnorm(n*par,0,0.001),n,par)
+colnames(X) <- paste0("var", 1:par)
+
+# outcome variable
+y <- X %*% t(t(beta)) + rnorm(n)
+
+dat <- data.frame(y,X)
+
+# let's see the model
+model1.0 <- lm(y ~ 1, data=dat)
+model1.1 <- lm(y ~ var1, data=dat)
+model1.2 <- lm(y ~ var1 + var2, data=dat)
+model1.3 <- lm(y ~ var1 + var2 + var3, data=dat)
+model1.4 <- lm(y ~ var1 + var2 + var3 + var4, data=dat)
+model1.5 <- lm(y ~ var1 + var2 + var3 + var4 + var5, data=dat)
+model1.6 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6, data=dat)
+model1.7 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7, data=dat)
+model1.8 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8, data=dat)
+model1.9 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8 + var9, data=dat)
+model1.10 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8 + var9 + var10, data=dat)
+
+BIC1.0 <- BIC(model1.0)
+BIC1.1 <- BIC(model1.1)
+BIC1.2 <- BIC(model1.2)
+BIC1.3 <- BIC(model1.3)
+BIC1.4 <- BIC(model1.4)
+BIC1.5 <- BIC(model1.5)
+BIC1.6 <- BIC(model1.6)
+BIC1.7 <- BIC(model1.7)
+BIC1.8 <- BIC(model1.8)
+BIC1.9 <- BIC(model1.9)
+BIC1.10 <- BIC(model1.10)
+
+AIC1.0 <- AIC(model1.0)
+AIC1.1 <- AIC(model1.1)
+AIC1.2 <- AIC(model1.2)
+AIC1.3 <- AIC(model1.3)
+AIC1.4 <- AIC(model1.4)
+AIC1.5 <- AIC(model1.5)
+AIC1.6 <- AIC(model1.6)
+AIC1.7 <- AIC(model1.7)
+AIC1.8 <- AIC(model1.8)
+AIC1.9 <- AIC(model1.9)
+AIC1.10 <- AIC(model1.10)
+
+CP1.0 <- sum(model1.0$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.0$rank -
++ 100
+CP1.1 <- sum(model1.1$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.1$rank -
++ 100
+CP1.2 <- sum(model1.2$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.2$rank -
++ 100
+CP1.3 <- sum(model1.3$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.3$rank -
++ 100
+CP1.4 <- sum(model1.4$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.4$rank -
++ 100
+CP1.5 <- sum(model1.5$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.5$rank -
++ 100
+CP1.6 <- sum(model1.6$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.6$rank -
++ 100
+CP1.7 <- sum(model1.7$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.7$rank -
++ 100
+CP1.8 <- sum(model1.8$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.8$rank -
++ 100
+CP1.9 <- sum(model1.9$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.9$rank -
++ 100
+CP1.10 <- sum(model1.10$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.10$rank -
++ 100
+
+values1 <- c(BIC1.0, BIC1.1, BIC1.2, BIC1.3, BIC1.4, BIC1.5, BIC1.6, BIC1.7, BIC1.8, BIC1.9, BIC1.10, AIC1.0, AIC1.1, AIC1.2, AIC1.3, AIC1.4, AIC1.5, AIC1.6, AIC1.7, AIC1.8, AIC1.9, AIC1.10, CP1.0, CP1.1, CP1.2, CP1.3, CP1.4, CP1.5, CP1.6, CP1.7, CP1.8, CP1.9, CP1.10)
+
+return(values1)
+
+}
+
+
+set.seed(124)
+
+imp.par <- 2
+
+count1 <- replicate(100, situation2(1000, imp.par))
+
+count1.bic <- matrix(0,11,100)
+count1.aic <- matrix(0,11,100)
+count1.cp <- matrix(0,11,100)
+for(i in 1:100){
+  for(j in 1:11){
+    count1.bic[j,i] <- count1[j,i]
+  }
+  for(j in 12:22){
+    count1.aic[j-11,i] <- count1[j,i]
+  }
+  for(j in 23:33){
+    count1.cp[j-22,i] <- count1[j,i]
+  }
+}
+
+best.model.bic <- 0
+best.model.aic <- 0
+best.model.cp <- 0
+for(i in 1:100){
+  best.model.bic[i] <- which.min(count1.bic[,i]) #BIC
+  best.model.aic[i] <- which.min(count1.aic[,i]) #AIC
+  best.model.cp[i] <- which.min(count1.cp[,i]) #marginal F test
+}
+
+count.bic <- 0
+count.aic <- 0
+count.cp <- 0
+
+for(i in 1:100){
+  if(best.model.bic[i]==(imp.par+1)){
+    count.bic <- count.bic + 1
+  }
+  if(best.model.aic[i]==(imp.par+1)){
+    count.aic <- count.aic + 1
+  }
+  if(best.model.cp[i]==(imp.par+1)){
+    count.cp <- count.cp + 1
+  }
+}
+
+count.bic #0
+count.aic #10
+count.cp #10
+
+```
+
+For the third situation I changed the variance of the X matrix.
+
+```{r}
+
+situation3 <- function(n, imp.par){
+
+par <- 10
+# coefficients
+beta <- c(rep(1,imp.par),rep(0,par-imp.par))
+
+# variables
+X <- matrix(rnorm(n*par, 0, 0.001),n,par)
+colnames(X) <- paste0("var", 1:par)
+
+# outcome variable
+y <- X %*% t(t(beta)) + rnorm(n)
+
+dat <- data.frame(y,X)
+
+# let's see the model
+model1.0 <- lm(y ~ 1, data=dat)
+model1.1 <- lm(y ~ var1, data=dat)
+model1.2 <- lm(y ~ var1 + var2, data=dat)
+model1.3 <- lm(y ~ var1 + var2 + var3, data=dat)
+model1.4 <- lm(y ~ var1 + var2 + var3 + var4, data=dat)
+model1.5 <- lm(y ~ var1 + var2 + var3 + var4 + var5, data=dat)
+model1.6 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6, data=dat)
+model1.7 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7, data=dat)
+model1.8 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8, data=dat)
+model1.9 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8 + var9, data=dat)
+model1.10 <- lm(y ~ var1 + var2 + var3 + var4 + var5 + var6 + var7 + var8 + var9 + var10, data=dat)
+
+BIC1.0 <- BIC(model1.0)
+BIC1.1 <- BIC(model1.1)
+BIC1.2 <- BIC(model1.2)
+BIC1.3 <- BIC(model1.3)
+BIC1.4 <- BIC(model1.4)
+BIC1.5 <- BIC(model1.5)
+BIC1.6 <- BIC(model1.6)
+BIC1.7 <- BIC(model1.7)
+BIC1.8 <- BIC(model1.8)
+BIC1.9 <- BIC(model1.9)
+BIC1.10 <- BIC(model1.10)
+
+AIC1.0 <- AIC(model1.0)
+AIC1.1 <- AIC(model1.1)
+AIC1.2 <- AIC(model1.2)
+AIC1.3 <- AIC(model1.3)
+AIC1.4 <- AIC(model1.4)
+AIC1.5 <- AIC(model1.5)
+AIC1.6 <- AIC(model1.6)
+AIC1.7 <- AIC(model1.7)
+AIC1.8 <- AIC(model1.8)
+AIC1.9 <- AIC(model1.9)
+AIC1.10 <- AIC(model1.10)
+
+CP1.0 <- sum(model1.0$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.0$rank -
++ 100
+CP1.1 <- sum(model1.1$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.1$rank -
++ 100
+CP1.2 <- sum(model1.2$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.2$rank -
++ 100
+CP1.3 <- sum(model1.3$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.3$rank -
++ 100
+CP1.4 <- sum(model1.4$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.4$rank -
++ 100
+CP1.5 <- sum(model1.5$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.5$rank -
++ 100
+CP1.6 <- sum(model1.6$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.6$rank -
++ 100
+CP1.7 <- sum(model1.7$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.7$rank -
++ 100
+CP1.8 <- sum(model1.8$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.8$rank -
++ 100
+CP1.9 <- sum(model1.9$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.9$rank -
++ 100
+CP1.10 <- sum(model1.10$residuals^2)/(summary(model1.10)$sigma^2) + 2 * model1.10$rank -
++ 100
+
+values1 <- c(BIC1.0, BIC1.1, BIC1.2, BIC1.3, BIC1.4, BIC1.5, BIC1.6, BIC1.7, BIC1.8, BIC1.9, BIC1.10, AIC1.0, AIC1.1, AIC1.2, AIC1.3, AIC1.4, AIC1.5, AIC1.6, AIC1.7, AIC1.8, AIC1.9, AIC1.10, CP1.0, CP1.1, CP1.2, CP1.3, CP1.4, CP1.5, CP1.6, CP1.7, CP1.8, CP1.9, CP1.10)
+
+return(values1)
+
+}
+
+set.seed(124)
+
+imp.par <- 5
+
+count1 <- replicate(100, situation3(100, imp.par))
+
+count1.bic <- matrix(0,11,100)
+count1.aic <- matrix(0,11,100)
+count1.cp <- matrix(0,11,100)
+for(i in 1:100){
+  for(j in 1:11){
+    count1.bic[j,i] <- count1[j,i]
+  }
+  for(j in 12:22){
+    count1.aic[j-11,i] <- count1[j,i]
+  }
+  for(j in 23:33){
+    count1.cp[j-22,i] <- count1[j,i]
+  }
+}
+
+best.model.bic <- 0
+best.model.aic <- 0
+best.model.cp <- 0
+for(i in 1:100){
+  best.model.bic[i] <- which.min(count1.bic[,i]) #BIC
+  best.model.aic[i] <- which.min(count1.aic[,i]) #AIC
+  best.model.cp[i] <- which.min(count1.cp[,i]) #marginal F test
+}
+
+count.bic <- 0
+count.aic <- 0
+count.cp <- 0
+
+for(i in 1:100){
+  if(best.model.bic[i]==(imp.par+1)){
+    count.bic <- count.bic + 1
+  }
+  if(best.model.aic[i]==(imp.par+1)){
+    count.aic <- count.aic + 1
+  }
+  if(best.model.cp[i]==(imp.par+1)){
+    count.cp <- count.cp + 1
+  }
+}
+
+count.bic #0
+count.aic #6
+count.cp #7
+
+```
+
+
+
+
+
+
