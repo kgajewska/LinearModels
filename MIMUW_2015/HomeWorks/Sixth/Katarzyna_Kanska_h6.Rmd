@@ -1,0 +1,229 @@
+---
+title: "Homework 6"
+author: "Katarzyna Kanska"
+date: "12.11.2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Goals
+
+Now consider scenario with ,,unequal slopes'' - an interaction between continuous and categorical variable. We are going to check when such interaction can be detected.
+
+Create following scenarios:
+
+Generate continuous variable `X_1` from distribution `U[0,1]`. Generate categorical variable `X_2` with 2 levels with equal frequency). Generate Y in a way that it depends on interaction of `X_1` and `X_2`.
+
+1. Add random noise from N(0,1), all ANCOVA assumptions are met. 
+2. Choose other distribution for epsilons, find a distribution with the same scale as N(0,1) for which you will get drop in power.
+3. Choose other distribution for epsilons in a way that the test for residual will not keep I type error rate.
+
+For all these scenarios, produce plot that will compare power as a function of sample size. Moreover on this plot is should be visible that power for scenario 2 is lower than for scenario 1. And that I type error rate is different for scenario 3 and scenario 1.
+
+## Solution
+
+### Preparing dataset
+
+We have three variables:
+
+* `X_1` from distribution `U[0,1]`,
+* `X_2` categorical variable with 2 levels (`A`, `B`) with equal frequency,
+* `Y` depends on interaction of `X_1` and `X_2`.
+
+This dependence will be linear, different in each of `X_2` levels.
+
+```{r, warning=FALSE, message=FALSE}
+
+myDistribution <- function(N, distribution, m, sigma2) {
+  return(switch(distribution,
+                normal=rnorm(2*N, m, sqrt(sigma2)),
+                uniform=runif(2*N, min = m - sqrt(12*sigma2)/2, max = m + sqrt(12*sigma2)/2),
+                pseudoexponential = m + rexp(N, 1/sqrt(sigma2))*sample(c(-1,1), size=2*N, replace=TRUE)
+                )
+         )
+}
+
+GenData <- function(M, distribution, m, sigma2){
+  '
+    M is 1/2 of sample size
+    
+    possible distributions of random noise:
+      normal,
+      uniform,
+      pseudoexponential: F = m + H * J,
+                        where H is from exponential distribution with variance equal sigma2,
+                        J is 1 or -1 (with probability 1/2)
+  
+    characteristics of chosen distribution:
+    m - mean
+    sigma2 - variance
+  
+  '
+  
+  X_1 <- runif(2*M, min = 0, max = 1)
+  X_2 <- rep(c("A","B"), times=M)
+  
+  Y <- myDistribution(2*M, distribution, m, sigma2)
+  
+  # generate interactions
+  Y[X_2=="A"] <- Y[X_2=="A"] + 0.5*X_1[X_2=="A"]
+  Y[X_2=="B"] <- Y[X_2=="B"] + 2*X_1[X_2=="B"]
+  
+  df <- data.frame(Y, X_1, X_2 = factor(X_2))
+  
+  return(df)
+}
+
+```
+
+### Adding random noise from N(0,1), all ANCOVA assumptions are met.
+
+Let us see the result for sample size `N` = 500.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+M <- 250
+
+# generate data
+df <- GenData(M, "normal", 0, 1)
+
+library("ggplot2")
+ggplot(df, aes(x=X_1, y=Y, color=X_2)) + geom_point()
+
+```
+
+We can see that `Y` reacts differently to `X_1` depending on `X_2` value.
+
+### Choice of distribution for epsilons, find a distribution with the same scale as N(0,1) for which you will get drop in power.
+
+Firstly, let us try the uniform distribution for random noise.
+
+```{r, warning=FALSE, message=FALSE}
+CalcPower <- function(N, M, distribution, m, sigma2){
+  '
+  Function calculate the power of F test used in diagnostics of a linear model with two categorical variables (one nested effect).
+  The significance level is set to 0.05.
+  
+  Input:
+    N - numeric (number of simulations)
+    M - numeric (1/2 of sample size)
+    distribution - string (name of distribution for random noise)
+    m, sigma2 - numeric (mean and variance of above distribution)
+  Output:
+    power - numeric (power of the F test for nested effect)
+  '
+  
+  alpha <- 0.05
+  
+  pvals <- replicate(N,
+                     {
+                       df <- GenData(M, distribution, m, sigma2)  
+                       model <- lm(Y ~ X_1*X_2, data=df)
+                       interactions <- summary(aov(model))[[1]][3,5]
+                       normality <- shapiro.test(rstandard(model))[2]
+                       c(interactions, normality)
+                     })
+
+  power.int <- round(100*mean(pvals[1,] < alpha),1)
+  power.resid <- round(100*mean(pvals[2,] < alpha),1)
+  
+  return(c(power.int, power.resid))
+}
+
+```
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+# 1/2 of sample size
+M <- 75
+# number of simulations used to calculate power of F test
+N <- 1000
+
+sample.size <- seq(5, M, by = 5)
+
+powers.norm <- sapply(sample.size, function(x) CalcPower(N, x, "normal", 0, 1))
+powers.unif <- sapply(sample.size, function(x) CalcPower(N, x, "uniform", 0, 1))
+
+powers.df <- data.frame(sample.size = 2*rep(sample.size, times=2),
+                        powers = c(powers.norm[1,], powers.unif[1,]),
+                        eps.distribution = factor(c(rep("normal", times=length(sample.size)),
+                                             rep("uniform", times=length(sample.size)))))
+
+ggplot(powers.df, aes(x=sample.size, y=powers, color=eps.distribution)) +
+  geom_point() +
+  xlim(0, 2*M) +
+  ylim(0, 100)
+```
+
+We cannot see much difference in test power.
+
+Now let us try the pseudo-exponential distribution.
+
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+
+powers.pseudoexp <- sapply(sample.size, function(x) CalcPower(N, x, "pseudoexponential", 0, 1))
+
+powers.df <- data.frame(sample.size = 2*rep(sample.size, times=2),
+                        powers = c(powers.norm[1,], powers.pseudoexp[1,]),
+                        eps.distribution = factor(c(rep("normal", times=length(sample.size)),
+                                                    rep("pseudoexponential", times=length(sample.size)))))
+
+ggplot(powers.df, aes(x=sample.size, y=powers, color=eps.distribution)) +
+  geom_point() +
+  xlim(0, 2*M) +
+  ylim(0, 100)
+```
+
+Here can observe significant difference in test power. The question which arises now is why uniform distribution of random noise failed to decrese the test power, while this strange pseudo-exponential distribution achieved that?
+
+Let us compare the histograms.
+```{r, warning=FALSE, message=FALSE}
+set.seed(7)
+M <- 500
+
+df.norm <- myDistribution(M, "normal", 0, 1)
+df.unif <- myDistribution(M, "uniform", 0, 1)
+df.pseudoexp <- myDistribution(M, "pseudoexponential", 0, 1)
+
+df <- data.frame(Y = c(df.norm, df.unif, df.pseudoexp),
+                 distribution = factor(c(rep("normal", times=2*M),
+                                         rep("uniform", times=2*M),
+                                         rep("pseudoexponential", times=2*M))))
+
+ggplot(df, aes(x=Y)) + geom_histogram() +
+  xlim(-5, 5) + facet_grid(distribution ~ .)
+```
+
+Probably long tails of exponential distribution were crucial.
+
+### Choice of distribution for epsilons in a way that the test for residual will not keep I type error rate.
+
+Firstly, we recall the definition of type I error - it is the incorrect rejection of a true null hypothesis (a "false positive").
+
+```{r, warning=FALSE, message=FALSE}
+powers.df2 <- data.frame(sample.size = 2*rep(sample.size, times=3),
+                        powers = c(powers.norm[2,], powers.unif[2,], powers.pseudoexp[2,]),
+                        eps.distribution = factor(c(rep("normal", times=length(sample.size)),
+                                                    rep("uniform", times=length(sample.size)),
+                                                    rep("pseudoexponential", times=length(sample.size)))))
+
+ggplot(powers.df2, aes(x=sample.size, y=powers, color=eps.distribution)) +
+  geom_point() +
+  xlim(0, 2*max(sample.size)) +
+  ylim(0, 100)
+```
+
+Here we see that both uniform and pseudo-exponential distribution of residuals are detected by Shapiro-Wilk test for normality.
+
+### Conclusions
+
+We have two main conclusions:
+
+1. Test for interactions is robust in terms of detecting interaction even if the model assumptions are violated. Power of this test increases with the sample size regardless the random noise distribution.
+2. Model residuals really reflect the distribution of random noise. Power of Shapiro-Wilk test was very high even for small sample sizes.
+
+These conclusions are very optimistic. However, we tested only two kinds of non-normal distribution (one whose density has a compact support, another one with tails), which might be not enough to state with certainty that above conclusions are correct.

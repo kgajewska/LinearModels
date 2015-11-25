@@ -1,0 +1,32 @@
+Overall experience
+
+
+Aktualnie, przesłany dokument nie przypomina raportu. Składa się z wielu wykresów, których jednak nie sposób odczytać z uwagi na rozdzielczość (wyniki testów post-hoc są całkowicie nieczytelne).
+Jest dużo kodu R i outputu z tego kodu, jednak bez szerszych komentarzy. Co czyni i kod i wyniki niezrozumiałymi.
+
+Raport jest na tyle niestaranny, że brakuje w nim nawet polskich liter, nie mówiąc o estetyce wykresów.
+
+Brakuje też spisu treści, podsumowania i wprowadzenia.
+
+1. Is there a (small) list of genes?
+
+Są przedstawione 4 listy genów, plus geny z tytułów wykresów.
+Nie jest jednak nigdzie napisane która z tych list jest tą ostateczną.
+
+
+2. Is there progress between phase 1 and phase 2?
+
+Z pewnością, ale głównie dlatego, że nie było fazy 1.
+
+
+3. Does it fit the 10 pages limit?
+
+Próba wydruku pokazuje 19 stron. 
+
+
+
+
+Points
+2/6 + 6/6 + 3/6 + 2 = 13
+
+

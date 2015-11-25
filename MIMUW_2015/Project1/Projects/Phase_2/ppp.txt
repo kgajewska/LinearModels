@@ -1,0 +1,48 @@
+Overall experience
+
+
+You have attached a very detailed explanation what your R code is doing.
+And this is nice. 
+But for the report you should focus more in results and discussion of results. 
+
+In modeling it is quite common to try different approaches and combine different results. Each approach should be described shortly (details are in the Rmd code) and then key are your conclusions.
+
+I like the summary in the form of plot.design, it shows a lot of information. But try to compress this information even further and present all 12 genes on a single plot.
+
+
+1. Is there a (small) list of genes?
+
+You have list of 12 genes for main effects and 61 genes for interactions.
+However the first list of genes can be read only from plot titles.
+Put the list in text and it will be much easier to find it. 
+
+
+2. Is there progress between phase 1 and phase 2?
+
+In my opinion the progress comes with approaches to present differences between cancers.
+In comparison to report 1 you are now more focused on results rather than on the way how you reach them. It's positive. In phase 3 I would expect to see only results without any R code.
+
+
+3. Does it fit the 10 pages limit?
+
+I've tried to print this html page in chrome and it showed 14 pages.
+
+Others
+
+Allow knitr to generate table of contents for you. Then it will consist links in html.
+
+It is not clear why you are adding cancer names to plot.design plots. 
+I guess that it shows which cancer may be detected with the presented gene but you can be more explicit.
+
+I like the plot.design plots a lot. They bring a lot of information.
+However they are also using a lot of space. 
+Consider a single plot that summaries results from all these figures.
+
+It is not clear if C20orf134 is a special case.
+From the figure I do not see any important interaction. 
+
+
+Points
+6/6 + 4/6 + 5/6 + 2 = 17
+
+
