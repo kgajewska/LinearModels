@@ -1,0 +1,136 @@
+---
+title: "Project 1, Phase 3"
+author: "Agnieszka Sitko, Annanina Koster, Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output:
+  word_document: default
+  pdf_document: default
+  toc: yes
+  html_document: null
+---
+
+# Strategy of choosing the genes and summary of pervious phases
+
+We were given data set with around 3600 patients and 16 thousnds genes. Every patient had some cohort of cancer, which subsequently we will call cancer type. We decided to divide patients according to cancer type (so the patients form groups) and for each gene tested whether there is any difference in means of gene's expression in the groups. We have done it with ANOVA.
+Afterwards we performed so-called post-hoc test (we used Scheffe test) to check what means in groups are and to get Critical Difference, i.e. value of maximal difference of two means to consider those means to be statistically equal.
+Then groups were created in the following way: two cancer types are in the same group if the means are statistically equal.
+Finally, we chosen, and consider as important, genes which have the highest number of groups. Why? Because we see each group as an information, and taking such a genes we maximaze informations while minimizing number of genes. To explain it better, consider an example. Assume we have 5 (we are going to denote it by roman numbers) cancer types. We are given a patient with 3 genes - A, B, C. Firstly, we consider gene A. Let's say that expression of gene A has a value such that according to our post hoc test, patient is likely to have cancer type I, III or IV. So then we consider gene B and we are interested only in cancer types I, III or IV. So it may turn out that on the basis of gene B, patient may have cancer type I or V but since we don't consider V, we infer that patient is likely to have cancer type I. Then we can check if according to gene C, gene's expression is in group of cancer type I. One can say that we treat each genes as a kind of filter, and if patient successfully passes oall filters he is arguably ill. In other words, we take a subset of possible cancers according to each gene and then intersect them. We can also modify it, by computing absolute value of distance in each gene, between gene expression and cancer type, then add those value and see for which cancer type the value is the least. This modification is resistant to the situation where patient for a few genes can be very close to be in a specific cancer type, but he is not, and in the rest of genes he fits perfectly.
+Above approach has many advantages. Firstly, as it was said, it minimizes number of genes while maximizing amount of informations. Secondly, Each gene is much or less important for each cancer type, so we infer on the basis of 14 genes, while normal approach would be to find a gene (or genes) which are specific for a certain cancer type and is irrelevant for others, so we would have to either infer on one gene or drastically increase number of genes. Thirdly, in our approach it is very probable that if we have a patient with some gene's expression, he will be classified to some group, because if we have many groups, there are many groups, which don't overlap, so they cover more space.
+This approach has also some drawbacks. The most important one is that there are known diseases for which only one gene is responsible. In our case, we won't detect it. Also it may turn out that one gene has many different group in post hoc test, and other genes are correlated with them, so they have the same high number. But we check correlation, and fortunately they are not, moreover we looked at each post hoc test at confirmed that genes which were chosen explain different things. The last disadvantage is that despite high number of groups we can have a pathological situation that for a one gene's expression it can say us nothing about cancer type. But as well this situation we excluded by checking post hoc tests one by one.
+So we chose genes:
+
+```{r echo=FALSE}
+library(agricolae)
+library(ggplot2)
+library(gridExtra)
+load("~/Modele liniowe i mieszane/projekt 1/genes.RData")
+load("~/Modele liniowe i mieszane/projekt 1/CancerType.RData")
+genes<-as.matrix(genes)
+colnames(genes)
+```
+
+Now we present characteristic genes' expressions for each cancer type. One plot concerns with one cancer type. Each rectangle is one gene, thick line is a mean of gene's expression and top and bottom borders corresponds to mean +/- critical difference. So if patient has value of gene which is in the rectangle it means, on the basis of this gene, he is prone to have this cancer type.
+
+```{r echo=FALSE}
+tabela<-matrix(0, nrow=14, ncol=12)
+tabela2<-matrix(0, nrow=2*length(genes[1,]), ncol=12)
+x<-0
+for (i in seq(1, 2*length(genes[1,]),2)) {
+  model<-lm(genes[,floor(i/2)+1]~CancerType)
+  tmp<-scheffe.test(aov(model), "CancerType", console = FALSE)
+  x<-tmp$means$genes
+  
+  tabela[i/2+1,]<-paste0("(",round(x+tmp$statistics$CriticalDifference,2),",", round(x-tmp$statistics$CriticalDifference,2),")")
+  tabela2[i:(i+1),]<-rbind(round(x+tmp$statistics$CriticalDifference,2),round(x-tmp$statistics$CriticalDifference,2))
+}
+colnames(tabela2)<-levels(CancerType)
+genesnam<-rep(colnames(genes), times=rep(2,length(genes[1,])))
+rownames(tabela2)<-colnames(genesnam)
+#par(mfrow=c(2,2))
+tabela2<-rbind(tabela2,tabela2)
+genesnam<-rep(genesnam,2)
+
+#for (i in 1:12) {
+#print(qplot(genesnam, tabela2[,i], geom=c("boxplot"), 
+#   main=paste0("Characteristic genes' profiles for", colnames(tabela2)[i]),
+#   xlab="Gene", ylab="Gene's expression", ylim=c(-10,7)))
+#}
+
+plot1<-qplot(genesnam, tabela2[,1], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[1]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=guide_legend(title="Gene"))
+
+plot2<-qplot(genesnam, tabela2[,2], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[2]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=FALSE)
+
+
+plot3<-qplot(genesnam, tabela2[,3], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[3]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=guide_legend(title="Gene"))
+
+
+plot4<-qplot(genesnam, tabela2[,4], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[4]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=FALSE)
+
+plot5<-qplot(genesnam, tabela2[,5], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[5]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=guide_legend(title="Gene"))
+
+plot6<-qplot(genesnam, tabela2[,6], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[6]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=FALSE)
+
+
+plot7<-qplot(genesnam, tabela2[,7], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[7]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=guide_legend(title="Gene"))
+
+plot8<-qplot(genesnam, tabela2[,8], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[8]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=FALSE)
+
+plot9<-qplot(genesnam, tabela2[,9], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[9]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=guide_legend(title="Gene"))
+
+plot10<-qplot(genesnam, tabela2[,10], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[10]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=FALSE)
+
+plot11<-qplot(genesnam, tabela2[,11], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[11]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=guide_legend(title="Gene"))
+
+plot12<-qplot(genesnam, tabela2[,12], fill=genesnam,geom=c("boxplot"), 
+   main=paste0(colnames(tabela2)[12]),
+   xlab="Gene", ylab="Gene's expression") + theme(axis.ticks = element_blank(), axis.text.x = element_blank())+guides(fill=FALSE)
+
+
+grid.arrange(plot1,plot2, ncol=2)
+grid.arrange(plot3,plot4, ncol=2)
+grid.arrange(plot5,plot6, ncol=2)
+grid.arrange(plot7,plot8, ncol=2)
+grid.arrange(plot9,plot10, ncol=2)
+grid.arrange(plot11, plot12, ncol=2)
+
+```
+
+
+```{r echo=FALSE}
+colnames(tabela)<-levels(CancerType)
+rownames(tabela)<-colnames(genes)
+#tabela
+data<-c(genes[,1])
+for( i in 2:5) {
+  data<-c(data,genes[,i])
+  
+}
+genesnames<-c(rep(colnames(genes)[1],3587))
+for(i in 2:5) {
+  genesnames<-c(genesnames,rep(colnames(genes)[i],3587))
+}
+
+qplot(rep(CancerType,5), data, fill=factor(genesnames),   geom="boxplot", position="dodge") + theme_bw() + coord_flip()
+```
