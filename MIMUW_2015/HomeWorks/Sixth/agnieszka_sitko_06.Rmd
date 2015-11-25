@@ -1,0 +1,135 @@
+---
+title: "Homework 6"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+#Scenario I: Normally distributed random noise
+
+```{r, warning = FALSE, message = FALSE}
+library(ggplot2)
+set.seed(32)
+
+M <- 100
+power1 <- rep(0, 100)
+power1normality <- rep(0, 100)
+
+
+for (N in 10:1000){
+      pvals <- as.matrix(replicate(M, {
+            
+            X_1 <- runif(N)
+            X_2 <- c(rep(c("first level"), times = round(N/2)), rep(c("second level"), times = N - round(N/2)))
+            epsilon <- rnorm(N)
+            Y <- 1 * (X_2 == "first level") * X_1  + 2 * (X_2 == "second level") * X_1 + epsilon
+            model <- aov(lm(Y ~ X_1 * X_2))
+            c(summary(model)[[1]][[5]][3], shapiro.test(rstandard(model))[2])
+      }))
+      
+      
+      power1[N] <- sum(pvals[1,] < 0.05) / M
+      power1normality[N] <- sum(pvals[2,] < 0.05) / M
+}
+
+plot(power1, xlab = "sample size")
+plot(power1normality, xlab = "sample size")
+
+```
+
+
+
+
+#Scenario II: Cauchy-distributed random noise
+```{r, warning = FALSE, message = FALSE}
+
+M <- 100
+power2 <- 0
+power2normality <- 0
+
+
+
+for (N in 10:1000){
+      pvals <- as.matrix(replicate(M, {
+            
+            X_1 <- runif(N)
+            X_2 <- c(rep(c("first level"), times = round(N/2)), rep(c("second level"), times = N - round(N/2)))
+            epsilon <- rcauchy(N, 0, 1)
+            Y <- 1 * (X_2 == "first level") * X_1  + 2 * (X_2 == "second level") * X_1 + epsilon
+            model <- aov(lm(Y ~ X_1 * X_2))
+            c(summary(model)[[1]][[5]][3], shapiro.test(rstandard(model))[2])
+      }))
+      
+      
+      power2[N] <- sum(pvals[1,] < 0.05) / M
+      power2normality[N] <- sum(pvals[2,] < 0.05) / M
+}
+
+plot(power2, xlab = "sample size")
+```
+
+
+
+#Scenario III: Random noise which does not keep I type error rate
+```{r, warning = FALSE, message = FALSE}
+set.seed(32)
+
+M <- 100
+power3 <- 0
+power3normality <- 0
+
+
+
+for (N in 10:1000){
+      pvals <- as.matrix(replicate(M, {
+            
+            X_1 <- runif(N)
+            X_2 <- c(rep(c("first level"), times = round(N/2)), rep(c("second level"), times = N - round(N/2)))
+            epsilon <- sort(rnorm(N, 1000))
+            Y <- 1 * (X_2 == "first level") * X_1  + 2 * (X_2 == "second level") * X_1 + epsilon
+            model <- aov(lm(Y ~ X_1 * X_2))
+            c(summary(model)[[1]][[5]][3], shapiro.test(rstandard(model))[2])
+      }))
+      
+      
+      power3[N] <- sum(pvals[1,] < 0.05) / M
+      power3normality[N] <- sum(pvals[2,] < 0.05) / M
+}
+
+plot(power3, xlab = "sample size")
+
+
+```
+
+
+
+#Comparison
+
+
+## Model 1 and Model 2 - power of a test for interactions
+```{r, warning = FALSE, message = FALSE}
+df <- data.frame(x = 1:1000, power1, power2)
+g <- ggplot(df, aes(x))
+g <- g + geom_point(aes(y = power1), col = "blue")
+g <- g + geom_point(aes(y = power2), col = "red")
+g
+
+```
+
+It is noticeable that power in the first model (blue plot) increases with the sample size while in the second model (red plot) does not.
+
+
+
+## Model 1 and Model 3 - power of a test for residuals' normality
+```{r, warning = FALSE, message = FALSE}
+df2 <- data.frame(x = 1:1000, power1normality, power3normality)
+g2 <- ggplot(df2, aes(x))
+g2 <- g2 + geom_point(aes(y = power1normality), col = "blue")
+g2 <- g2 + geom_point(aes(y = power3normality), col = "red")
+g2
+
+```
+
+It is noticeable that power in the third model (red plot) increases with the sample size while in the second model (blue plot) does not. As the residuals in both cases are normally distributed the power of the test for normality should remain constant.
