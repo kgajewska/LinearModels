@@ -83,11 +83,11 @@ coef2<-lm.ridge(pc1~., data=bs, lambda=100)$coef
 coef3<-lm.ridge(pc1~., data=bs, lambda=1000000)$coef
 ```
 
-Let's compute the differences of coefficients from normal regression and ridge regression.
+Let's compute the distance between vectors with coefficients from normal regression and ridge regression in metric max.
 ```{r}
-coef1-coef5
-coef1-coef2
-coef1-coef3
+max(abs(coef1[2:46]-coef5))
+max(abs(coef1[2:46]-coef2))
+max(abs(coef1[2:46]-coef3))
 ```
 
 Now we do the lasso regression.
@@ -165,8 +165,12 @@ l1ce(pc1~., data=bs, bound=.01, absolute.t=TRUE)
 
 coef4<-l1ce(pc1~., data=bs, bound=.01, absolute.t=TRUE)$coef
 
-coef1-coef4
-coef2-coef4
-coef3-coef4
-coef5-coef1
+max(abs(coef1-coef4))
+max(abs(coef2-coef4[2:46]))
+max(abs(coef3-coef4[2:46]))
+max(abs(coef5-coef4[2:46]))
 ```
+
+# Conclusions
+
+In the max metric lasso model and model which uses MLE are very similar, in fact almost the same. Model made with the ridge regerssion is different from others. Also interesting thing happened in ridge regression. Some coefficients changed their sign. It may be caused by the fact that other coefficients increased in that "time", so to balance it, others had to decrease and they decreased so much that they changed their sign.

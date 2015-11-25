@@ -216,76 +216,13 @@ ggplot(df2, aes(lambdas, ewg)) +
 <pre class="r"><code>coef5&lt;-lm.ridge(pc1~., data=bs, lambda=10)$coef
 coef2&lt;-lm.ridge(pc1~., data=bs, lambda=100)$coef
 coef3&lt;-lm.ridge(pc1~., data=bs, lambda=1000000)$coef</code></pre>
-<p>Let’s compute the differences of coefficients from normal regression and ridge regression.</p>
-<pre class="r"><code>coef1-coef5</code></pre>
-<pre><code>## Warning in coef1 - coef5: długość dłuszego obiektu nie jest wielokrotnością
-## długości krótszego obiektu</code></pre>
-<pre><code>##   (Intercept)           ewg             w            rp             v 
-## -2.861733e-02  9.439680e-05  2.402227e-05  1.340143e-04 -1.204754e-04 
-##            sd           run            gl           pgk            cg 
-##  1.616098e-04  4.537421e-05  7.180231e-05  2.883221e-06 -5.345786e-05 
-##          gpdh         ninaC           glt           mhc           ddc 
-##  3.262002e-04  4.858638e-05  5.485070e-05  1.072806e-04 -1.822779e-05 
-##           duc           sli          egfr           twi           zip 
-## -1.238594e-04  6.930323e-05  6.092538e-06 -4.580344e-05  6.046817e-05 
-##           lsp            ve           acr           dbi             h 
-## -5.047903e-06  2.324352e-05  2.628824e-04  1.619009e-04  8.766603e-05 
-##            fz           eip           tra           rdg            ht 
-##  4.007774e-05  1.567100e-04 -6.393872e-05  1.587330e-04 -1.585569e-07 
-##           ant         ninaE           fas           mst           odh 
-##  9.009913e-05  1.370539e-04  1.179327e-04 -6.554261e-05 -4.441784e-05 
-##           tub            hb           rox           ald           mlc 
-##  1.204886e-04  1.952061e-04  1.017675e-04 -8.229001e-05  2.541255e-04 
-##           jan           efi        adjpc1          area         areat 
-## -3.495371e-04 -1.079990e-03  2.966798e-02  3.479599e+00  1.951575e-01 
-##         tibia 
-##  6.890524e-03</code></pre>
-<pre class="r"><code>coef1-coef2</code></pre>
-<pre><code>## Warning in coef1 - coef2: długość dłuszego obiektu nie jest wielokrotnością
-## długości krótszego obiektu</code></pre>
-<pre><code>##   (Intercept)           ewg             w            rp             v 
-## -2.847381e-02  3.095373e-04  2.107527e-04  3.696407e-04 -5.673145e-05 
-##            sd           run            gl           pgk            cg 
-##  1.445487e-04  1.864885e-04  1.553587e-04  1.725808e-04  1.842870e-04 
-##          gpdh         ninaC           glt           mhc           ddc 
-##  4.907300e-04  1.608816e-04  2.358289e-04  1.858900e-04  6.083976e-05 
-##           duc           sli          egfr           twi           zip 
-## -5.516913e-06  9.599412e-05  4.040237e-05  4.556681e-05  1.463775e-04 
-##           lsp            ve           acr           dbi             h 
-##  1.335365e-04  2.370052e-04  4.635496e-04  3.051703e-04  3.301262e-04 
-##            fz           eip           tra           rdg            ht 
-##  2.485371e-04  2.297424e-04  6.963186e-05  2.943640e-04  1.415244e-04 
-##           ant         ninaE           fas           mst           odh 
-##  2.604939e-04  3.147074e-04  2.058764e-04  4.214003e-05  1.109073e-04 
-##           tub            hb           rox           ald           mlc 
-##  2.987331e-04  3.637741e-04  2.445143e-04  1.079889e-04  3.368761e-04 
-##           jan           efi        adjpc1          area         areat 
-## -1.491189e-04 -7.309926e-04  3.082899e-02  3.480620e+00  1.951913e-01 
-##         tibia 
-##  7.034040e-03</code></pre>
-<pre class="r"><code>coef1-coef3</code></pre>
-<pre><code>## Warning in coef1 - coef3: długość dłuszego obiektu nie jest wielokrotnością
-## długości krótszego obiektu</code></pre>
-<pre><code>##   (Intercept)           ewg             w            rp             v 
-## -2.861470e-02 -1.486211e-05  4.545297e-05  4.353439e-05  6.509631e-05 
-##            sd           run            gl           pgk            cg 
-##  1.917419e-04  1.028236e-05  3.019467e-05 -5.777316e-05 -4.102908e-05 
-##          gpdh         ninaC           glt           mhc           ddc 
-##  2.672742e-04  5.694378e-05 -1.499529e-05  6.185372e-05 -1.365534e-04 
-##           duc           sli          egfr           twi           zip 
-## -1.446273e-04  4.967884e-05 -3.411895e-05 -7.590699e-05  3.378570e-05 
-##           lsp            ve           acr           dbi             h 
-## -3.897003e-05  7.817977e-05  2.051212e-04  1.162033e-04 -6.314903e-05 
-##            fz           eip           tra           rdg            ht 
-##  9.879149e-05  1.443356e-04 -9.319653e-05  9.765284e-05  4.824552e-05 
-##           ant         ninaE           fas           mst           odh 
-##  5.023715e-05  1.014605e-04  2.741498e-05 -7.737909e-05 -7.958659e-05 
-##           tub            hb           rox           ald           mlc 
-##  1.348384e-04  1.153751e-04  2.283431e-05 -9.501732e-05  9.467378e-05 
-##           jan           efi        adjpc1          area         areat 
-## -3.307524e-04  2.406426e-04  3.260497e-02  3.482237e+00  1.957317e-01 
-##         tibia 
-##  6.893149e-03</code></pre>
+<p>Let’s compute the distance between vectors with coefficients from normal regression and ridge regression in metric max.</p>
+<pre class="r"><code>max(abs(coef1[2:46]-coef5))</code></pre>
+<pre><code>## [1] 3.4793</code></pre>
+<pre class="r"><code>max(abs(coef1[2:46]-coef2))</code></pre>
+<pre><code>## [1] 3.480461</code></pre>
+<pre class="r"><code>max(abs(coef1[2:46]-coef3))</code></pre>
+<pre><code>## [1] 3.482237</code></pre>
 <p>Now we do the lasso regression.</p>
 <pre class="r"><code>library(lasso2)</code></pre>
 <pre><code>## R Package to solve regression problems while imposing
@@ -385,96 +322,18 @@ ggplot(df2, aes(lambdas, ewg)) +
 ## The Lagrangian for the bound is:  4.413787e-16</code></pre>
 <pre class="r"><code>coef4&lt;-l1ce(pc1~., data=bs, bound=.01, absolute.t=TRUE)$coef
 
-coef1-coef4</code></pre>
-<pre><code>##   (Intercept)           ewg             w            rp             v 
-## -7.979728e-17  1.189234e-18 -2.026103e-18 -3.455894e-19  1.124860e-18 
-##            sd           run            gl           pgk            cg 
-##  1.192622e-18 -2.625802e-18 -2.178569e-18  1.429114e-17 -9.974660e-18 
-##          gpdh         ninaC           glt           mhc           ddc 
-## -2.710505e-19 -1.484002e-18  2.303930e-18 -1.147899e-17  1.612751e-17 
-##           duc           sli          egfr           twi           zip 
-## -6.423898e-18  3.774379e-18 -1.775381e-18 -4.784042e-18  5.224499e-18 
-##           lsp            ve           acr           dbi             h 
-## -1.768605e-18  4.119968e-18 -1.544988e-18 -1.626303e-19  6.234162e-18 
-##            fz           eip           tra           rdg            ht 
-## -9.812030e-18 -5.664956e-18  1.111307e-17 -2.276825e-18 -1.050321e-18 
-##           ant         ninaE           fas           mst           odh 
-## -3.862470e-19  1.355253e-20  5.709002e-18  1.910906e-18 -5.014435e-19 
-##           tub            hb           rox           ald           mlc 
-## -4.282599e-18  6.139295e-18 -1.406075e-18  6.098637e-19 -2.669848e-18 
-##           jan           efi        adjpc1          area         areat 
-##  5.421011e-18 -2.087089e-18  4.163336e-17 -7.105427e-15  3.858025e-15 
-##         tibia 
-##  1.335737e-16</code></pre>
-<pre class="r"><code>coef2-coef4</code></pre>
-<pre><code>## Warning in coef2 - coef4: długość dłuszego obiektu nie jest wielokrotnością
-## długości krótszego obiektu</code></pre>
-<pre><code>##   (Intercept)           ewg             w            rp             v 
-##  2.847381e-02 -3.095373e-04 -2.107527e-04 -3.696407e-04  5.673145e-05 
-##            sd           run            gl           pgk            cg 
-## -1.445487e-04 -1.864885e-04 -1.553587e-04 -1.725808e-04 -1.842870e-04 
-##          gpdh         ninaC           glt           mhc           ddc 
-## -4.907300e-04 -1.608816e-04 -2.358289e-04 -1.858900e-04 -6.083976e-05 
-##           duc           sli          egfr           twi           zip 
-##  5.516913e-06 -9.599412e-05 -4.040237e-05 -4.556681e-05 -1.463775e-04 
-##           lsp            ve           acr           dbi             h 
-## -1.335365e-04 -2.370052e-04 -4.635496e-04 -3.051703e-04 -3.301262e-04 
-##            fz           eip           tra           rdg            ht 
-## -2.485371e-04 -2.297424e-04 -6.963186e-05 -2.943640e-04 -1.415244e-04 
-##           ant         ninaE           fas           mst           odh 
-## -2.604939e-04 -3.147074e-04 -2.058764e-04 -4.214003e-05 -1.109073e-04 
-##           tub            hb           rox           ald           mlc 
-## -2.987331e-04 -3.637741e-04 -2.445143e-04 -1.079889e-04 -3.368761e-04 
-##           jan           efi        adjpc1          area         areat 
-##  1.491189e-04  7.309926e-04 -3.082899e-02 -3.480620e+00 -1.951913e-01 
-##         tibia 
-## -7.034040e-03</code></pre>
-<pre class="r"><code>coef3-coef4</code></pre>
-<pre><code>## Warning in coef3 - coef4: długość dłuszego obiektu nie jest wielokrotnością
-## długości krótszego obiektu</code></pre>
-<pre><code>##   (Intercept)           ewg             w            rp             v 
-##  2.861470e-02  1.486211e-05 -4.545297e-05 -4.353439e-05 -6.509631e-05 
-##            sd           run            gl           pgk            cg 
-## -1.917419e-04 -1.028236e-05 -3.019467e-05  5.777316e-05  4.102908e-05 
-##          gpdh         ninaC           glt           mhc           ddc 
-## -2.672742e-04 -5.694378e-05  1.499529e-05 -6.185372e-05  1.365534e-04 
-##           duc           sli          egfr           twi           zip 
-##  1.446273e-04 -4.967884e-05  3.411895e-05  7.590699e-05 -3.378570e-05 
-##           lsp            ve           acr           dbi             h 
-##  3.897003e-05 -7.817977e-05 -2.051212e-04 -1.162033e-04  6.314903e-05 
-##            fz           eip           tra           rdg            ht 
-## -9.879149e-05 -1.443356e-04  9.319653e-05 -9.765284e-05 -4.824552e-05 
-##           ant         ninaE           fas           mst           odh 
-## -5.023715e-05 -1.014605e-04 -2.741498e-05  7.737909e-05  7.958659e-05 
-##           tub            hb           rox           ald           mlc 
-## -1.348384e-04 -1.153751e-04 -2.283431e-05  9.501732e-05 -9.467378e-05 
-##           jan           efi        adjpc1          area         areat 
-##  3.307524e-04 -2.406426e-04 -3.260497e-02 -3.482237e+00 -1.957317e-01 
-##         tibia 
-## -6.893149e-03</code></pre>
-<pre class="r"><code>coef5-coef1</code></pre>
-<pre><code>## Warning in coef5 - coef1: długość dłuszego obiektu nie jest wielokrotnością
-## długości krótszego obiektu</code></pre>
-<pre><code>##   (Intercept)           ewg             w            rp             v 
-##  2.861733e-02 -9.439680e-05 -2.402227e-05 -1.340143e-04  1.204754e-04 
-##            sd           run            gl           pgk            cg 
-## -1.616098e-04 -4.537421e-05 -7.180231e-05 -2.883221e-06  5.345786e-05 
-##          gpdh         ninaC           glt           mhc           ddc 
-## -3.262002e-04 -4.858638e-05 -5.485070e-05 -1.072806e-04  1.822779e-05 
-##           duc           sli          egfr           twi           zip 
-##  1.238594e-04 -6.930323e-05 -6.092538e-06  4.580344e-05 -6.046817e-05 
-##           lsp            ve           acr           dbi             h 
-##  5.047903e-06 -2.324352e-05 -2.628824e-04 -1.619009e-04 -8.766603e-05 
-##            fz           eip           tra           rdg            ht 
-## -4.007774e-05 -1.567100e-04  6.393872e-05 -1.587330e-04  1.585569e-07 
-##           ant         ninaE           fas           mst           odh 
-## -9.009913e-05 -1.370539e-04 -1.179327e-04  6.554261e-05  4.441784e-05 
-##           tub            hb           rox           ald           mlc 
-## -1.204886e-04 -1.952061e-04 -1.017675e-04  8.229001e-05 -2.541255e-04 
-##           jan           efi        adjpc1          area         areat 
-##  3.495371e-04  1.079990e-03 -2.966798e-02 -3.479599e+00 -1.951575e-01 
-##         tibia 
-## -6.890524e-03</code></pre>
+max(abs(coef1-coef4))</code></pre>
+<pre><code>## [1] 7.105427e-15</code></pre>
+<pre class="r"><code>max(abs(coef2-coef4[2:46]))</code></pre>
+<pre><code>## [1] 3.480461</code></pre>
+<pre class="r"><code>max(abs(coef3-coef4[2:46]))</code></pre>
+<pre><code>## [1] 3.482237</code></pre>
+<pre class="r"><code>max(abs(coef5-coef4[2:46]))</code></pre>
+<pre><code>## [1] 3.4793</code></pre>
+</div>
+<div id="conclusions" class="section level1">
+<h1>Conclusions</h1>
+<p>In the max metric lasso model and model which uses MLE are very similar, in fact almost the same. Model made with the ridge regerssion is different from others. Also interesting thing happened in ridge regression. Some coefficients changed their sign. It may be caused by the fact that other coefficients increased in that “time”, so to balance it, others had to decrease and they decreased so much that they changed their sign.</p>
 </div>
 
 
