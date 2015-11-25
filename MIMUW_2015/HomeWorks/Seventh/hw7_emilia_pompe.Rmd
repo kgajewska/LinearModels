@@ -1,0 +1,182 @@
+---
+title: "Untitled"
+author: "Emilia Pompe"
+date: "Wednesday, November 18, 2015"
+output: html_document
+---
+# Homework 7
+### Emilia Pompe
+In each of the following scenarios I created a dataset with a dependent variable y and 10 potential predictor variables. Then, every time I searched for the best model out of all 2^10-1 possible models. I did it using 3 different criterions: BIC (the best models gathered in a vector called bic), AIC (the best models gathered in a vector called aic), and by choosing all significant variables (the best models gathered in a vector called fmarginal). The last method works as follows: I create 10 models based on one predictor variable and an intercept only; then I compare a p-value of the ANOVA test performed on this model with alpha (equal to 0.05 in all the scenarios) to check if the variable turned out to be significant. One remark: although there are basically 1023 models (from 1 to 1023), the last criterion may also indicate a model with no predictor variables (with number 0). 
+
+The procedure described above was repeated 100 times in order to obtain reliable results.
+
+```{r}
+library(e1071)
+```
+
+### Scenario 1
+In the first scenario I created a dataset with 1000 observations. The first nine variables come from the normal distribution with mean 0 and standard deviation 0.8, while the last variable follows the normal distribution with mean 3 and sd 0.1. The real model contains only the last variable, hence the model number 1 is the proper one. All regression parameters beta1, ..., beta10 are equal to 1.
+```{r}
+set.seed(7)
+p = 10
+alpha = 0.05
+v <- sapply(1:p-1, function(x) 2^x)
+N <- 100
+aic <- rep(NA, times=N)
+bic <- rep(NA, times=N)
+fmarginal <- rep(NA, times=N)
+comb <- bincombinations(p)[-1,]
+
+for(j in 1:N){
+  dat=as.data.frame(matrix(NA, ncol=p, nrow=1000))
+  dat[,p] <- rnorm(1000,3,0.1)
+  
+  for (k in 1:(p-1)){
+    dat[,k] <- dat[,p] + rnorm(1000,0,0.8)
+  }
+  colnames(dat) <- paste0("var", 1:p)
+  
+  dat$y <- 2*dat[,p] + rnorm(1000)
+  
+  crit <- matrix(0, nrow(comb), 2)
+  
+  for (i in 1:nrow(comb)) {
+    form <- paste0("y~",paste0("var",which(comb[i,]==1), collapse="+"))
+    model <- lm(as.formula(form), data=dat)
+    crit[i,1] <- AIC(model)
+    crit[i,2] <- BIC(model)
+  }
+  
+  if.significant.vector <- c()
+  for(i in 1:p){
+    form<- paste0("y~",paste0("var",i))
+    model <- lm(as.formula(form), data=dat)
+    if.significant <- ifelse(anova(model)[1,5] <alpha, 1,0)
+    if.significant.vector <- c(if.significant.vector, if.significant)
+  }
+
+ aic[j] <- which.min(crit[,1])
+ bic[j] <- which.min(crit[,2])
+ fmarginal[j] <- sum(if.significant.vector*v)
+}
+```
+
+Let us see what was the percentage of times the real model was chosen according to all 3 criterions:
+```{r}
+sum(aic==1)/N
+sum(bic==1)/N
+sum(fmarginal==1)/N
+```
+
+The best score in this scenario was obtained by using the BIC criterion. This is probably because the sample size was large and because it tends to choose a model with a smaller number of predictor variables (smaller than in case of using AIC). 
+### Scenario 2
+In the second scenario I created a dataset with 60 observations. The first nine variables come from the normal distribution with mean 0 and standard deviation 1, while the last variable is a vector from 1 to 60 plus a variable following the normal distribution with mean 0 and standard deviation 0.1. The real model contains all the variables, hence the model number 1023 is the proper one. The first regression parameter is equal to 0.01 and the other ones are equal to 1.
+```{r}
+set.seed(7)
+p = 10
+alpha = 0.05
+v <- sapply(1:p-1, function(x) 2^x)
+N <- 100
+aic <- rep(NA, times=N)
+bic <- rep(NA, times=N)
+fmarginal <- rep(NA, times=N)
+comb <- bincombinations(p)[-1,]
+
+for(j in 1:N){
+  dat=as.data.frame(matrix(NA, ncol=p, nrow=60))
+  dat[,p] <- 1:60 + rnorm(60,0,0.1)
+  for (k in 1:(p-1)){
+    dat[,k] <-  rnorm(60,0,1)
+  }
+  colnames(dat) <- paste0("var", 1:p)
+  
+  dat$y <- rowSums(dat[,2:p]) + 0.01*dat[,1] + rnorm(60)
+  
+  crit <- matrix(0, nrow(comb), 2)
+  
+  for (i in 1:nrow(comb)) {
+    form <- paste0("y~",paste0("var",which(comb[i,]==1), collapse="+"))
+    model <- lm(as.formula(form), data=dat)
+    crit[i,1] <- AIC(model)
+    crit[i,2] <- BIC(model)
+  }
+  
+  if.significant.vector <- c()
+  for(i in 1:p){
+    form<- paste0("y~",paste0("var",i))
+    model <- lm(as.formula(form), data=dat)
+    if.significant <- ifelse(anova(model)[1,5] <alpha, 1,0)
+    if.significant.vector <- c(if.significant.vector, if.significant)
+  }
+  
+  aic[j] <- which.min(crit[,1])
+  bic[j] <- which.min(crit[,2])
+  fmarginal[j] <- sum(if.significant.vector*v)
+ 
+}
+
+
+sum(aic==1023)/N
+sum(bic==1023)/N
+sum(fmarginal==1023)/N
+
+```
+
+Here the AIC criterion turned out to have the best performance.
+### Scenario 3
+In the third scenario I created a dataset with 60 observations. The first nine variables are compound as a vector from 1 to 60 plus a variable following the normal distribution with mean 0 and standard deviation 1, while the last predictor variable is a vector from 1 to 60 plus a variable following the normal distribution with mean 0 and standard deviation 0.1. The real model contains all the variables, hence the model number 1023 is the proper one. All the regression parameters are equal to 1.
+
+```{r}
+set.seed(7)
+p = 10
+alpha = 0.05
+v <- sapply(1:p-1, function(x) 2^x)
+N <- 100
+aic <- rep(NA, times=N)
+bic <- rep(NA, times=N)
+fmarginal <- rep(NA, times=N)
+comb <- bincombinations(p)[-1,]
+
+for(j in 1:N){
+  dat=as.data.frame(matrix(NA, ncol=p, nrow=60))
+  dat[,p] <- 1:60 + rnorm(60,0,0.1)
+  for (k in 1:(p-1)){
+    dat[,k] <- 1:60 + rnorm(60,0,1)
+  }
+  colnames(dat) <- paste0("var", 1:p)
+  
+  dat$y <- rowSums(dat[,1:p])  + rnorm(60)
+  
+  crit <- matrix(0, nrow(comb), 2)
+  
+  for (i in 1:nrow(comb)) {
+    form <- paste0("y~",paste0("var",which(comb[i,]==1), collapse="+"))
+    model <- lm(as.formula(form), data=dat)
+    crit[i,1] <- AIC(model)
+    crit[i,2] <- BIC(model)
+  }
+  
+  if.significant.vector <- c()
+  for(i in 1:p){
+    form<- paste0("y~",paste0("var",i))
+    model <- lm(as.formula(form), data=dat)
+    if.significant <- ifelse(anova(model)[1,5] <alpha, 1,0)
+    if.significant.vector <- c(if.significant.vector, if.significant)
+  }
+  
+  aic[j] <- which.min(crit[,1])
+  bic[j] <- which.min(crit[,2])
+  fmarginal[j] <- sum(if.significant.vector*v)
+  
+}
+
+```
+
+Let us see what was the percentage of times the real model was chosen according to all 3 criterions:
+```{r}
+sum(aic==1023)/N
+sum(bic==1023)/N
+sum(fmarginal==1023)/N
+```
+
+Here the last method turned out to give the highest score. This is probably because all the predictor variables were strongly correlated with y, so all of them were classified as significant.
