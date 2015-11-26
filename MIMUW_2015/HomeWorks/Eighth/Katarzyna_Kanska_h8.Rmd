@@ -1,0 +1,158 @@
+---
+title: "Homework 8"
+author: "Katarzyna Kańska"
+date: "26.11.2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+
+## Goals
+
+For the Drosophila study check what will happen with coefficients if:
+
+a) all variables are included into a model and standard MLE estimates are calculated,
+b) ridge regression is applied,
+c) lasso regression is applied.
+
+For points b) and c) present how model coefficient behaves as a function of penalty/parameter.
+
+
+## Solution
+
+Firstly, we load the data.
+
+```{r, message=FALSE, warning=FALSE}
+library(PBImisc)
+attach(Drosophila)
+
+df <- bs[,1:42]
+```
+
+### Standard MLE estimates for full model
+
+Under standard assumptions of linear model the OLS estimator is BLUE (Best Linear Unbiased Estimator). Normal distribution of random noise provides that this estimator is also MLE (Maximum Likelihood Estimator).
+
+```{r, message=FALSE, warning=FALSE}
+modelMLE <- lm(pc1 ~ . , data=df)
+summary(modelMLE)
+```
+
+We see that only few variables are significant. All of the coefficients are very small.
+
+```{r, message=FALSE, warning=FALSE}
+library(car)
+vif(modelMLE)
+```
+
+The full model suffers from high colinearity. Therefore we need to select some subset of explanatory variables.
+
+
+### Ridge regression
+
+To stabilize estimates we perform the ridge regression. To have a full image of the situation, we are interested in dependence of coefficients as a function of parameter 'lambda'.
+
+```{r, , message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+lambdas <- 2^((-20):15)
+coefsR <- sapply(lambdas, function(lambda) {
+  lm.ridge(pc1 ~ . , data=df, lambda=lambda)$coef
+})
+RIDGEcoeffs <- data.frame(t(coefsR), lambdas)
+
+library("tidyr")
+
+RIDGEcoeffs2 <- gather(RIDGEcoeffs, variable, coefficient, -lambdas)
+
+library("ggplot2")
+ggplot(RIDGEcoeffs2, aes(x=lambdas, y=coefficient, color=variable)) +
+  geom_line() + ylab("coefficients") +
+  scale_x_log10() +
+  theme(legend.position = "none") +
+  geom_text(data = RIDGEcoeffs2[RIDGEcoeffs2$lambdas==2^(-18),], aes(label = variable), hjust = 0.7, vjust = 1, size=5)
+```
+
+For such number of variables it is hard to describe the behaviour of each coeeficient. We can only have some general observations like the strange behaviour of coefficients that almost all converge to very similar value. Moreover, in some cases this causes a change of sign.
+
+In order to choose the best model we use GCV criterion (Generalized Cross-Validation) which is often recommended for ridge regression.
+
+```{r, message=FALSE, warning=FALSE}
+library("broom")    # package for converting statistical analysis objects into tidy data frames
+fit <- lm.ridge(pc1 ~ . , data=df, lambda=lambdas)
+td <- tidy(fit)
+head(td)
+
+g <- glance(fit)
+g
+# lambdaGCV is the one we are looking for
+```
+
+```{r, fig.height=5, fig.width=5}
+ggplot(td, aes(x=lambda, y=GCV)) + geom_line() +
+    geom_vline(xintercept = g$lambdaGCV, col = "red", lty = 2)
+
+modelRIDGE <- lm.ridge(pc1 ~ . , data=df, lambda=g$lambdaGCV)
+```
+
+We conclude the results in the Comparison section.
+
+### Lasso regression
+
+Now we perform lasso regresion.
+
+```{r, warning=FALSE, message=FALSE, fig.width=10, fig.height=10}
+library("lasso2")
+
+lambdas <- 10^seq(-4,1,0.1)
+coefsL <- sapply(lambdas, function(lambda) {
+  l1ce(pc1 ~ . , data=df, bound=lambda, absolute.t=TRUE)$coef
+})
+LASSOcoeffs <- data.frame(t(coefsL[2:42,]), lambdas)
+LASSOcoeffs2 <- gather(LASSOcoeffs, variable, coefficient, -lambdas)
+
+ggplot(LASSOcoeffs2, aes(x=lambdas, y=coefficient, color=variable)) +
+  geom_line() + ylab("coefficients") +
+  scale_x_log10() +
+  theme(legend.position = "none") +
+  geom_text(data = LASSOcoeffs2[LASSOcoeffs2$lambdas==10^0.5,], aes(label = variable), hjust = 0.7, vjust = 1, size=5)
+
+```
+
+These results are easier to interprete, because coefficients do not change their sign and we are even able to distinguish at which point each coefficient (or at least a set of coefficients) approaches zero.
+
+Again, we need a critetion to choose the proper model. Here we select the model with largest value of lambda such that error is within 1 standard error of the minimum.
+
+```{r, message=FALSE, warning=FALSE}
+library("glmnet")
+cvfit <- cv.glmnet(as.matrix(df[,colnames(df)!="pc1"]),df$pc1)
+chosenLASSO <- coef(cvfit, s = "lambda.1se")
+```
+
+## Comparison
+
+Now we compare the results for standard linear model with rigde and lasso regression.
+
+```{r, message=FALSE, warning=FALSE}
+coeffs <- data.frame( MLE = coef(modelMLE), RIDGE = coef(modelRIDGE), LASSO = as.numeric(chosenLASSO))
+coeffs
+```
+
+These coefficients seem to differ much, but for better comparison we look at some graphical representation of this data.
+
+```{r, fig.height=6, fig.width=5}
+heatmap(as.matrix(coeffs), Rowv=NA, Colv=NA)
+```
+
+This confirms our previous impression that coefficients derived from three different methods vary much.
+
+Let us see how many variables had coefficient greater than $10^{-4}$ or zero.
+
+```{r, message=FALSE, warning=FALSE}
+sum(as.numeric(abs(coeffs$MLE)>10^(-4)))
+sum(as.numeric(abs(coeffs$RIDGE)>10^(-4)))
+sum(as.numeric(coeffs$LASSO!=0))
+```
+
+As we expected, lasso regression chooses the smallest number of variables.
+
+At this point, the only conclusion I am able to come up with, is that the model selection is a very hard problem and we have to know exactly what issue we are dealing with. This time probably the results from ridge regression would fit our case as we strugle with the colinearity of predictors.
