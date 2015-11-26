@@ -56,9 +56,9 @@ Projekty będą przedstawiane na zajęciach (terminy wypisane powyżej). Należy
 
 See here: https://github.com/pbiecek/LinearModels/tree/master/MIMUW_2015/Project1
 
-
 2. Project - mixed models
 
+See here: https://github.com/pbiecek/LinearModels/tree/master/MIMUW_2015/Project2
 
 
 Ocena:

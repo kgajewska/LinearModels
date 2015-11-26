@@ -1,0 +1,428 @@
+---
+title: "Project 1, Phase 3"
+author: "Emilia Pompe, Ma³gorzata Pujszo"
+date: "Thursday, November 26, 2015"
+output: html_document
+---
+
+####Table of contents:
+1. Summary of the results from previous phases.\n
+2. Lists of genes characteristic for different cancer types.\n
+3. Justification: why the chosen genes are proper ones?\n
+4. Which cancer types are similar and which are easily distinguishable from each other?
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+#R code used in 2nd phase 
+#preparing dataset
+library(MASS)
+library(plyr)
+library(dplyr)
+library(car)
+library(agricolae)
+library(nortest)
+library(ggplot2)
+library(knitr)
+
+load("expression.cb1.rda")
+load("expression.cb2.rda")
+load("clinical.cb.rda")
+
+expression <-rbind(expression.cb1, expression.cb2)
+colnames(expression)<-gsub(".","-", colnames(expression), fixed=TRUE)
+trial <-t(expression[,-1])
+trial<- as.data.frame(trial)
+colnames(trial) <- expression[,1]
+trial$sampleID <- rownames(trial)
+dataset<-merge(trial, clinical.cb, by="sampleID")
+dataset <- subset(dataset, X_cohort != "TCGA Formalin Fixed Paraffin-Embedded Pilot Phase II")
+dataset$X_cohort<-factor(dataset$X_cohort)
+```
+```{r, eval=FALSE, echo=FALSE}
+#assumptions checking
+N <- 16115
+shapiro_coeff1 <- rep(NA, times=N)
+levene1 <- rep(NA, times=N)
+M.anova <- matrix(NA, nrow=N, ncol=4)
+M.anova[,4] <- 1:N
+```
+```{r, echo=FALSE}
+threshold <- 20
+filtered.dataset <- function(i) {
+  y <- dataset[,i]
+  d <- data.frame(y=y[!(is.na(y))], x=dataset$X_cohort[!(is.na(y))], 
+                  sex = dataset$gender[!(is.na(y))])
+  d <- subset(d, sex %in% c("FEMALE", "MALE"))
+  d$sex <- factor(d$sex)
+  tab <- as.data.frame(table(d$x, d$sex))
+  bad.female <-intersect(which(tab[,3]<=threshold), which(tab[,2]=="FEMALE"))
+  bad.male <-intersect(which(tab[,3]<=threshold), which(tab[,2]=="MALE"))
+  d <- filter(d, !(x %in% tab[bad.female, 1] & sex=="FEMALE")) 
+  d <- filter(d, !(x %in% tab[bad.male, 1] & sex=="MALE"))
+  d$x <- factor(d$x)
+  d$sex <- factor(d$sex)
+  d
+  }
+```
+```{r, eval=FALSE, echo=FALSE}
+#assumptions cheking and two-way ANOVA
+for(i in 2:(N+1)){
+  d <- filtered.dataset(i)
+  model <- lm(y~ x * sex, data=d)
+  shapiro_coeff1[i-1] <- shapiro.test(rstandard(model))$p.value
+  levene1[i-1] <- leveneTest(d$y~d$x*d$sex)[1,3]
+  M.anova[i-1,1:3] <- anova(model)[1:3,5]
+}
+shapiro.data <- data.frame(nr=1:N, shapiro = shapiro_coeff1)
+shapiro.data.new <- arrange(shapiro.data, shapiro)
+```
+```{r, fig.height=3, fig.width=6, echo=FALSE, eval=FALSE}
+#assumptions checking - plots used previously
+par(mfrow=c(1, 2), mar=c(4, 4, 4, 4))
+d <- filtered.dataset(shapiro.data.new$nr[1]+1)
+model <- lm(y ~ x * sex, data=d)
+qqnorm(rstandard(model))
+abline(0, 1, col="red", lwd=3)
+hist(rstandard(model), breaks=100, main=paste0("Histogram of standardized residuals\n", colnames(dataset)[shapiro.data.new$nr[1]+1]), cex.main=1)
+par(mfrow=c(1, 2), mar=c(4, 4, 4, 4))
+
+i <- 5823
+d <- filtered.dataset(i)
+model <- lm(y~ x * sex, data=d)
+qqnorm(rstandard(model))
+abline(0, 1, col="red", lwd=3)
+hist(rstandard(model), breaks=100, main=paste0("Histogram of standardized residuals\n", colnames(dataset)[i]), cex.main=1)
+
+i <- 8149
+d <- filtered.dataset(i)
+model <- lm(y~ x * sex, data=d)
+qqnorm(rstandard(model))
+abline(0, 1, col="red", lwd=3)
+hist(rstandard(model), breaks=100, main=paste0("Histogram of standardized residuals\n", colnames(dataset)[i]), cex.main=1)
+i <- levene.data.new[min(which(levene.data.new[,2]>= 10^(-42))), 1]+1 
+d <- filtered.dataset(i)
+model <- lm(y~ x * sex, data=d)
+d$res <- model$residuals
+variances <- ddply(d, .(x, sex), summarize, var = var(res))
+min(variances$var)
+max(variances$var)
+
+i <- levene.data.new[which.max(levene.data.new$levene),1]+1 
+d <- filtered.dataset(i)
+model <- lm(y~ x * sex, data=d)
+d$res <- model$residuals
+variances <- ddply(d, .(x, sex), summarize, var = var(res))
+min(variances$var)
+max(variances$var)
+
+i <- levene.data.new[1,1]+1 
+d <- filtered.dataset(i)
+model <- lm(y~ x * sex, data=d)
+d$res <- model$residuals
+variances <- ddply(d, .(x, sex), summarize, var = var(res))
+min(variances$var)
+max(variances$var)
+
+p.value.shapiro.threshold <- 10^(-34)
+p.value.levene.threshold <- 10^(-42)
+cancer.p.value <- 0.05
+interaction.p.value <- 0.05
+
+#chosen genes to ANOVA (assumptions are met) - model without interactions
+p.value.genes <- intersect(which(shapiro_coeff1 > p.value.shapiro.threshold), 
+                           which(levene1 > p.value.levene.threshold))
+M.anova.part <- M.anova[p.value.genes,] 
+M.anova.used <- cbind(matrix(p.adjust(as.vector(M.anova.part[,1:3]), method= "holm"), ncol=3), M.anova.part[,4]) 
+M.anova.used <- as.data.frame(M.anova.used)
+colnames(M.anova.used) <- c("cancer.pvalues", "sex.pvalues", "interaction.pvalues", "nr")
+used.genes <- M.anova.used$nr[intersect(which(M.anova.used[,3]> interaction.p.value), which(M.anova.used[,1]< cancer.p.value))] 
+
+results <- data.frame(highest=rep(NA,times=N), lowest=rep(NA,times=N), 
+                      difference.highest=rep(NA, times=N), difference.lowest=rep(NA, times=N))
+for (k in used.genes){
+  i <- k+1
+  d<-filtered.dataset(i)
+  model <- LSD.test(lm(y~ x, data=d), "x") 
+  groups <- as.character(model$group[,"M"])
+  high.mean <- grep("a", groups) 
+  if(length(high.mean)==1){
+    results$highest[k] <- as.character(model$group[,"trt"])[1]
+    results$difference.highest[k] <- (model$groups[1, c("means")] - model$groups[2, c("means")])/sd(d$y)
+  }
+  low.mean <- grep(groups[length(groups)], groups) 
+  if(length(low.mean)==1){
+    results$lowest[k] <- as.character(model$group[,"trt"])[length(groups)] 
+    results$difference.lowest[k] <- (model$groups[length(groups),c("means")] - model$groups[(length(groups)-1), c("means")])/sd(d$y)
+  }
+}
+```
+```{r, echo = FALSE, eval=FALSE}
+load("phase2.results2.RData")
+#method for chosing genes - the same as previously
+
+highest.means.genes <- data.frame(name=rep(NA,times=nlevels(dataset$X_cohort)),
+                                  difference=rep(NA,times=nlevels(dataset$X_cohort)),
+                                  nr=rep(NA,times=nlevels(dataset$X_cohort)))
+lowest.means.genes <- data.frame(name=rep(NA,times=nlevels(dataset$X_cohort)),
+                                 difference=rep(NA,times=nlevels(dataset$X_cohort)),
+                                 nr=rep(NA,times=nlevels(dataset$X_cohort)))
+i <-1
+for (cancer.names in levels(dataset$X_cohort)){
+  v <- grep(cancer.names, results$highest)
+  cancer.genes <- results[v,c(1,3,5)]
+  highest.means.genes[i,] <- cancer.genes[which.max(cancer.genes$difference.highest),]
+  v <- grep(cancer.names, results$lowest)
+  cancer.genes <- results[v,c(2,4,5)]
+  lowest.means.genes[i,] <- cancer.genes[which.min(cancer.genes$difference.lowest),]
+  i <- i+1
+}
+all.means.genes <- cbind(highest.means.genes, lowest.means.genes)[,-4]
+all.means.genes$name <- levels(dataset$X_cohort)
+```
+```{r, fig.width=8, fig.height=24, eval=FALSE, echo=FALSE}
+#plot.design shown previously
+par(mfrow=c(6,2), mar=c(2,2,2,2))
+i <-1
+for (cancer.names in levels(dataset$X_cohort)) {
+ 
+  nr.gene <- ifelse(abs(all.means.genes[i,2])>=abs(all.means.genes[i,2]), all.means.genes[i,3], all.means.genes[i,5])
+  d <- filtered.dataset(nr.gene+1)
+  plot.design(y~x, data=d, main=paste0(cancer.names,", ",
+                                       colnames(dataset)[nr.gene+1]), cex=0.7)
+  if(cancer.names %in% c("TCGA Breast Cancer", "TCGA Acute Myeloid Leukemia")){
+    y <- dataset[,nr.gene+1]
+    d <- data.frame(y=y[!(is.na(y))], x=dataset$X_cohort[!(is.na(y))], sex = dataset$gender[!(is.na(y))])
+    d <- subset(d, sex %in% c("FEMALE", "MALE"))
+    bad <- names(which(table(d$x) < threshold)) 
+    d <- filter(d, !(x %in% bad)) 
+    d$x <- factor(d$x) 
+    d$sex <- factor(d$sex)
+    print(cancer.names)
+    print(table(d$x, d$sex))
+    }
+  i <- i+1
+}
+```
+```{r, fig.width=8, fig.height=8, echo=FALSE, eval=FALSE}
+  par(mfrow=c(2,2), mar=c(2,2,2,2))
+  cancer.names <- "TCGA Breast Cancer"
+  nr.gene <- 4825
+  d <- filtered.dataset(nr.gene+1)
+  plot.design(y~x, data=d, main=paste0(cancer.names,", ",
+                                       colnames(dataset)[nr.gene+1]), cex=0.7)
+  cancer.names <- "TCGA Bladder Cancer"
+  nr.gene <- 2938
+  d <- filtered.dataset(nr.gene+1)
+  plot.design(y~x, data=d, main=paste0(cancer.names,", ",
+                                       colnames(dataset)[nr.gene+1]), cex=0.7)
+  cancer.names <- "TCGA Colon Cancer" 
+  nr.gene <- 15920
+  d <- filtered.dataset(nr.gene+1)
+  plot.design(y~x, data=d, main=paste0(cancer.names,", ",
+                                       colnames(dataset)[nr.gene+1]), cex=0.7)
+  cancer.names <- "TCGA Lung Adenocarcinoma"
+  nr.gene <- 10879
+  d <- filtered.dataset(nr.gene+1)
+  plot.design(y~x, data=d, main=paste0(cancer.names,", ",
+                                       colnames(dataset)[nr.gene+1]), cex=0.7)
+#end of R code used previously
+```
+
+####1.  Summary of the results from previous phases.
+We were given a dataset with over 16 000 genes and 12 types of cancer. In first two phases we chose a subset of those genes for which we are able to make reliable statistical inference about differences in their expression level among cancer types. Among other techniques, we used:
+
+- Shapiro tests\n
+- Levene tests\n
+- normality qq-plots\n
+- adjustments of p-values (because of multiple testing)
+
+to ensure that the crucial assumptions of normality of standardised residuals and homogeneity of variance hold in case of genes from which we drew conclusions. Afterwards, we performed ANOVA tests on genes from the subset - we tested whether there is a difference in means among cancer types and whether interaction with sex is significant. It turned out that:
+
+- almost all genes differ significantly among cancer types\n
+- very few genes (about 50) have significant interactions between cancer type and gender
+
+We decided to focus on genes that lead to the same conclusions for both sexes as they give more easily interpretable results.
+
+####2. Lists of genes characteristic for different cancer types.
+In the tables below we presented 'top 10' characteristic genes for each cancer type. The column 'cutoff' shows a threshold for gene expression in this particular type of cancer. If the column 'Location'  has a label 'below', gene expression below the cutoff indicates suffering from the cancer type included in the name of the table (and similarly for the label 'above'). For example, if a patient's expression of the gene BCAR1 is lower than -7.074, it may be conluded with very high probability that he or she suffers from Acute Myeloid Leukemia.   
+```{r, echo=FALSE, eval=FALSE}
+#chosing only those genes which have all levels of cancer
+N <- 16115
+results$if.all.levels <- sapply(2:(N+1), function(k){
+  d <- filtered.dataset(k)
+  nlevels(d$x)==12
+})
+results.all.levels <- subset(results, if.all.levels==T)
+#number of genes chosen for each cancer
+number.chosen <- 10
+#chosen genes: name of cancer, gene's number, gene's name, location, cutoffs 
+gene.chosen.data.frame <- data.frame()
+
+#best 10 genes for each cancer 
+for (cancer.names in levels(dataset$X_cohort)){
+  v <- grep(cancer.names, results.all.levels$lowest)
+  w <- grep(cancer.names, results.all.levels$highest)
+  
+  data.cancer.v <- results.all.levels[v,]
+  data.cancer.v$abs.value <- abs(data.cancer.v[,4])
+  data.cancer.v$location <- "below"
+  
+  data.cancer.w <- results.all.levels[w,]
+  data.cancer.w$abs.value <- abs(data.cancer.w[,3])
+  data.cancer.w$location <- "above"
+  
+  data.cancer <- arrange(rbind(data.cancer.v, data.cancer.w), desc(abs.value))
+  data.cancer <- data.cancer[1: (min(c(nrow(data.cancer), number.chosen))),]
+  data.cancer$cancer <- cancer.names
+  
+  gene.chosen.data.frame <- rbind(gene.chosen.data.frame, data.cancer)
+}
+
+gene.chosen.data.frame$Gene.name <- colnames(dataset[,gene.chosen.data.frame$nr+1])
+gene.chosen.data.frame <- data.frame(Cancer=gene.chosen.data.frame$cancer, 
+                                     Gene.number=gene.chosen.data.frame$nr, 
+                                     Gene.name=gene.chosen.data.frame$Gene.name,
+                                     Location=gene.chosen.data.frame$location)
+#adding cutoff
+for (i in 1:nrow(gene.chosen.data.frame)) {
+  d <- filtered.dataset(as.numeric(gene.chosen.data.frame$Gene.number[i])+1)
+  if (gene.chosen.data.frame$Location[i]=="below") {
+    gene.chosen.data.frame$Cuttoff[i] <- LSD.test(lm(y~x, d), "x")$means[grep(gene.chosen.data.frame$Cancer[i], rownames(LSD.test(lm(y~x, d), "x")$means)),4]
+  } else {
+    gene.chosen.data.frame$Cuttoff[i] <- LSD.test(lm(y~x, d), "x")$means[grep(gene.chosen.data.frame$Cancer[i], rownames(LSD.test(lm(y~x, d), "x")$means)),5]
+  }
+}
+```
+
+```{r, echo=FALSE}
+load("phase3.gene.RData")
+gene.chosen.data.frame <- gene.chosen[[1]]
+```
+
+```{r, results="asis", echo=FALSE}
+for (cancer.name in levels(dataset$X_cohort)) {
+  cat("<div style='float: left; margin: 10px 10px; font-size: 12px;'><h5 style='font-weight: bold;'>")
+  cat(gsub("TCGA ", "", cancer.name))
+  cat("</h5>")
+  cat(kable(gene.chosen.data.frame[gene.chosen.data.frame$Cancer==cancer.name, 3:5], format="html", digits=3, row.names=FALSE))
+  cat("</div>")
+}
+cat("<div style='clear:both;'></div>")
+```
+
+####3. Justification: why the chosen genes are proper ones?
+ Most probably among these over 16000 genes there are several subsets allowing for distinguishing between cancer types. Our procedure leads to one of them and, in our opinion, its interpretation is very straightforward.
+Let us describe the procedure. First thing was to perform LSD tests on each gene - it allowed to check which cancer types differ significanlty for a given gene. Of our main interest were the ones in which a certain cancer type constituted 'its own group', i.e. there was a significant difference between a given cancer type and all remaining ones, and, beside that, the group was the one with the highest or the lowest mean. We were presenting this approach in details in Phase 2. This gave us a long list of genes for each cancer type - to derive 10 best genes we chose the ones with largest relative difference between a given mean and the next one.
+The cutoff was set to a lower (for 'above') of upper (for 'below') bound of the 95% confidence interval for the estimate of mean from  LSD tests
+
+Why is it a good subset of genes?
+
+- for all chosen genes crucial assumptions for making statistical inference hold and we have many observations for them in our dataset, hence our results are reliable\n
+- all cancer types appear in our observations for this genes, thanks to this it is possible to compare a given cancer type with all remaining ones\n
+- there are 10 genes for each cancer type - we wanted to compromise between having a 'small list' and being able to deal with a situation when we have gene expression close to the cutoff\n
+- for all chosen genes the relative difference mentioned above is very large; it was shown clearly in the plots in Phase 2\n
+- choosing groups with the highest (or lowest) mean gives a simple interpretation of the results, e.g. the lower the gene expression of BCAR1 (and lower than -7.074), the more confidence we have about suffering from Leukemia\n
+-results may be used for both sexes\n
+- in the histograms below we plotted distributions of gene expressions along with the cutoff; in most cancer types it gave us a very clear separation
+```{r, echo=FALSE, fig.height=8, fig.width=12}
+D <- as.data.frame(matrix(NA, nrow=0, ncol=7))
+intercept <- c()
+for (cancer.name in levels(dataset$X_cohort)) {
+  cancer.data <- gene.chosen.data.frame[gene.chosen.data.frame$Cancer==cancer.name, ]
+  d <- filtered.dataset(cancer.data[1, 2]+1)
+  d$cancer <- "Other"
+  d$cancer[grep(cancer.name, d$x)] <- "Cancer type specific\n for this gene"
+  d$gene.name <- paste0(cancer.data$Gene.name[1],", (cancer: ", gsub("TCGA ", "",cancer.name), ")")
+  d$cancer.name <- rep(cancer.name, times=nrow(d))
+  intercept <- c(intercept, cancer.data[1, 5])
+  D <- rbind(D,d)
+}
+
+hist_cut <- ggplot(D, aes(x=y, fill=cancer, group=cancer)) +
+  geom_histogram(binwidth = 1) + facet_wrap( ~ gene.name, ncol=3) +theme(legend.position="bottom")
+
+hist_cut <- hist_cut + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[1]),aes(xintercept=intercept[1])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[2]), aes(xintercept=intercept[2])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[3]), aes(xintercept=intercept[3])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[4]), aes(xintercept=intercept[4])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[5]), aes(xintercept=intercept[5])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[6]), aes(xintercept=intercept[6])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[7]), aes(xintercept=intercept[7])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[8]), aes(xintercept=intercept[8])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[9]), aes(xintercept=intercept[9])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[10]), aes(xintercept=intercept[10])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[11]), aes(xintercept=intercept[11])) + 
+  geom_vline(data=subset(D, cancer.name==levels(dataset$X_cohort)[12]), aes(xintercept=intercept[12]))
+
+hist_cut
+```
+
+```{r, echo=FALSE, eval=FALSE}
+#checking which genes are similar to each other - are in the same groups in LSD test
+nr <- 1
+L <- list()
+for(k in used.genes){
+  i <- k+1
+  d <- filtered.dataset(i)
+  model <- LSD.test(lm(y~ x, data=d), "x")
+  L[[nr]] <- model$groups
+  nr <- nr+1
+}
+
+
+pairs.list <- list()
+k <-1
+
+for (cancer.names.a in levels(dataset$X_cohort)){
+  for(cancer.names.b in levels(dataset$X_cohort)){
+    v <- unlist(lapply(L, function(LSD.dataframe) {
+      a <- grep(cancer.names.a,LSD.dataframe$trt)
+      b <- grep(cancer.names.b,LSD.dataframe$trt)
+      if(length(a)==0 | length(b)==0){
+        return(FALSE)
+      } else{
+        label.a <- strsplit(as.character(LSD.dataframe$M)[a], "", fixed=TRUE)[[1]]
+        label.b <- strsplit(as.character(LSD.dataframe$M)[b], "", fixed=TRUE)[[1]]
+        response <- any(label.a %in% label.b)
+        return(response)
+      }
+
+    }))
+
+    pairs.list[[k]]<- v
+    names(pairs.list)[length(pairs.list)] <- paste0(cancer.names.a, "_", cancer.names.b)
+    k <- k+1
+  }
+}
+```
+
+####4. Which cancer types are similar  and which are easily distinguishable from each other?
+In our study some cancer types were more easily distinguishable than others. The simplest results were obtained for Leukemia. First of all, the list of genes with Leukiemia being in its own 'highest' or 'lowest' group was the longest. There was even one gene with the following property: a minimum of this gene expression for Leukemia was larger than the maximum over all other cancer types. We decided to plot its histogram below.
+
+```{r, echo=FALSE, fig.height=2, fig.width=4}
+i <- 5479
+d <- filtered.dataset(i+1)
+d$cancer.name <- "Other"
+d$cancer.name[grep("Leukemia", d$x)] <- "Leukemia" 
+hist_cut <- ggplot(d, aes(x=y, fill=cancer.name))
+hist_cut + geom_histogram() + theme(legend.text = element_text(size=7), axis.title=element_text(size=8), legend.title=element_blank())
+```
+
+We checked also which pairs of cancer types had similar gene expression. In this case the pair Rectal Cancer and Colon Cancer was second to none. Their gene expression did not have a significant difference in over 8000 genes out of about 12000. It was indeed difficult to find genes with very clear separation for these cancer types, which was also visible in the histograms, hence one should be very cautious while making inference about differences between them.
+```{r, echo=FALSE, fig.height=2, fig.width=8}
+load(file= "L.RData") # list of model$groups
+load(file= "pairs.list.RData")  # how many pairs together
+
+number.together <- unlist(lapply(pairs.list, sum))
+
+chosen <- sort(number.together, decreasing=TRUE)[seq(from=13, to=25, by=2)]
+chosen.data <- data.frame(name=names(chosen), value=chosen)
+chosen.data2 <- c()
+for(i in 1:nrow(chosen.data)){
+  chosen.data2 <- c(chosen.data2, rep(as.character(chosen.data$name)[i], times=chosen.data$value[i]))
+}
+
+chosen.data2 <- data.frame(chosen.data2)
+colnames(chosen.data2) <- "cancer.pair"
+
+ggplot(chosen.data2, aes(x=cancer.pair)) + geom_bar(width=.5) + coord_flip() + xlab("") +ylab("") + ggtitle("Cancer types most commonly appearing\n in the same gene expression group") +  theme(plot.title = element_text(size=10))
+```
