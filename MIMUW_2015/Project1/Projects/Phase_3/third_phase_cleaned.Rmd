@@ -1,0 +1,134 @@
+---
+title: "Projekt 1, faza 3"
+author: "Michał Frej, Bartosz Piotrowski, Krzysztof Rutkowski"
+output:
+  html_document:
+  toc: yes
+pdf_document:
+  toc: yes
+---
+#Przygotowywanie danych
+Wyselekcjonowaliśmy za pomocą poprzednich faz 47 genów. Robimy tabelę z tych genów oraz binarną decyzją
+dla każdego raka.
+```{r, warning = FALSE, message = FALSE}
+library(aod)
+library(plyr)
+library(ggplot2)
+load("cleaned_table.RData")
+
+#list of "good" genes from previous phases and preparing data
+genes.list <- c("C21orf34", "DACT2", "FCGBP", "OTX1", "TLE6", "ADA", "NAP1L1", "SNCAIP", "SNX4", "STX3",
+                "ATG7", "BMF", "C21orf122", "DPY19L1", "ENOSF1", "FAM115C", "HTRA3", "IGJ", "MED26", "MEGF6", 
+                "MYD88", "RAB32", "RCC1", "SEMA3C", "SNRNP200", "SPSB1", "SYNPO", "TULP3", "WDTC1", "ZDHHC8P1", 
+                "ZDHHC9", "ADAMTS14", "AGAP8", "ALDH1L1", "ANKRD58", "ASPG", "BTBD11", "C1orf204", "CA4",
+                "CCDC150", "CCL3", "IER3", "KLF15", "MRAP2", "SIGLEC8", "ST6GAL2", "SYT12")
+
+#preparing data
+bin.cancer <- data.frame(lapply(levels(cleaned_table$X_cohort), function(i) {cleaned_table$X_cohort == i}))
+colnames(bin.cancer) <- gsub(" ", "_", levels(cleaned_table$X_cohort))
+all.data <- cbind(bin.cancer, cleaned_table[,c(genes.list, "gender", "age_at_initial_pathologic_diagnosis")])
+cancers <- colnames(bin.cancer)
+#separation of patients on men and women
+all.data.male <- all.data[all.data$gender == "MALE",]
+all.data.female <- all.data[all.data$gender == "FEMALE",]
+```
+#Selekcja najlepszych genów dla każdego typu raka
+Za pomocą miary odróżnialności dla decyzji binarnej (ma raka, nie ma) wybieramy, które geny
+najbardziej wpływają na decyzję dla każdego typu raka.
+```{r, warning = FALSE, message = FALSE}
+#functions for selecting the most discernible genes for each cancer
+GetDiscMeasure <- function(cancer, gene, data) {
+  disc.data <- data[, c(cancer, gene)]
+  disc.data <- disc.data[order(disc.data[, gene]), ]
+  ones.first.cut <- 0
+  all.ones <- nrow(disc.data[disc.data[,cancer] == TRUE, ])
+  min.disc <- (nrow(disc.data) - all.ones)*all.ones
+  best.cut <- disc.data[1,2]
+  for (i in 1:nrow(disc.data)) {
+    if (disc.data[i,cancer]) {
+      ones.first.cut = ones.first.cut + 1
+    }
+    disc <- (i - ones.first.cut)*ones.first.cut + 
+      (all.ones - ones.first.cut)*((nrow(disc.data) - i) - (all.ones - ones.first.cut))
+    if(min.disc > disc){
+      min.disc <- disc
+      best.cut <- disc.data[i,2]
+    }
+  }
+  return(c(min.disc, best.cut, median(disc.data[disc.data[,cancer],2])))
+}
+
+DiscListCountAndShowPlots <- function(data, show.plots=TRUE) {
+  par(mfrow = c(3,4))
+  disc.list <- vector(mode="list", length=11)
+  names(disc.list) <- cancers
+  for (cancer in cancers) {
+    disc.list[[cancer]] <- sort.int(unlist(lapply(genes.list, function(i) {GetDiscMeasure(cancer, i, data)[1]})), index.return=TRUE)
+    if(show.plots){
+      plot(disc.list[[cancer]]$x, main=cancer, ylab="discernibilty measure")  
+    }
+  }
+  return(disc.list)
+}
+
+GetGenesListFromCutoffs <- function(cancer.cutoffs, disc.list) {
+  selected.genes <- vector(mode="list")
+  names(disc.list) <- cancers
+  ind <- 1
+  for (cancer in cancers) {
+    if(cancer.cutoffs[cancer] > 0){
+      selected.genes[[cancer]] <- genes.list[disc.list[[cancer]]$ix[1:cancer.cutoffs[ind]]]
+      ind <- ind + 1
+    }
+  }
+  return(selected.genes)
+}
+
+# count selected genes and show some plots
+disc.list <- DiscListCountAndShowPlots(all.data, show.plots=FALSE)
+disc.list.female <- DiscListCountAndShowPlots(all.data.female, show.plots=FALSE)
+disc.list.male <- DiscListCountAndShowPlots(all.data.male, show.plots=FALSE)
+```
+Patrząc na wykresy miary rozróżnialności wybraliśmy odpowiednią liczbę genów dla każdego raka
+```{r, warning = FALSE, message = FALSE}
+par(mfrow=c(1,2))
+plot(disc.list[["TCGA_Kidney_Clear_Cell_Carcinoma"]]$x, main="TCGA_Kidney_Clear_Cell_Carcinoma", ylab="discernibilty measure") 
+abline(h=4e+05, col="red")
+plot(disc.list[["TCGA_Lung_Adenocarcinoma"]]$x, main="TCGA_Lung_Adenocarcinoma", ylab="discernibilty measure")
+abline(h=400000, col="red")
+
+cancer.cutoffs.male <- c(3, 3, 4, 0, 3, 1, 3, 2, 2, 0, 4)      # cutoffs from seeing plots
+names(cancer.cutoffs.male) <- names(disc.list.male)
+cancer.cutoffs.female <- c(4, 1, 2, 6, 2, 3, 3, 2, 3, 2, 2)      # cutoffs from seeing plots
+names(cancer.cutoffs.female) <- names(disc.list.female)
+
+selected.genes.male <- GetGenesListFromCutoffs(cancer.cutoffs.male, disc.list.male)
+selected.genes.female <- GetGenesListFromCutoffs(cancer.cutoffs.female, disc.list.female)
+```
+Początkowy output dla wybranych genów dla mężczyzn.
+```{r, warning = FALSE, message = FALSE}
+selected.genes.male[1:2]
+```
+Potem patrzyliśmy na kwantyle ekspresji wybranych genów w zależności od typu raka i płci. Na podstawie odcięć otrzymanych z liczenia miary rozróżnialności i analizy wykresów zrobiliśmy tabelę decyzyjną.
+```{r, warning = FALSE, message = FALSE}
+#plots for each gene and cancer
+BoxplotGeneVsCancer <- function(gene, cancer, data){
+  cut <- GetDiscMeasure(cancer, gene, data)[2]
+  #cat(cut)
+  qplot(X_cohort, get(gene), fill=gender, data=cleaned_table, geom="boxplot", position="dodge",xlab="Cancer" ,ylab="Gene expression", main=gene) + 
+    geom_hline(yintercept = cut, colour="brown", size=2) + theme_bw() + coord_flip() 
+}
+
+#viewing boxplots for some good genes which differentiate certain cancers
+BoxplotGeneVsCancer("TULP3", "TCGA_Acute_Myeloid_Leukemia", all.data.male)
+
+BoxplotGeneVsCancer("BMF", "TCGA_Endometrioid_Cancer", all.data.female)
+BoxplotGeneVsCancer("RAB32", "TCGA_Endometrioid_Cancer", all.data.female)
+BoxplotGeneVsCancer("FAM115C", "TCGA_Endometrioid_Cancer", all.data.female)
+```
+
+Ostatecznie otrzymaliśmy następującą tabelę decyzyjną.
+```{r, warning = FALSE, message = FALSE}
+dec.data <- readRDS("decdata.rds")
+knitr::kable(dec.data, digits = 2, caption = "Decision table")
+```
