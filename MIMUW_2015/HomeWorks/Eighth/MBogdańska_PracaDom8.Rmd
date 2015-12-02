@@ -1,0 +1,63 @@
+---
+title: "PracaDom8"
+author: "Magdalena Bogdańska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    toc: TRUE
+---
+# Task
+
+For the Drosophila study check what will happen with coefficients if:
+
+a) all variables are included into a model and standard MLE estimates are calculated, b) ridge regression is applied, c) lasso regression is applied.
+
+For points b) and c) present how model coefficient behaves as a function of penalty/parameter.
+
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+attach(Drosophila)
+names(Drosophila)
+head(bs)
+df<-bs[,1:42]
+```
+First 41 variables are genotypes for selected loci, last 5 are phenotypes.
+We'll consider a Drosophila study with 41 loci and a single quantitative trait (shape of proboscis) denoted by variable pc1.
+
+# Standard MLE estimates
+```{r, warning=FALSE, message=FALSE}
+(coef1<-lm(pc1~., data=df)$coefficients)
+range(coef1)
+```
+All coefficients are relatively small.
+
+# Ridge regression
+```{r, warning=FALSE, message=FALSE}
+lambdas2 <- 10^seq(0,6.5,0.1)
+coef2 <- sapply(lambdas2, function(par) {
+  lm.ridge(pc1~., data=df, lambda=par)$coef
+})
+df2 <- data.frame(t(coef2), lambdas2)
+
+library(tidyr)
+df3<-gather(df2[,colnames(df2)!="X.Intercept."], variables, values, -lambdas2)
+
+library(ggplot2)
+ggplot(df3, aes(x=lambdas2, y=values, color=variables)) +
+  geom_line() + ylab("coefficients") +   scale_x_log10() + theme(legend.position="none")
+```
+
+# Lasso regression
+```{r, warning=FALSE, message=FALSE}
+library(lasso2)
+lambdas3 <- 10^seq(-5,1,0.1)
+coef3 <- sapply(lambdas3, function(lambda) {
+  l1ce(pc1~., data=df, bound=lambda, absolute.t=TRUE)$coef
+})
+
+df4 <- data.frame(t(coef3), lambdas3)
+df5<-gather(df4[,colnames(df4)!="X.Intercept."], variables, values, -lambdas3)
+
+ggplot(df5, aes(x=lambdas3, y=values, color=variables)) +
+  geom_line() + ylab("coefficients") +   scale_x_log10() + theme(legend.position="none")
+```
