@@ -1,0 +1,51 @@
+---
+title: "Homework 8"
+author: "Marcin Wojno"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+    
+Zdefiniujmy wartości dalej wykorzystywane.
+    
+###Najpierw biblioteki i zbiór danych:
+```{r, warning=FALSE, message=FALSE}
+library(glmnet)
+library(PBImisc)
+attach(Drosophila)
+```
+
+###MLE
+Czyli zwykły model liniowy. Na wykresie przedstawiającym zamodelowane współczynniki widzimy, że mają niewielkie wartości bezwzględne.
+```{r, warning=FALSE, message=FALSE}
+mle <- lm(pc1~., data=bs[,1:42])
+plot(mle$coefficients)
+```
+
+###Ridge
+
+Skorzystam z pakietu glmnet, który wykorzystywałem na innych zajęciach. Parametr alpha dobiera się między 0 a 1, gdzie alpha=0 to kara taka jak w Ridge Regression a alpha=1 to model taki jak Lasso. Wybrana wartość lambdy wydała mi się najodpowiedniejsza.
+```{r, warning=FALSE, message=FALSE}
+ridge <- glmnet(x=as.matrix(bs[,1:41]), 
+                y=as.matrix(bs[,42]), 
+                lambda = 2^((-13):5), 
+                alpha = 0)
+plot(ridge, xvar="lambda")
+```
+
+###Lasso
+
+```{r, warning=FALSE, message=FALSE}
+
+
+lasso <- glmnet(x=as.matrix(bs[,1:41]), 
+                y=as.matrix(bs[,42]), 
+                lambda = 10^seq(-5,-0.5,0.1), 
+                alpha = 1)
+plot(lasso, xvar="lambda")
+
+```
+
+###Porównanie
+Na wykresach widać, że większa liczba parametrów jest równa zeru przy modelu Lasso.

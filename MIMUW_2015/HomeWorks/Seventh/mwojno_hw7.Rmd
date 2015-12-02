@@ -1,0 +1,121 @@
+---
+title: "Homework 7"
+author: "Marcin Wojno"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+Zdefiniujmy wartości dalej wykorzystywane.
+```{r, warning=FALSE, message=FALSE}
+library(e1071)
+set.seed(123)
+n <- 50
+p <- 10
+combs <- bincombinations(p)[-1,]
+M <- 100
+```
+
+Na początku zdefiniuję kilka funkcji, aby później robić wyłącznie symulacje. Pierwsza niech będzie funkcja licząca wartości kryteriów odpowiednia AIC oraz BIC dla każdej konfiguracji zmiennych w modelu danym przez argument wejściowy dataSet:
+```{r, warning=FALSE, message=FALSE}
+policzMacierzWartosciKryteriow <- function(dataSet,combs)
+{
+    resultsOfCriterias <- matrix(0, nrow(combs), 2)
+    colnames(resultsOfCriterias) <- c("AIC", "BIC")
+    for (i in 1:nrow(combs)) {
+        form <- paste0("y~", paste0("var",which(combs[i,]==1), collapse="+"))
+        model <- lm(as.formula(form), data=dataSet)
+        resultsOfCriterias[i,1] <- AIC(model)
+        resultsOfCriterias[i,2] <- BIC(model)
+    }
+    fullModel <- lm(y ~ ., data=dataSet)
+    res <- as.data.frame(resultsOfCriterias)
+    res
+}
+```
+Teraz funkcja, która dla danych wejściowych (X) i wektora istotne, mówiącego które zmienne niezależne mają w jakim stopniu wyjaśniać zmienną zależną, korzystając z funkcji zdefiniowanej poprzednio, pakuje najlepsze modele wg kryteriów odpowiednio aic, bic oraz testu istotności brzegowej:
+```{r, warning=FALSE, message=FALSE}
+getModelByCriterium <- function( X , combs, istotne )
+{
+    y <- as.matrix(X)%*%as.matrix(istotne) + rnorm(n)
+    dataSet <- data.frame(y,X)
+    fullModel <- lm(y ~ ., data=dataSet)
+    wyniki <- policzMacierzWartosciKryteriow(dataSet, combs)
+    aic <- combs[which(wyniki[,1]==apply(wyniki, 2, min)[1]),]>0
+    bic <- combs[which(wyniki[,2]==apply(wyniki, 2, min)[2]),]>0
+    marginalF <- summary(fullModel)[[4]][2:11,4]<0.05
+    wazne <- istotne>0
+    rbind(wazne, aic, bic, marginalF)
+}
+```
+Teraz funkcja, która będzie tworzyć nasze dane:
+```{r, warning=FALSE, message=FALSE}
+createX <- function(n)
+{
+    threeLevels <- sample(c(1, 2, 3), size = n, replace = TRUE)
+    twoLevelsE <- sample(c(0, 1), size = n, replace = TRUE, prob=c(1/3, 2/3))
+    twoLevelsF <- sample(c(0, 1), size = n, replace = TRUE, prob=c(1/4, 3/4))
+    uniForm <- runif(n, min = -1, max = 5)
+    expo <- rexp(n, rate = 1.2)
+    normalA <- rnorm(n, mean = 1, sd = 2)
+    normalB <- rnorm(n, mean = -4, sd = 5)
+    normalC <- rnorm(n, mean = 2, sd = 10)
+    normalD <- rnorm(n, mean = 0, sd = 5)
+    normalE <- rnorm(n, mean = 0, sd = 5)
+    X <- data.frame(threeLevels,twoLevelsE,twoLevelsF,uniForm,expo,normalA,normalB,normalC,normalD,normalE)
+    colnames(X) <- paste0("var", 1:p)
+
+    X
+}
+```
+I w końcu funkcja pakująca wszystkie poprzednie w jedną, wypluwającą porównanie skuteczności kryterium:
+```{r, warning=FALSE, message=FALSE}
+porownujSkutecznoscKryteriow <- function(combs, istotne, n)
+{
+    x <- getModelByCriterium(createX(n), combs, istotne)
+    aic <- sum(x[1,]==x[2,])/10 # porownanie bazy z AIC
+    bic <- sum(x[1,]==x[3,])/10 # porownanie bazy z BIC
+    fTest <- sum(x[1,]==x[4,])/10 # porownanie bazy z testem brzegowym
+    c(aic, bic, fTest)
+}
+```
+
+Moja strategia opiera się na pomyśle, aby wszystko zrobić na jednym wzrocu danych (funkcja createX()) i modyfikować jedynie które kolumny mają wyjaśniać zmienną zależną i w jakim stopniu.
+
+Jako pierwsze rozpatrzmy AIC. TO kryterium wybiera dużywiększe modele, ponieważ kara za liczbę zmiennych jest liniowa. Weźmy zatem kilka (na pewno więcej niż w BIC) atrybutów:
+
+```{r, warning=FALSE, message=FALSE}
+istotneAIC <- c(0.03, 0.05, 1, 0.1, 0.05, 0, 0, 0.1, 0.2, 0)
+wynikAIC <- replicate(M, porownujSkutecznoscKryteriow(combs, istotneAIC, n))
+
+sum(apply(wynikAIC, 2, which.max)==1)
+sum(apply(wynikAIC, 2, which.max)==2)
+sum(apply(wynikAIC, 2, which.max)==3)
+```
+
+W BIC weźmy w takim razie mniej zmiennych:
+
+```{r, warning=FALSE, message=FALSE}
+istotneBIC <- c(0, 0, 0, 0, 1.2, 0, 0, .7, 0, .9)
+wynikBIC <- replicate(M, porownujSkutecznoscKryteriow(combs, istotneBIC, n))
+
+sum(apply(wynikBIC, 2, which.max)==1)
+sum(apply(wynikBIC, 2, which.max)==2)
+sum(apply(wynikBIC, 2, which.max)==3)
+```
+
+Nie znalazłem niestety w swoich symulacjach kiedy test brzegowy moze istotnie wyprzedzać kryteria AIC/BIC na danych przygotowanych przeze mnie i różnie to bywa w końcowej symulacji:
+```{r, warning=FALSE, message=FALSE}
+n <- 50
+
+istotneMarginal <- c(0, 0, 0, 0, 0.9, 0, 0, .7, 0, .6)
+wynikMarginal <- replicate(100, porownujSkutecznoscKryteriow(combs, istotneMarginal, n))
+
+sum(apply(wynikMarginal, 2, which.max)==1)
+sum(apply(wynikMarginal, 2, which.max)==2)
+sum(apply(wynikMarginal, 2, which.max)==3)
+```
+
+
+
