@@ -54,6 +54,12 @@ So, how to fixed and mixed models may look like?
 ### Three models, three sets of estimates
 
 ```{r}
+summary(lm(y~species*temperature, data=X))
+summary(lm(y~species:temperature, data=X))
+
+
+
+
 model1 = lmer(y~species*temperature + (1|plant:species:temperature), data=X)
 summary(model1)$coefficients
 
