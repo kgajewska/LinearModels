@@ -1,0 +1,55 @@
+---
+title: "Homework 9"
+author: "Ma³gorzata Pujszo"
+date: "Monday, December 07, 2015"
+output: html_document
+---
+
+###Dataset simulation 
+
+Firstly, I created a function which will be used in 2 simulated scenarios. u has normal distribution with mean=0 and standard deviation=sigma1, errors have normal distribution with mean=0 and standard deviation=sigma0. Function sim simulates a dataset, creates a model and returns estimator for sigma1. z is the variable which is modeled as random effect. 
+
+```{r, message=FALSE, warning=FALSE}
+library(lme4)
+library(ggplot2)
+sim <- function (z, sigma0, sigma1) {
+  epsilon <- rnorm(length(z), 0, sigma0)
+  u <- rnorm(length(z), 0, sigma1)
+  y <- u[z] + epsilon
+  model <- lmer(y~(1|z))
+  as.data.frame(VarCorr(model))[1, 4]
+}
+```
+
+For both scenarios I used the same z, sigma0=2.
+
+###First scenario
+
+Here, sigma1=0. Since I'm looking for distribution of estimator of sigma1^2, I performed sim function n=1000 times. I plotted histogram and compute some basic statistics for the obtained distribution.
+
+
+```{r}
+n <- 1000
+z <- rep(1:10, times=1:10)
+sigma0 <- 2
+sigma1 <- 0
+
+sigma2.1 <- replicate(n, sim(z, sigma0, sigma1))
+qplot(sigma2.1^2, geom="histogram") + ggtitle("Histogram of sigma1^2")
+summary(sigma2.1^2)
+```
+
+As we can see this distribution is skewed with the maximum value around 16 but it is mostly concentrated near 0.
+
+###Second scenario
+
+In this case sigma1=1.
+
+```{r}
+sigma1 <- 1
+sigma2.2 <- replicate(n, sim(z, sigma0, sigma1))
+qplot(sigma2.2^2, geom="histogram") + ggtitle("Histogram of sigma1^2")
+summary(sigma2.2^2)
+```
+
+It is also a skewed distribution but here it is more spread.
