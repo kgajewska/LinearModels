@@ -12,6 +12,7 @@ Firstly, I created a function which will be used in 2 simulated scenarios. u has
 ```{r, message=FALSE, warning=FALSE}
 library(lme4)
 library(ggplot2)
+set.seed(77)
 sim <- function (z, sigma0, sigma1) {
   epsilon <- rnorm(length(z), 0, sigma0)
   u <- rnorm(length(z), 0, sigma1)
@@ -35,11 +36,13 @@ sigma0 <- 2
 sigma1 <- 0
 
 sigma2.1 <- replicate(n, sim(z, sigma0, sigma1))
-qplot(sigma2.1^2, geom="histogram") + ggtitle("Histogram of sigma1^2")
+qplot(sigma2.1^2, stat="ecdf", geom="step") + ggtitle("Distribution function of sigma1^2")
 summary(sigma2.1^2)
+f1 <- ecdf(sigma2.1^2)
+f1(0)
 ```
 
-As we can see this distribution is skewed with the maximum value around 16 but it is mostly concentrated near 0.
+As we can see this distribution is skewed with the maximum value around 4 but it is mostly concentrated near 0. Moreover, probability of 0 is around 0.5.
 
 ###Second scenario
 
@@ -48,8 +51,22 @@ In this case sigma1=1.
 ```{r}
 sigma1 <- 1
 sigma2.2 <- replicate(n, sim(z, sigma0, sigma1))
-qplot(sigma2.2^2, geom="histogram") + ggtitle("Histogram of sigma1^2")
+qplot(sigma2.2^2, stat="ecdf", geom="step") + ggtitle("Distribution function of sigma1^2")
 summary(sigma2.2^2)
+f2 <- ecdf(sigma2.2^2)
+f2(0)
 ```
 
-It is also a skewed distribution but here it is more spread.
+It is also a skewed distribution but here it is more spread and probability of 0 is less than 0.1.
+
+###Comparison of 2 scenarios
+
+Let's compare those distributions.
+
+```{r}
+df <- data.frame(x = c(sigma2.1^2, sigma2.2^2), scenario = gl(2, n))
+
+ggplot(df, aes(x, colour = scenario)) + stat_ecdf() + ggtitle("Comparison of distribution functions in 2 scenarios")
+```
+
+
