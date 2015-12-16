@@ -1,0 +1,77 @@
+---
+title: "PracaDom9_MBogdańska"
+author: "Magdalena Bogdańska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    fig_height: 4
+    fig_width: 6
+    toc: yes
+---
+## Task
+
+There is a problem with theoretical formulation of distribution for $\hat\theta$.
+
+But one can use simulations to study this distribution in controlled settings.
+
+The task: simulate distribution of $\hat\theta=\hat\sigma^2_1$ when the true $\sigma^2_1=0$ (all random effects are equal 0) and when $\sigma^2_1=1$.
+
+To simulate distribution of $\hat\sigma^2_1$ one should repeat many times (i.e. 1000) the following scenario:
+
+- simulate $\varepsilon$ and $u$ from Gaussian distribution with given $\sigma^2_0$ and $\sigma^2_1$, 
+
+- estimate $\hat\sigma^2_1$ with the use of lme4.
+
+-------------------------------------------------------------------------------------------
+I will construct a mixed-effects models, that is a model of a form: 
+
+$$ y= X \beta + Zu +\varepsilon,$$
+where $X$ is variable having fixed effect and $Z$ is having random effect, $u \sim \mathcal{N}(0,\sigma_1), \ \epsilon \sim \mathcal{N}(0,\sigma_0).$
+
+In this study I will consider only model of random effect $(X \equiv 0).$ I will consider 12 levels of variable $Z, \sigma_0=5$ and $\sigma_1$ will be equal either 0 or 1.
+
+
+## Simulation procedure and estimation of $\hat \theta$ for both scenarios
+```{r, warning=FALSE, message=FALSE}
+library(lme4)
+
+lev<-12
+n_obs<-50
+s0<-5 
+
+#first scenario
+s1_1<-0
+# second scenario
+s1_2<-1 
+
+N<-1000
+
+theta<-replicate(N,{
+  Z<-sample(1:lev,n_obs, replace = TRUE)
+  eps <- rnorm(n_obs, 0, s0)
+  u <- rnorm(n_obs, 0, s1_1)
+  u2 <- rnorm(n_obs, 0, s1_2)
+  y <- u[Z] + eps
+  y2 <- u2[Z] + eps
+  rm <- lmer(y~(1|Z)) # random-effects model
+  rm2 <- lmer(y2~(1|Z)) # random-effects model
+  # extract variance using VarCorr function
+  theta<-attr(VarCorr(rm)$Z, "stddev")^2
+  # one can alternatively use command: 
+  # VarCorr(rm)$Z[1]
+  theta1<-attr(VarCorr(rm2)$Z, "stddev")^2
+  c(theta,theta1)
+} )
+```
+
+## Visualisation
+```{r, warning=FALSE, message=FALSE}
+library(ggplot2)
+qplot(theta[1,], geom="histogram", main=expression(paste("Histogram for estimated ", theta, " in first scenario")))
+qplot(theta[2,], geom="histogram", main=expression(paste("Histogram for estimated ", theta, " in second scenario")))
+
+```
+
+## Conclusions
+
+The distribution of estimated $\theta$ in both scenario is concentrated around 0, but in the second case the tail is slightly longer and bigger.
