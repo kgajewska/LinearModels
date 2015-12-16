@@ -1,0 +1,136 @@
+---
+title: "Homework 9"
+author: "Katarzyna Kanska"
+date: "10.12.2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Goal
+
+Study the distribution of $\hat\theta$ using simulation and package `mle4`.
+
+Focus on two scenarios: the true $\sigma^2_1=0$ (all random effects are equal 0) and $\sigma^2_1=1$.
+
+## Scenario 1
+
+Fistly we racall the model formulation $y=X\beta + Zu + \varepsilon$, where $\varepsilon \sim \mathcal{N}(0, \sigma^2_0)$ and $u \sim \mathcal{N}(0, \sigma^2_1)$.
+
+```{r, warning=FALSE, message=FALSE}
+library(lme4)
+
+GenData <- function(N, sigma0, sigma1, m){
+  '
+    Function generating a data set consisting of N observations of two variables.
+    One of them eaxplains the other one in a way described by a mixed model
+    with random effect derived from the normal distribution with standard deviation = sigma1.
+    The random noise is from the normal distribution with standard deviation = sigma0.
+    Parameter m describes the number of observed levels of the explanatory variable.
+    Assumption: m < N.
+  '
+  
+  u <- rnorm(N, sd=sigma1)
+  epsilon <- rnorm(N, sd=sigma0)
+  z <- sample(1:m, size=N, replace=TRUE)
+  y <- u[z] + epsilon
+  
+  data.frame(y, z)
+  
+}
+
+GetEstimate <- function(df, reml){
+  '
+    Function performing linear regression with one random effect.
+  
+    Input:
+    df - data frame with variables y and u
+    reml - logical value indicating whether the estimates should be chosen
+            to optimize the REML criterion (TRUE) or the log-likelihood (FALSE)
+  
+    Output:
+    sigma1 - the estimate for standard deviation of the random effect
+  '
+  
+  model <- lmer(y ~ (1|z), data=df, REML=reml)
+  sigma1 <- as.data.frame(VarCorr(model))[1, 4]
+  
+  return(sigma1)
+
+}
+
+
+# number of replications
+M <- 1000
+
+# sample size
+N <- 300
+
+# sd of random noise
+sigma0 <- 1
+
+# sd of random effect
+sigma1 <- 0
+
+# number of observed levels
+m <- c(10, 50, 100)
+
+# simulations for 10, 50, 100 observed levels of random effect
+sigma1LogLik0 <- lapply(m,
+                        function(m) replicate(M, GetEstimate(GenData(N, sigma0, sigma1, m), FALSE) )
+                        )
+
+sigma1REML0 <- lapply(m,
+                      function(m) replicate(M, GetEstimate(GenData(N, sigma0, sigma1, m), TRUE) )
+                      )
+
+```
+
+## Scenario 2
+
+```{r, warning=FALSE, message=FALSE}
+# sd of random effect
+sigma1 <- 1
+
+# simulations for 10, 50, 100 observed levels of random effect
+sigma1LogLik1 <- lapply(m,
+                        function(m) replicate(M, GetEstimate(GenData(N, sigma0, sigma1, m), FALSE) )
+                        )
+
+sigma1REML1 <- lapply(m,
+                      function(m) replicate(M, GetEstimate(GenData(N, sigma0, sigma1, m), TRUE) )
+                      )
+
+```
+
+## Comparison and conclusions
+
+```{r, warning=FALSE, message=FALSE}
+# preparing data frame with results
+df0 <- data.frame( sigma1 = c(unlist(sigma1LogLik0), unlist(sigma1REML0)),
+                   REML = rep(c("LogLik", "REML"), each=3*M),
+                   observed.levels = rep(m, times=2, each=M)
+                   )
+
+df1 <- data.frame( sigma1 = c(unlist(sigma1LogLik1), unlist(sigma1REML1)),
+                   REML = rep(c("LogLik", "REML"), each=3*M),
+                   observed.levels = rep(m, times=2, each=M)
+                   )
+
+
+library(ggplot2)
+
+ggplot(df0, aes(x=sigma1)) + geom_histogram() + facet_grid(REML ~ observed.levels) +
+    ggtitle("True sigma1 = 0")
+
+ggplot(df1, aes(x=sigma1)) + geom_histogram() + facet_grid(REML ~ observed.levels) +
+    ggtitle("True sigma1 = 1")
+
+```
+
+**Conclusions**
+
+* In both cases there in no significant difference between REML and Log Likelihood method used for estimating the variance of random effect.
+* In the case of non-zero true variance the estimates for variance of random effect are more accurate if there are more levels of random effect observed. Also the histograms become more symetric. For small number of observed levels we can see that the distributions has a right tail.
+* In the case of zero true variance the estimates for variance of random effect are more accurate for small number of levels of random effect observed. The distribution is right tailed, which is obvious - variance is non-negative.
+* The estimates of variance oscilates around the true value in both scenarios.
