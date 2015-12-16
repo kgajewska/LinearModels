@@ -1,0 +1,42 @@
+---
+title: "Praca domowa 9"
+author: "Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+Firstly I load necessary libraries and then do such a scenario. I generate residuals from $\mathcal{N}(0,1)$ oraz efekt losowy, nazwany mieszanym o rozkładzie $\mathcal{N}(0, \theta_i)$, gdzie $i=0,1$ i $\theta_i$ jest równa odpowiedznio 0 i 1. Następnie losuję podział, czyli jak zmienne będą ze sobą grupowane. Jako że losuję z rozkładu jednostajnego grupę do której dana obserwacja należy, grup będzie dużo, zatem potraktowanie tej zmiennej jako efekt losowy jest rozsądne.
+Następnie generuję zmienną x z rozkładu jednostajnego i dodaję do siebie wszystkie rzeczy, robię model liczę wariancję, powtarzam wszytko 1000 razy i generuję histogramy.
+
+```{r}
+library(lme4)
+library(ggplot2)
+z<- replicate(1000, {
+theta1<-0
+theta0<-1
+residuals<-rnorm(1000)*theta0
+mieszane1<-rnorm(1000)*theta1
+theta1<-1
+mieszane2<-rnorm(1000)*theta1
+podzial<-sample(1000, 1000, replace = TRUE, prob = NULL)
+x<-runif(1000)
+y1<-x+mieszane1[podzial]+residuals
+y2<-x+mieszane2[podzial]+residuals
+
+model1<-lmer(y1~x+(1|podzial))
+model2<-lmer(y2~x+(1|podzial))
+c(as.data.frame(VarCorr(model1))[1,5],
+as.data.frame(VarCorr(model2))[1,5])
+})
+```
+
+## Histograms and conclusions
+```{r}
+qplot(z[1,], geom="histogram")
+qplot(z[2,], geom="histogram")
+```
+
+We see the distributions of $\theta_i$. In the case when $\theta=0$, the distribution of this paramteter is strongly focused in 0 and observing $\theta$ greater than 0.35 is very rare.
+On the other hand when $\theta=1$ the distribution is less concentrated around 1, but the mean is definitaly around it.
