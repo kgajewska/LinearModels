@@ -149,7 +149,15 @@ ggplot(data=data, aes(x=mouse, y=length, group=treatment, colour=treatment)) + s
 
 ```
 
-# 5. Conslusion
+# 5. Diagnosis of random effects
+
+
+```{r, warning=FALSE, message=FALSE}
+u = ranef(model2, condVar=T)
+dotplot(u)
+```
+
+# 6. Conslusion
 
 In first phase of project 2, we tried to explain what factors affect the length of spines. According to recommendation, we test if there is an interaction between the mouse type and the treatment. In case for "KO" study, we can say, that the most important influence has kind of treatment.
 
