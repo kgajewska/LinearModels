@@ -1,0 +1,213 @@
+---
+title: "Project 2, Phase 1"
+author: "Magdalena Bogdañska, Piotr Obarski and Ma³gorzata Pujszo"
+date: "Linear and Mixed Models with Examples for Biological and Medical Data"
+output: 
+  html_document:
+    toc: true
+---
+
+##Introduction
+It has been observed that abnormalities in human dendritic spines can cause cognitive disorders such as ADHD, autism and intellectual disability. Thus it is believed that functionality of dendritic spines can influence brain cognitive functions. Based on the data on mice with different genomes and treated in different ways one can infer many hypothesis on the role of dendritic spines and affect of treatments.
+
+##Objective
+
+Our main goal is to find out which variables affect the length of dendritic spine. In the first phase we will verify whether the interaction between mice type and treatment's type influences the length of dendritic spines. 
+
+
+##Preparing dataset
+In this project we will use the dataset "dendriticSpines", which contains data from three different studies. In this phase of the project we considered a subset with "chiron" study (named below as "dataset").
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+library(ggplot2)
+library(lme4)
+library(MASS)
+library(lattice)
+load("dendriticSpines.rda")
+dataset <- dendriticSpines[dendriticSpines$Study=="chiron",]
+```
+
+Apart of studying "control group" (wild type with no genetic modifications) there were included two basic types of genetically modified mice.
+
+Transgenic mouse (TG) is obtained through injection into a single cell of the mouse embryo, thus inserting new genetic information into the mouse genome or to over-express endogenous genes.
+
+Knonckout mouse (KO) has inactivated an existing gene which has been done by modifying embryonic stem cells (replacing or disrupting selected gene with an artificial piece of DNA).
+
+However in the study "chiron" KO mice don't appear and consequently this type won't be taken into account while modelling. We can observe it using the following command:
+```{r}
+table(dataset$mouse)
+```
+
+```{r, echo=FALSE}
+dataset <- subset(dataset, mouse != "KO")
+dataset$mouse <- factor(dataset$mouse)
+```
+Now, let's verify which types of treatment are taken into acount in this study.
+
+```{r}
+table(dataset$treatment)
+```
+
+```{r, echo=FALSE}
+dataset <- subset(dataset, !(treatment %in% c("-", "gm", "li")))
+dataset$treatment <- factor(dataset$treatment)
+```
+As we can see we have only two types of treatment which have nonzero observations: "chiron" and "dmso". So, we focused on them only. 
+
+##Effect of interaction between treatment and mice type
+
+###Graphical analysis
+
+Since we are interested in the effect of interaction of type of mouse and type of treatment, let's first see some plots and tables. 
+
+```{r, fig.height=4, fig.width=6}
+ggplot(aes(y=log(length), x=interaction(mouse, treatment)), data=dataset) + geom_boxplot()
+```
+
+From boxplots, it looks as if there was no interaction. We calculated also means within groups. They are the following:
+
+```{r}
+by(dataset$length, dataset$mouse:dataset$treatment, mean)
+```
+
+Here, one doesn't notice a huge different. Let's see also interaction plot.
+
+```{r, fig.height=4, fig.width=5}
+ggplot(data=dataset, aes(x=mouse, y=length, group=treatment, colour=treatment)) + stat_summary(fun.y= mean, geom="line") +ggtitle("Interaction of mouse type and treatment")
+```
+
+Lines seems to be almost parallel and it is also a sign of the lack of interaction. Plots and table suggest that interaction is not important. However, we tested it in order to have more reliable results.
+
+###Fitting a model
+
+Since we have only 2 levels of type of mouse and 2 levels of type of treatment and we are interested in estimation of effects of these variables, we modeled them as fixed effects.
+
+However, we also have an information of animals and photos of part of their brain and we probably have to take it into consideration. Because mice in the study are random sample from general population of mice and we are probably not interested of the effects of specific animal or photo, we modeled those variables as random effects. 
+
+Since we know that the effect of photo is nested in the effect of animal we tried the following model:
+
+```{r}
+model1 <- lmer(length ~ mouse*treatment + (1|Animal/Photo_ID_abs), data=dataset)
+```
+
+In order to have a proper model we need to check normality of random effects and normality of residuals.
+
+First, let's check normality of photo variable - it is done by performing Shapiro test.
+
+```{r}
+shapiro.test(as.matrix(ranef(model1)$`Photo_ID_abs:Animal`))
+```
+
+p-value is quite low but still at the level of 0.05 the test classify this variable as normal.
+
+Normality of animal is tested here:
+
+```{r}
+shapiro.test(as.matrix(ranef(model1)$Animal))
+```
+
+The test is positive since the p-value is close to 1.
+
+What is left is the normality of residuals. Because the number of observation is huge, we cannot perform Shapiro test. So, let's look at it graphically.
+
+```{r, fig.height=4, fig.width=4}
+qplot(residuals(model1, scaled=TRUE), geom="histogram") + ggtitle("Histogram of standardized residuals")
+qplot(sample = residuals(model1, scaled=TRUE), stat="qq") + geom_abline(intercept=0, slope=1, colour="red", size=1) + ggtitle("Normal Q-Q Plot")
+```
+
+Residuals doesn't look normal. We tried to transform length variable in order to obtain normal residuals. We performed both: Box-Cox transformation anad Logtrans.
+
+```{r, fig.height=4, fig.width=4}
+boxcox(length~mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset)
+
+logtrans(length~mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset, alpha=seq(-min(dataset$length)+0.01,1,0.1))
+```
+
+As we can see both methods give approximately lambda=0, respectively alpha=0, so the best choice is just taking logarithm.
+
+We performed the same tests for changed model and results are the following:
+
+```{r, fig.height=4, fig.width=4}
+model1 <- lmer(log(length) ~ mouse*treatment + (1|Animal/Photo_ID_abs), data=dataset)
+summary(model1)
+shapiro.test(as.matrix(ranef(model1)$`Photo_ID_abs:Animal`))
+shapiro.test(as.matrix(ranef(model1)$Animal))
+qplot(residuals(model1, scaled=TRUE), geom="histogram") + ggtitle("Histogram of standardized residuals")
+qplot(sample = residuals(model1, scaled=TRUE), stat="qq") + geom_abline(intercept=0, slope=1, colour="red", size=0.75) + ggtitle("Normal Q-Q Plot")
+```
+
+In order to confirm results from Shapiro test, we plotted quantile plot with confidence intervals.
+
+```{r, fig.height=4, fig.width=4}
+qqmath(ranef(model1, condVar=TRUE))
+```
+
+Because it is possible to put a line which intersects all confidence intervals there is no reason to reject hypothesis of normality of random effects.
+
+After transformation standardized residuals and random effects looks pretty normal so the assumptions all fullfilled.
+
+###Testing variables coded as random effects
+
+Now, we would like to find out whether we chose a good model. In order to do this, we tested all variables separately using Maximum Likelihood ratio test.
+
+Random effect of animal:
+
+```{r}
+model2 <- lmer(log(length) ~ mouse*treatment + (1|Photo_ID_abs:Animal), data=dataset)
+anova(model1, model2)
+```
+
+Effect of animal turned out to be very significant since p-value is low.
+
+Let's now test the nested effect of photo.
+
+```{r}
+model3 <- lmer(log(length) ~ mouse*treatment + (1|Animal), data=dataset)
+anova(model1, model3)
+```
+
+Again, the effect is very important.
+
+###Testing the effect of interaction
+
+For now, we know that our random effects are significant. However, since our main goal was to check interaction effect, it's time to find out something about its significance.
+
+```{r}
+model4 <- lmer(log(length) ~ mouse + treatment +(1|Animal/Photo_ID_abs), data=dataset)
+anova(model1, model4)
+```
+
+Here the effect of interaction is non-significant. But let's see if we obtain the same using t-test.
+
+```{r}
+int <- summary(model1)$coef[4,3]
+2*pnorm(int, lower.tail=T)
+```
+
+Both tests reject the hypothesis of important influence of interaction on length of spine. Combining these results with the plots shown previously, we may infer that the effect of interaction of mouse and treatment variable is not significant in the model.
+
+##Testing fixed effects
+
+We have already tested the importance of random effects and of interaction (which was our main goal). However, we would like to know if the mouse and treatment variable are important.
+
+Let's test the effect of treatment first.
+
+```{r}
+model5 <- lmer(log(length) ~ mouse +(1|Animal/Photo_ID_abs), data=dataset)
+anova(model4, model5)
+```
+
+The effect of treatment seems to be significant. 
+
+What about the effect of mouse?
+
+```{r}
+model6 <- lmer(log(length) ~ treatment +(1|Animal/Photo_ID_abs), data=dataset)
+anova(model4, model6)
+```
+
+The effect of mouse turned out to be not important.
+
+##Conclusions
+
+We tested the effect of interactions and it turned out to be non-significant. We also found out that the effect of mouse is not important while the effect of treatment and random effects of animal and photo are. As a result, basing only on "chiron" study we may conclude that to explain length of spine we have to consider: treatment and the effects of particular animals and photos.

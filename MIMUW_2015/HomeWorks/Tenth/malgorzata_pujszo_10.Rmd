@@ -1,0 +1,46 @@
+---
+title: "Homework 10"
+author: "Ma³gorzata Pujszo"
+date: "Wednesday, December 16, 2015"
+output: html_document
+---
+
+###Performing post-hoc
+
+First task was to perform post-hoc analysis of the effect of ICD10 in eunomia study. I used LSD.test.
+
+```{r, message=FALSE, warning=FALSE}
+library(PBImisc)
+library(agricolae)
+library(lattice)
+library(ggplot2)
+library(lme4)
+model <- lm(BPRS.T2 ~ ICD10, data=eunomia)
+LSD.test(model, "ICD10", console=TRUE)
+```
+
+As a result, I obtained that diseases: F12.1, F42.0 are the most likely to produce psychotic behaviour since they are both in the same group and have the highest mean.
+
+###Clustering ICD10
+
+LSD test (or another post-hoc tests) returns also the division of the variable into groups such that levels (in this case diseases) are not significantly different within groups.
+
+```{r}
+post.hoc.groups <- LSD.test(model, "ICD10")$groups
+levels(post.hoc.groups[,3])
+```
+
+In eunomia study LSD test returnes 11 groups (if we treat combinations of more than one  letter as a separate group). so we can cluster ICD10 variable into 11 groups and diseases within the cluster are similar.
+
+Let's look at boxplots of such groups.
+
+```{r}
+post.hoc.groups <- post.hoc.groups[,c(1,3)]
+colnames(post.hoc.groups) <- c("ICD10", "group")
+df <- merge(eunomia, post.hoc.groups, "ICD10")
+ggplot(aes(y=BPRS.T2, x=group), data=df) + geom_boxplot()
+```
+
+###ICD10 as random effect
+
+When ICD10 is coded as a random effect we are not interested in clutering it. When considering random effects we are focused in its distribution not on the effects of particular groups.
