@@ -1,0 +1,149 @@
+---
+title: "Homework 10"
+author: "Katarzyna Kanska"
+date: "17.12.2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Goal
+
+For the `eunomia` study perform following analyses:
+
+* Try a post-hoc test for effect of `ICD10` to find out which diseases are more likely to produce psychotic behaviours?
+* Is it possible you cluster `ICD10` groups depending on average level of psychotic behaviours?
+* Is it possible to do something similar if `ICD10` is coded as random effects?
+
+## Post-hoc test (`ICD10` as fixed effect)
+
+We are focusing on variable `BPRS.T1`, that is average score for Brief Psychiatric Rating Scale, measured in time T1. Here we explain it using variable `ICD10` (International Statistical Classification of Diseases and Related Health Problems) treated as fixed effect.
+
+Firstly we analyse the results of LSD post-hoc test.
+
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+library(agricolae)
+(groups1 <- (LSD.test(aov(BPRS.T1 ~ ICD10, data=eunomia),"ICD10"))$groups)
+table(groups1[,3])
+```
+
+Note that the `BPRS` have values ranging from 1 (not present) to 7 (extremely severe psychotic disorders). So we are interested in diseases with relatively high mean of `BPRS`.
+
+Variable `ICD10` have 138 levels, so it hard to set a proper threshold for deciding whether each disease has significantly higher mean of `BPRS` than other diseases. Therefore it could be beneficial to reduce number of `ICD10` levels. At the moment we can only say that `F34.9` has the highest mean.
+
+## Clusterization (`ICD10` as fixed effect)
+
+We try to cluster `ICD10` groups using the results of LSD post-hoc test. But this is not very satisfying result as we see 6 overlapping subgroups (called from "a" to "f").
+Maybe adding another variable (`NUM.HOSP` -  number of hospitalizations) would help somehow. Let's see.
+
+```{r, warning=FALSE, message=FALSE}
+groups2 <- (LSD.test(aov(BPRS.T1 ~ NUM.HOSP + ICD10, data=eunomia),"ICD10"))$groups
+table(groups2[,3])
+```
+
+Now we have 7 groups which is slightly better result. But still any group cannot be distinguished from other ones.
+
+But we won't give up that easily. We can try clustering group of `ICD10` levels that have the same set of letters (although there is no straight justification for doing it this way).
+
+```{r, warning=FALSE, message=FALSE}
+eunomia$ICD10new <- as.character(eunomia$ICD10)
+
+for (x in levels(groups2$M)){
+  for (y in unlist(lapply(groups2$trt[groups2$M == x], as.character))){
+    eunomia$ICD10new[eunomia$ICD10 == y] <- paste0("F.", x)
+  }
+}
+
+eunomia$ICD10new <- factor(eunomia$ICD10new)
+
+groups3 <- (LSD.test(aov(BPRS.T1 ~ NUM.HOSP + ICD10new, data=eunomia),"ICD10"))$groups
+table(groups3[,3])
+```
+
+Now we can iterate this procedure.
+
+```{r, warning=FALSE, message=FALSE}
+eunomia$ICD10new2 <- as.character(eunomia$ICD10new)
+
+for (x in levels(groups3$M)){
+  for (y in gsub(" ", "", unlist(lapply(groups3$trt[groups3$M == x], as.character)), fixed = TRUE)){
+    eunomia$ICD10new2[eunomia$ICD10new == y] <- paste0("F2.", x)
+  }
+}
+
+eunomia$ICD10new2 <- factor(eunomia$ICD10new2)
+
+groups4 <- (LSD.test(aov(BPRS.T1 ~ NUM.HOSP + ICD10new2, data=eunomia),"ICD10"))$groups
+table(groups4[,3])
+```
+
+There is no further possibility for clustering using this method. But let's see what we derived.
+
+```{r, warning=FALSE, message=FALSE}
+groups4
+```
+
+Still it is not clear what the threshold should be. By the rule of thumb we can say that 3 first groups have higher probability of having stronger psychotic behaviours. (Because their mean is above the middle point of the `BPRS` scale (that is 3.5).)
+
+Now let's "decode" these artificial groups.
+
+F2.a stands for
+
+```{r, warning=FALSE, message=FALSE}
+as.character(groups2$trt[groups2$M==gsub(" ", "",gsub("F.", "", groups3$trt[groups3$M=="a"], fixed = TRUE), fixed = TRUE)])
+```
+
+F2.ab stands for
+
+```{r, warning=FALSE, message=FALSE}
+as.character(groups2$trt[groups2$M==gsub(" ", "",gsub("F.", "", groups3$trt[groups3$M=="ab"], fixed = TRUE), fixed = TRUE)])
+```
+
+F2.abc stands for
+
+```{r, warning=FALSE, message=FALSE}
+as.character(groups2$trt[groups2$M==gsub(" ", "",gsub("F.", "", groups3$trt[groups3$M=="abc"], fixed = TRUE), fixed = TRUE)])
+```
+
+So our selected diseases are `F34.9`, `F12.1` and `F63.9 3.652174`, which could have been derived from the first LSD test result as well...
+
+Maybe the model diagnostics is better for the clustered variable?
+
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(rstandard(lm(BPRS.T1 ~ NUM.HOSP + ICD10, data=eunomia)))
+shapiro.test(rstandard(lm(BPRS.T1 ~ NUM.HOSP + ICD10new2, data=eunomia)))
+
+par(mfrow=c(1,2))
+plot(lm(BPRS.T1 ~ NUM.HOSP + ICD10, data=eunomia), which=2)
+plot(lm(BPRS.T1 ~ NUM.HOSP + ICD10new2, data=eunomia), which=2)
+```
+
+There is not much difference.
+
+## Clusterization (`ICD10` as random effect)
+
+If we treat `ICD10` as a random effect for the mean, then we won't get any information which would be useful for clusterization. The only way to vary some subgroups of `ICD10` is assuming that it has a different effect depending on the number of hospitalizations.
+
+```{r, warning=FALSE, message=FALSE}
+library(lme4)
+library(lattice)
+
+ICD10new3 <- substr(eunomia$ICD10, start=0, stop=3)
+eunomiaNEW <- data.frame(eunomia, ICD10new3)
+
+xyplot(BPRS.T2 ~ NUM.HOSP | ICD10new3, eunomiaNEW, type = c("g","p","r"), pch=19)
+
+ICD10new4 <- substr(eunomia$ICD10, start=0, stop=2)
+eunomiaNEW2 <- data.frame(eunomia, ICD10new4)
+
+xyplot(BPRS.T2 ~ NUM.HOSP | ICD10new4, eunomiaNEW2, type = c("g","p","r"), pch=19)
+```
+
+There is some evidence of different slopes.
+
+```{r, warning=FALSE, message=FALSE}
+(model <- lmer(BPRS.T2 ~ NUM.HOSP + (NUM.HOSP | ICD10), eunomia))
+```
+
+Some kind of "post-hoc test for mixed model" would be very helpful here.

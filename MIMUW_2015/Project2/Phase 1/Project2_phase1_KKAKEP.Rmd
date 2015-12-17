@@ -1,0 +1,337 @@
+---
+title: "Project 2"
+author: "Katarzyna Kańska, Annanina Koster, Emilia Pompe"
+date: "December 17, 2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Introduction
+
+This project focuses on explaining what factors influence the length of dendritic spine, whose condition is believed to affect occurrence of several cognitive disorders.
+
+We use the dataset `dendriticSpines.rda` with the study set to `gm`. This dataset contains `18716` observations of 5 mice's lengths of dendritic spines.
+
+```{r, warning=FALSE, message=FALSE, echo=4:5}
+library(lme4)
+library(ggplot2)
+library(lattice)
+library(plyr)
+load("dendriticSpines.rda")
+dendritic.data <- subset(dendriticSpines, Study=="gm")
+```
+
+The available variables in this dataset are
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+colnames(dendritic.data)
+```
+
+Treatments in our study are:
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+summary(factor(dendritic.data$treatment))
+```
+
+The mice are:
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+summary(factor(dendritic.data$Animal))
+```
+
+The mouse ,,types’’ are: 
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+summary(factor(dendritic.data$mouse))
+```
+which stands for
+
+* WT (wild type) normal mice, 
+* TG (transgenic) mice with additional genetic material.
+
+The way how spines are measured is following: from mouse ‘Animal ID’ the part (slice) of the brain is extracted. The slice is threated with treatment and then photos of slices are taken. Photo_ID_abs id the ID of the photo, note that this factor is nested in the Animal ID. In each photo different spines are visible. Length of spines visible on each photo is measured.
+
+
+# The research objective
+
+Explain what factors affect the length of spines. Pay special attention to checking for existence of an interaction between the mouse type and the treatment.
+
+# Results
+
+The final model we selected is described in the following table
+ 
+Variable name          |     Type of effect            |   Effect               
+-----------------------+-------------------------------+-------------------------
+`mouse`                |     fixed                     |   -0.13210  (WT)       
+`treatment`            |     fixed                     |   -0.08661  (gm)       
+`mouse:treatment`      |     fixed (interaction term)  |    0.11512   (WT:gm)    
+`Animal`               |     random                    |    0.03139   (Std.Dev.) 
+`Photo_ID_abs:Animal`  |     random (nested)           |    0.11017   (Std.Dev.) 
+
+As we can see that becoming a transgenic mouse (TG) as well as being treated with dmso makes the dendritic spines longer. This effect is smaller (but still positive) when the wild mouse is treated with dmso. (One can calculate that $0.11512 - 0.08661 - 0.13210 =  - 0.10359 < 0$.)
+
+We decided to set `mouse` and `treatment` as **fixed** effects because the number of levels of each of these variables is very small and we are interested in the precise value of estimators (they can be used for prediction).
+
+Variable `Animal` is modeled as **random** effect because we don't need to know the effect of certain animal, just the variation among the population of animals. The same argument is valid for `Photo_ID_abs` variable when we interpret this information in a way that different photo represents slightly different area of a brain.
+
+# Statistical methods
+
+## Graphical analysis
+
+### `length` variable
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+d <- data.frame(length = c(dendritic.data$length, log(dendritic.data$length)),
+                type = c(rep("length",nrow(dendritic.data)), rep("log(length)",nrow(dendritic.data))))
+
+ggplot(d, aes(length)) + geom_histogram(binwidth=0.2,colour="black", fill="orange")  +
+  facet_wrap(~ type) + xlab("") + ggtitle("Histograms of length and log(length)") +
+     theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+First thing we noticed were ''better'' properties of distribution of logarithm of spines' length. It is more similar to the normal distribution. So in further analysis we considered only `log(length)`.
+
+### `treatment`, `mouse` and `Animal` variables
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=10, fig.width=10}
+ggplot(dendritic.data, aes(y=log(length), x=factor(mouse))) +
+  geom_boxplot(aes(fill = factor(treatment))) + facet_wrap(~Animal) +
+    ggtitle("Boxplots of log(length) for differents mice") +
+      theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+These boxplots suggests the existence of the `Animal` effect. For example, compare the effect of treatment for 3. and 4. transgenic mouse.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+ggplot(dendritic.data, aes(y=log(length), x=factor(mouse))) +
+  geom_boxplot(aes(fill = factor(treatment))) +
+    ggtitle("Boxplots of log(length) for differents types of mouse") +
+      theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+Here it seems that for transgenic mice the effect of dmso treatment is higher than for wild mice.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+par(mar=c(5.1, 4.1, 4.1, 3.1))
+treatment <- factor(dendritic.data$treatment)
+mouse <- factor(dendritic.data$mouse)
+interaction.plot(treatment, mouse,
+                 log(dendritic.data$length), 
+                 ylab="log(length)", 
+                 main="Interaction plot for mouse type and treatment effects")
+```
+
+This plot convince us that there may exists an interaction between mouse type and treatment effect.
+
+## Transformation of dependent variable `length`
+
+We estimated several simple models considering only fixed and only random effects to check whether the `lenght` or the `log(length)` gives better results in terms of normality of residuals and estimated random effects. The `log(length)` definitely outperformed the `length`, so from now on we will only use this variable.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+### LINEAR MODELS
+model0.0 <- lm(length~factor(mouse)*factor(treatment), data=dendritic.data)
+model0.1 <- lm(log(length)~factor(mouse)*factor(treatment), data=dendritic.data)
+
+## graphical analysis of residuals
+par(mfrow=c(1,2))
+hist(rstandard(model0.0))
+hist(rstandard(model0.1))
+
+## formal tests for normality
+
+# Shapiro-Wilk test for samples
+set.seed(7)
+p.values <- replicate(1000,{
+  shapiro.test(sample(size=1000, rstandard(model0.1)))$p.value
+})
+par(mfrow=c(1,1))
+hist(p.values, breaks=100, main=paste0("Histogram of p.values\n(", sum(p.values>0.01)/10, "% greater than 0.01)"))
+
+# other tests for normality
+library(fBasics)
+jarqueberaTest(rstandard(model0.1))   # p-value>0.01
+library(nortest)
+lillie.test((rstandard(model0.1)))   # p-value>0.01
+
+# model diagnostics
+par(mfrow=c(2,2))
+plot(model0.0, which=c(2,4))
+plot(model0.1, which=c(2,4))
+# for both models Cook.s distances are small, but the QQ plot is much better for the model with log(length)
+
+### MIXED MODELS
+model1.0 <- lmer(length~(1|Animal/Photo_ID_abs), data=dendritic.data)
+model1.1<- lmer(log(length)~(1|Animal/Photo_ID_abs), data=dendritic.data)
+
+## checking of assumptions (for random effects)
+shapiro.test(ranef(model1.0)$Animal[,1])      # ok (no surprise - we have only 5 numbers)
+shapiro.test(ranef(model1.0)$`Photo_ID_abs:Animal`[,1]) # not satisfied
+
+shapiro.test(ranef(model1.1)$Animal[,1])      # ok
+shapiro.test(ranef(model1.1)$`Photo_ID_abs:Animal`[,1]) # ok
+
+# in a mixed model without fixed effects the model with log(length) is better in terms of the normality assumptions
+```
+
+## Model selection - checking for interactions
+
+Here we compared the models with and without the interactions between `mouse` and `treatment`.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+# just to make sure we don.t want to consider raw length variable
+
+model2.0 <- lmer(length ~ factor(mouse) + factor(treatment) + (1|Animal/Photo_ID_abs), data=dendritic.data)
+shapiro.test(ranef(model2.0)$Animal[,1]) # satisfied
+shapiro.test(ranef(model2.0)$`Photo_ID_abs:Animal`[,1]) # not satisfied
+
+model3.0 <- lmer(length~ factor(mouse) * factor(treatment) + (1|Animal/Photo_ID_abs), data=dendritic.data)
+shapiro.test(ranef(model3.0)$Animal[,1]) # satisfied
+shapiro.test(ranef(model3.0)$`Photo_ID_abs:Animal`[,1]) # satisfied but with very small p-value
+```
+
+```{r, warning=FALSE, message=FALSE, echo=c(1,2,4,6,8,9,11,13)}
+# mixed model with fixed effect without interaction
+model2.1<- lmer(log(length) ~ factor(mouse) + factor(treatment) + (1|Animal/Photo_ID_abs), data=dendritic.data)
+
+# normality tests
+# shapiro.test(ranef(model2.1)$Animal[,1])                # satisfied
+shapiro.test(ranef(model2.1)$`Photo_ID_abs:Animal`[,1]) # satisfied
+
+# mixed model with fixed effect with interaction
+model3.1 <- lmer(log(length)~factor(mouse) * factor(treatment) + (1|Animal/Photo_ID_abs), data=dendritic.data)
+
+# normality tests
+# shapiro.test(ranef(model3.1)$Animal[,1])                # satisfied
+shapiro.test(ranef(model3.1)$`Photo_ID_abs:Animal`[,1]) # satisfied
+```
+
+At this stage both of these models seem to be correct.
+
+```{r, warning=FALSE, message=FALSE}
+anova(model2.1, model3.1)
+```
+
+In terms of AIC and Log Likelihood criteria the model with interactions is slightly better, so it becomes our final model.
+
+## Model validation
+
+### Normality of random effects
+
+```{r, warning=FALSE, message=FALSE}
+shapiro.test(ranef(model3.1, condVar=TRUE)$Animal[,1])
+shapiro.test(ranef(model3.1, condVar=TRUE)$`Photo_ID_abs:Animal`[,1])
+```
+
+The normality assumptions are fulfilled.
+
+To be convinced, let us see the empirical distribution function.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+dotplot(ranef(model3.1, condVar=TRUE),scales=list(y=list(alternating=0)))$`Photo_ID_abs:Animal`
+dotplot(ranef(model3.1, condVar=TRUE))$`Animal`
+```
+
+Especially the plot for `Photo_ID_abs` is very similar to the normal cumulative distribution function.
+To make sure, let us also have a look at a qq-plot:
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+rand_ef <- unlist(ranef(model3.1, condVar=TRUE)$`Photo_ID_abs:Animal`)
+y <- quantile(rand_ef, c(0.25, 0.75))
+x <- qnorm(c(0.25, 0.75))
+slope <- diff(y)/diff(x)
+int <- y[1L] - slope * x[1L]
+
+qplot(sample=rand_ef, stat="qq") +
+  geom_abline(slope = slope, intercept = int, col="red", size=0.9) + 
+      ggtitle("QQ-plot of random effects (Photo_ID_abs:Animal)")
+```
+
+### Normality of residuals
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+y <- quantile(residuals(model3.1), c(0.25, 0.75))
+x <- qnorm(c(0.25, 0.75))
+slope <- diff(y)/diff(x)
+int <- y[1L] - slope * x[1L]
+
+d <- data.frame(resids = residuals(model3.1))
+
+ggplot(d, aes(sample = resids)) + stat_qq() +
+  geom_abline(slope = slope, intercept = int, col="red", size=0.9) + 
+      ggtitle("QQ-plot of residuals (of the mixed model with the interaction)")
+
+library(fBasics)
+jarqueberaTest(residuals(model3.1))
+```
+
+The QQ plot indicates that residuals are normally distributed. The Jarque--Bera test for normality gives a small p-value, but taking into consideration the data size (many observations) we can interpret the result as positive, that is not rejecting the null hypothesis of normality.
+
+### Homogenity of variance for residuals
+```{r, warning=FALSE, message=FALSE}
+d <- data.frame(residuals = residuals(model3.1), 
+                mouse = dendritic.data$mouse,
+                treatment = dendritic.data$treatment)
+ddply(d, .(mouse, treatment), summarize,
+ var = var(residuals))
+```
+
+The variances calculated for groups seem to be very similar.
+
+### Independence of epsilons and random effects
+
+```{r, warning=FALSE, message=FALSE, fig.height=7, fig.width=7}
+u <- ranef(model3.1, condVar = TRUE)
+e <- residuals(model3.1)
+# v contains a random effect for Animal
+v <- u$Animal[,1][dendritic.data$Animal] 
+
+# w contains a 'nested' random effect for Photo
+w <- u$`Photo_ID_abs:Animal`[paste0(dendritic.data$Photo_ID_abs,":",dendritic.data$Animal),1]
+
+d <- data.frame(model_residuals=c(e,e), random_effect=c(v,w), 
+                type=rep(c("Animal", "Photo_ID_abs:Animal"), each=nrow(dendritic.data)))
+ggplot(d, aes(x=random_effect, y=model_residuals)) + geom_point() + geom_smooth(method="lm", col="red", size=1)+
+  facet_wrap(~type)
+```
+
+Epsilons and random effects seem to be independent as we cannot see any pattern in these plots.
+
+### Wald test for fixed effects
+
+```{r, warning=FALSE, message=FALSE}
+tse <- summary(model3.1)$coefficients[,3]
+2*pnorm(tse[tse<0], lower.tail=T)
+2*pnorm(tse[tse>0], lower.tail=F)
+```
+
+All of the coefficients turned out to be significant, including the interaction.
+
+### Significance of mixed effects
+
+We compare Log Likelihoods for models with and without random effects.
+
+```{r, warning=FALSE, message=FALSE}
+model0.1 <- lm(log(length)~factor(mouse)*factor(treatment), data=dendritic.data)
+lL0 <- logLik(model0.1)
+lL3 <- logLik(model3.1)
+df0 <- attr(logLik(model0.1),"df")
+df3 <- attr(logLik(model3.1),"df")
+
+lDelta <- as.numeric(lL0-lL3)
+df <- as.numeric(df3-df0)
+
+pchisq(-2*lDelta, df, lower.tail=F)
+```
+
+The difference is significant. We tested also whether our model with a nested random effect is significantly better than the one with a random effect of Animal only.
+```{r, warning=FALSE, message=FALSE}
+model3.1.1 <-lmer(log(length)~factor(mouse) * factor(treatment) + (1|Animal), data=dendritic.data)
+anova(model3.1.1,model3.1)
+```
+
+A random effect of Photo turned out to be significant.
+
+<img width="300px" src="christmas_cat.gif"/>
+
+<font color="red">**MERRY CHRISTMAS!**</font>
