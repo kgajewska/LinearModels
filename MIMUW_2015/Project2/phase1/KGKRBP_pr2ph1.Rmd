@@ -1,0 +1,155 @@
+---
+title: "Project 2"
+author: "Karolina Gajewska, Bartosz Piotrowski, Krzysztof Rutkowski"
+date: 17.12.2015r.
+output: 
+  html_document:
+    toc: TRUE
+---
+
+
+# 1. Introduction
+
+
+Neurology is the branch of medicine concerned with the study and treatment of disorders of the nervous system. The nervous system is a complex, sophisticated system that regulates and coordinates body activities. Different neurological problems can be described by the length of dendritic spine. The goal of this part is explaining what factors affect the length of spines. This report was prepared on the basis of the dataset dendriticSpines.rda, which is a collection of data from three different studies. 
+
+
+## 1.1. Data preprocessing
+
+```{r, warning=FALSE, message=FALSE}
+library(lattice)
+library(lme4)
+library(gplots)
+library(ggplot2)
+```
+
+```{r, warning=FALSE, message=FALSE}
+load("dendriticSpines.rda")
+head(dendriticSpines)
+```
+
+
+Authors of this work discuss result from "KO" Study, where two binary conditions are crossed: the mouse ,,type’’ and the treatment.
+
+
+```{r, warning=FALSE, message=FALSE}
+data <- dendriticSpines[dendriticSpines$Study == "ko",]
+head(data)
+dim(data)
+```
+
+
+In this case, the mouse ,,type’’ is one of following: 
+
+* WT (wild type) normal mice, 
+* KO (knock out) mice with a removed gene.
+
+
+```{r, warning=FALSE, message=FALSE}
+unique(data$mouse)
+```
+
+and treatments may be: 
+
+* from no treatment (-), 
+* lit (li) 
+
+
+```{r, warning=FALSE, message=FALSE}
+unique(data$treatment)
+```
+
+
+We used the function "droplevels" in order to drop unused levels from a factor or more commonly, from factors in a data frame.
+
+
+```{r, warning=FALSE, message=FALSE}
+data$mouse <- droplevels(data$mouse)
+data$treatment <- droplevels(data$treatment)
+```
+
+## 1.2 Goal for phase 1
+
+
+Finding a interaction between the mouse type and the treatment.
+
+
+# 2. Creating model
+
+We build two models, with and without contrasts. We treat mouse and treatment effects as constant effects and
+animal effect as randrom effect and use mixed model. Firstly we have not so much observations so we chose model 
+with less number of parameters. Secondly there is a small number of mouses, number of sample is very small comparing to whole population.
+```{r, warning=FALSE, message=FALSE}
+#without contrasts
+
+model1 = lmer(length~mouse*treatment + (1|Animal:mouse:treatment), data=data)
+ 
+coefs1 <- summary(model1)$coefficients[2:4,3]
+```
+
+```{r, warning=FALSE, message=FALSE}
+#with contrasts
+
+model2 = lmer(length~mouse*treatment + (1|Animal:mouse:treatment), data=data,
+              contrasts = list(mouse="contr.sum", treatment="contr.sum"))
+coefs2 <- summary(model2)$coefficients[2:4,3]
+
+```
+
+
+# 3. Model validation
+
+
+```{r, warning=FALSE, message=FALSE}
+e = residuals(model2)
+qqnorm(e, pch=20)
+```
+
+
+Unfortunatelly, based on theoretical quantiles chart for normal distribution we see that the rest of the model is not characterized by a normal distribution.
+
+
+```{r, warning=FALSE, message=FALSE}
+u = ranef(model2, condVar=T)
+z = model.matrix(~factor(Animal)-1, data)
+ue = z %*% u[[1]][[1]]
+xyplot(e~ue, type=c("p", "smooth"))
+
+```
+
+For plot for random effects and residuals we see that there also may be dependent. In our model we should have rather independence.
+
+# 4. Test for effect of an interaction
+
+Now, we choose a level of confidence - alpha = 0.05 and use Wald test. 
+
+
+```{r, warning=FALSE, message=FALSE}
+alpha = 0.05
+c = -qnorm(alpha/2)
+# c= 1.959964
+interactions1 <- (abs(coefs1) > c)
+interactions2 <- (abs(coefs2) > c)
+interactions2
+```
+
+
+We can observe small deviation for WT:-, so we suppose that interaction occurs. 
+
+
+```{r, warning=FALSE, message=FALSE}
+bwplot(length~mouse:treatment, data=data) 
+```
+
+Let's point out, that for both kind of treatments, normal mice have bigger value of  lenght of dendritic spine  than mice with a removed gene. However, what is important, we can observe significant differences between kind of mice in  "from no treatment".
+
+```{r, warning=FALSE, message=FALSE}
+
+ggplot(data=data, aes(x=mouse, y=length, group=treatment, colour=treatment)) + stat_summary(fun.y= mean, geom="line") +ggtitle("Interaction plot")
+
+```
+
+# 5. Conslusion
+
+In first phase of project 2, we tried to explain what factors affect the length of spines. According to recommendation, we test if there is an interaction between the mouse type and the treatment. In case for "KO" study, we can say, that the most important influence has kind of treatment.
+
