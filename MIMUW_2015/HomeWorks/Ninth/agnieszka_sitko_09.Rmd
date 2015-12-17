@@ -1,0 +1,68 @@
+---
+title: "Praca domowa 9"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+---
+In both scenarios presented below we create matrix Z illustrating a variable which has 100 levels. We consider this variable to have random effect on the dependent variable.
+
+##Scenario I
+
+All random effects are equal to zero.
+
+```{r, warning = FALSE, message = FALSE}
+library(lme4)
+library(ggplot2)
+set.seed(35)
+
+N <- 1000
+M <- 1000
+noOfGroups <- 100
+standardDeviation1 <- 0
+
+Z <- factor(sample(1:noOfGroups, replace = TRUE, size = N))
+
+sigmasScenario1 <- replicate(M,{
+      epsilon <- rnorm(N)
+      u <- rnorm(noOfGroups, sd = standardDeviation1)
+      y <- epsilon + model.matrix( ~ Z -1) %*% u
+      model <- lmer(y ~ (1|Z))
+      sqrt(VarCorr(model)[[1]][[1]])
+})
+
+qplot(sigmasScenario1, geom = "histogram") + ggtitle("Sigma_1 square distribution ")
+summary(sigmasScenario1)
+```
+
+##Scenario II
+
+$\sigma_1^2 = 1$
+
+```{r, warning = FALSE, message = FALSE}
+N <- 1000
+M <- 1000
+noOfGroups <- 100
+standardDeviation2 <- 1
+
+Z <- factor(sample(1:noOfGroups, replace = TRUE, size = N))
+
+sigmasScenario2 <- replicate(M,{
+      epsilon <- rnorm(N)
+      u <- rnorm(noOfGroups, sd = standardDeviation2)
+      y <- epsilon + model.matrix( ~ Z -1) %*% u
+      model <- lmer(y ~ (1|Z))
+      sqrt(VarCorr(model)[[1]][[1]]) 
+})
+
+qplot(sigmasScenario2, geom = "histogram") + ggtitle("Sigma_1 square distribution ")
+summary(sigmasScenario2)
+```
+
+It looks like in this scenario estimator of $\sigma_1^2$ is continuously distributed on a finite interval. 
+
+##Conclusions:
+
+- in both cases sample means of $\sigma_1^2$'s estimators are close to the real values of the parameters.
+- in the first scenario estimated $\sigma_1^2$ has an atom at zero (real value), while in the second scenario its distribution is continuous (thus, does not have any atoms).
+- to conclude, the distribution of the estimator of $\sigma_1^2$ is unequivocal and varies with respect to the value of the real parameter.

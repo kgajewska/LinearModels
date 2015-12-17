@@ -1,0 +1,82 @@
+---
+title: "Untitled"
+author: "Emilia Pompe"
+date: "Wednesday, December 09, 2015"
+output: html_document
+---
+### Emilia Pompe
+### Homework 9
+
+## Introduction
+The task is to study the distribution for $\hat\theta$ in two scenarios. I will use the package lme4 for building models with random effects and the package ggplot2 for visual presentation of my results. 
+
+```{r, warning=FALSE, message=FALSE}
+library(lme4)
+library(ggplot2)
+```
+
+To solve the exercise I created a function hatSigmaDist. It creates a dataset with n.obs observations and two variables: nr (a variable with 10 levels) and y (a sum of a random effest and epsilons). Then a mixed model is created (it is performed by the lmer function). Finally I extract from the model an estimate for sigma_1. The whole procedure is repeated N times. The parameter n.obs is used in such a way that it has to be a number divisible by 10.
+
+In this exercise I assumed N=1000 and n.obs=100.
+
+```{r, warning=FALSE}
+hatSigmaDist <- function(N=1000, n.obs=100, sigma_1, sigma_epsilon) {
+  sapply(1:N, function(i){
+    nr <- rep(1:10, times=n.obs/10)
+    u <- rnorm(10, mean=0, sd=sigma_1)
+    epsilon <- rnorm(n.obs, mean=0, sd=sigma_epsilon)
+    y <-  epsilon + u[nr]
+    dataset <- data.frame(y=y, nr=nr)
+    model <- lmer(y~(1|nr), data=dataset)
+    as.data.frame(VarCorr(model))[1,5] # it gives the estimate of sigma_1
+    })
+  }
+```
+
+## Scenario 1.
+ In the first scenario random effects are simply equal to 0, which corresponds to sigma_1=0. I checked the empirical distribution of $\hat\theta=\hat\sigma^2_1$ for 3 different standard deviations of epsilons. (As I want to make inference about the variance, not standard error, I use a square of the results of the hatSigmaDist function). I decided to show summaries and standard deviations of obtained vectors.
+
+```{r, warning=FALSE}
+set.seed(7)
+v1 <- hatSigmaDist(sigma_1=0, sigma_epsilon=0.1)^2
+summary(v1)
+sd(v1)
+v2 <- hatSigmaDist(sigma_1=0, sigma_epsilon=1)^2
+summary(v2)
+sd(v2)
+v3 <- hatSigmaDist(sigma_1=0, sigma_epsilon=2)^2
+summary(v3)
+sd(v3)
+```
+
+Clearly, the larger the variance of epsilons, the larger is the mean and variance of $\hat\sigma^2_1$.
+
+## Scenario 2.
+To create a second scenario, I do the same calculations as in the first scenario, but obviously with sigma_1=1.
+```{r, warning=FALSE}
+set.seed(7)
+v4 <- hatSigmaDist(sigma_1=1, sigma_epsilon=0.1)^2
+summary(v4)
+sd(v4)
+v5 <- hatSigmaDist(sigma_1=1, sigma_epsilon=1)^2
+summary(v5)
+sd(v5)
+v6 <- hatSigmaDist(sigma_1=1, sigma_epsilon=2)^2
+summary(v6)
+sd(v6)
+```
+
+Here the relation is not as clear as in the first scenario.
+
+I presented my results in histograms:
+```{r, warning=FALSE, message=FALSE, fig.height=10, fig.width=12}
+d1 <- data.frame(hat.sigma.sq=c(v1,v2,v3), sigma.eps=rep(c(0.1,1,2), each=1000),
+                sigma_1=rep("sigma1=0", times=3000))
+d2 <- data.frame(hat.sigma.sq=c(v4,v5,v6), sigma.eps=rep(c(0.1,1,2), each=1000),
+                sigma_1=rep("sigma1=1", times=3000))
+d <- rbind(d1,d2)
+
+ggplot(d, aes(hat.sigma.sq)) + geom_histogram(bindwidth=0.0001) + facet_wrap(~sigma.eps + sigma_1, nrow=2)
+```
+
+It is very clear from the histograms that in the fist scenario we have a distribution with a large mass at 0 (in all 3 cases, but it is particularly visible in case of sigma_epsilon=0.1). The distribution in the first scenario is hence very skewed. The distribution obtained in the second scenario does not have a mass at 0. It is skewed, but definitely it is 'closer to normal distribution' than the distribution from the first scenario.

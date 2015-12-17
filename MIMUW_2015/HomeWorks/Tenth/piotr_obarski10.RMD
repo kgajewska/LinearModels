@@ -1,0 +1,27 @@
+---
+title: "Praca domowa 10"
+author: "Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+# •Try a post-hoc test for effect of ICD10 to find out which diseases are more likely to produce psychotic behaviours?
+
+```{r}
+library(PBImisc)
+library(lme4)
+library(agricolae)
+fixedModel <- lm(BPRS.T1 ~ ICD10, data = eunomia)
+scheffe.test(aov(fixedModel), 'ICD10', console = TRUE)
+LSD.test(aov(fixedModel), 'ICD10', console = TRUE)
+```
+
+# •Is it possible you cluster ICD10 groups depending on average level of psychotic behaviours?
+
+We see that scheffe tests gives us only one significant group. So next step is to use LSD test which is more liberal. Here we have 6 groups.
+So answear to the question depends on the definition of clustering. If two clusters are allowed to have non-empty intersection then yes we can cluster ICD10 groups depending on average level of psychotic behaviours. If no, then according to LSD test it is impossible, and according to scheffe test it is possible, but we can get only one group - so it will not be interesting.
+
+# •Is it possible to do something similar if ICD10 is coded as random effects?
+
+No, because we are not interested in the impact of each group of ICD10 on the BPRS.T1, so we can only cluster in the way that each group is clusetered only with itself, and that will not give us any advantage.

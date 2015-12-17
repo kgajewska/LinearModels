@@ -1,0 +1,73 @@
+---
+title: "Homework 9"
+author: "Annanina Koster"
+date: "9 december 2015"
+output: html_document
+---
+
+When the true sigma1 is 0, a dataset is created with one random effect variable and one fixed effect variable (to make it easier!). Together with an epsilon with a fixed sigma0 a mixed model can now be estimated using lme4. The fitted sigma1 was found for a thousand different created datasets and the distribution is plotted.
+
+```{r, warning=FALSE, message=FALSE}
+
+library(lme4)
+
+set.seed(124)
+
+var1 <- 0
+
+for(z1 in 1:1000){
+  
+eps1 <- rnorm(1000)
+beta1 <- 1
+x1.1 <- sample(3:4, 1000, replace=TRUE)
+u1 <- rnorm(1, 0, 0) #is always 0
+x1.2 <- sample(0:1, 1000, replace=TRUE)
+y1 <- x1.1 %*% t(t(beta1)) + x1.2 %*% t(t(u1)) + eps1
+data1 <- data.frame(y1, x1.1, x1.2)
+
+model1 <- lmer(y1~x1.1 + (1|x1.2), data=data1)
+summary(model1)
+
+var1[z1] <- as.data.frame(VarCorr(model1))[1,4]
+
+}
+
+hist(var1)
+summary(var1)
+
+```
+
+From the histogram and table it can be seen that indeed most of the fitted values of sigma1 are around 0.
+
+---
+
+If the true sigma1 equals 1, the same procedure is used, but now creating a dataset that uses sigma1 is 1 for the random effect variable.
+
+```{r, warning=FALSE, message=FALSE}
+
+set.seed(321)
+
+var2 <- 0
+
+for(z2 in 1:1000){
+  
+eps2 <- rnorm(1000)
+beta2 <- 1
+x2.1 <- sample(3:4, 1000, replace=TRUE)
+u2 <- rnorm(1) #is always 0
+x2.2 <- sample(0:1, 1000, replace=TRUE)
+y2 <- x2.1 %*% t(t(beta2)) + x2.2 %*% t(t(u2)) + eps2
+data2 <- data.frame(y2, x2.1, x2.2)
+
+model2 <- lmer(y2~x2.1 + (1|x2.2), data=data2)
+summary(model2)
+
+var2[z2] <- as.data.frame(VarCorr(model2))[1,4]
+
+}
+
+hist(var2)
+
+```
+
+From this histogram it can be seen that the distribution of sigma1 is around 1! 
