@@ -1,0 +1,171 @@
+---
+title: "Random coefficients"
+author: "Przemyslaw Biecek"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Model with random coefficients
+
+## The `kidney` dataset
+
+MDRD stands for The Modification of Diet in Renal Disease. It is an estimate of Glomerular Filtration Rate (GFR). It may be used to assess the performance of a kidney - the larger the better.
+
+In the `kidney` data we have profiles of Graft function after kidney transplantation. Measurements start at day 7 after transplantation and last up to 60 months (for some patient shorter).
+
+```{r, message=FALSE, warning=FALSE}
+library(lme4)
+library(PBImisc)
+head(kidney)
+```
+
+We need to transform this dataset from wide format to long format. Also called RCV (row-column-value) format.
+
+```{r, message=FALSE, warning=FALSE}
+lkidney = reshape(kidney, direction="long", varying=list(9:16), v.names=c("MDRD"), times=c(1/4,1,3,6,12,24,36,60))
+head(lkidney[,5:11])
+```
+
+And as we will see, it is a good idea to use log(time) instead of time.
+
+```{r, message=FALSE, warning=FALSE}
+lkidney$ltime = log(lkidney$time)
+lkidney$title = factor(with(lkidney, paste("wiek ", recipient.age,"/",donor.age, ", zgod. ", discrepancy.AB,"/",discrepancy.DR, sep="")))
+```
+
+## Plots
+
+We have data, now we can plot it.
+We are adding linear and quadratic trend to each group.
+
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=10}
+library(lattice)
+# panel for lattice package
+panel.with.square <- function(...){
+  nx = list(...)$x
+  ny = list(...)$y
+  cc = lm(ny~nx+I(nx^2))$coef
+  panel.xyplot(...)
+  panel.curve(x^2*cc[3]+x*cc[2]+cc[1], from=min(nx), to=max(nx), col="red")
+}
+# the plot
+xyplot(MDRD ~ log(time) | title, lkidney, type = c("g","p","r"),
+  xlab = "log(time after graft)", ylab = "MDRD", pch=19,
+  panel = panel.with.square, subset= id>20 & id < 51)
+```
+
+## Models
+
+We know how the data looks like, now we can fit some models.
+
+Let's start with models with intercept only, with intercept and slope and only with slope.
+
+```{r, message=FALSE, warning=FALSE}
+(model0 = lmer(MDRD~1 + (1|id), data=lkidney, REML=FALSE))
+(model1 = lmer(MDRD~ltime + (ltime|id), data=lkidney, REML=FALSE))
+(model1bis = lmer(MDRD~ltime + (ltime-1|id) + (1|id), data=lkidney))
+```
+
+How we can extract individual coefficients from the model?
+
+```{r, message=FALSE, warning=FALSE}
+fixef(model1)
+head(ranef(model1)$id)
+
+randomCoefs = t(t(ranef(model1)$id) + fixef(model1))
+head(randomCoefs)
+```
+
+## Fixed effects
+
+We can do similar modelling for fixed effects only. 
+
+Let's compare the model with mixed effects to the one with fixed effects only.
+
+```{r, message=FALSE, warning=FALSE}
+model1fixed = lm(MDRD~ltime:factor(id) + factor(id) - 1, data=lkidney)
+fixedCoefs = matrix(coef(model1fixed), ncol=2)
+head(fixedCoefs)
+```
+
+```{r, eval=FALSE}
+lmList(MDRD ~ time | id, lkidney)
+## Call: lmList(formula = MDRD ~ time | id, data = lkidney) 
+## Coefficients:
+##     (Intercept)         time
+## 1      63.09062  0.219859695
+## 2      55.55200  0.165792565
+## 3      33.66915  0.157798211
+## 4      39.20332  0.984699102
+## 5      62.64902  0.126592898
+## 6      39.30236  0.313399820
+## 7      40.23394  0.113381365
+## 8      61.81949  0.298376739
+## 9      49.41234  0.750096638
+## 10     32.69759  0.216655569
+```
+
+## Regularisation  
+
+We are going to extract individual coefficient from both models and then we are going to compare these coefficients on a single plot.
+
+What is happening with these coefficients?
+  
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=10}
+plot(fixedCoefs[,1], fixedCoefs[,2], cex=1, pch=21, lwd=3, col="red3", xlab=expression(a[i]), ylab=expression(b[i]))
+
+abline(v=fixef(model1)[1], col="grey", lwd=2, lty=2)
+abline(h=fixef(model1)[2], col="grey", lwd=2, lty=2)
+arrows(fixedCoefs[,1], fixedCoefs[,2], randomCoefs[,1], randomCoefs[,2], angle=15, length=0.1, lwd=1)
+points(randomCoefs[,1], randomCoefs[,2], cex=1, pch=7, lwd=2, col="blue3")
+```
+
+## Higher order polynomials
+
+The sky is the limit.
+
+Up to now we have tried only model with linear trend. But figures suggest that quadratic trend may improve the fit.
+
+Let's create a model with quadratic coefficients as well.
+
+Then we can use log likelihood ratio test to compare these models.
+
+```{r, message=FALSE, warning=FALSE}
+(model2 = lmer(MDRD~ltime + I(ltime^2) + (ltime+I(ltime^2)|id), data= lkidney, REML=FALSE))
+
+anova(model2,model1,model0)
+```
+
+## Other fixed effects
+
+The random effects are only to define covariance matrix and allow for estimated for fixed effects.
+
+But in fact we may be more interested in fixed effects.
+
+So the usual strategy is to first work on variance matrix (random effects) and then tune and test fixed effects.
+
+Here we are going to decide what influence the prognosis of MDRD kidney function. The three most important variables are: donor.age, number of drugs and time after transplantation.
+
+```{r, message=FALSE, warning=FALSE}
+(fullModel = lmer(MDRD~donor.age+ recipient.age+ therapy+ diabetes+ bpl.drugs+ discrepancy.AB+ discrepancy.DR + ltime + I(ltime^2) + (ltime + I(ltime^2)|id), data=lkidney, REML=FALSE))
+
+(finalModel = lmer(MDRD~donor.age+ bpl.drugs+ ltime + I(ltime^2) + (ltime+I(ltime^2)|id), data=lkidney, REML=FALSE))
+
+```
+
+
+# The homework [7 I 2016]
+
+The data `sleepstudy`  (lme4) allow to measure the effect of sleep deprivation of reaction time.
+
+*The average reaction time per day for subjects in a sleep deprivation study. On day 0 the subjects had their normal amount of sleep. Starting that night they were restricted to 3 hours of sleep per night. The observations represent the average reaction time on a series of tests given each day to each subject.*
+
+With the use of the `sleepstudy`:
+
+- Plot the relation between `Reaction` and `Days` for each subject independently.
+- Build a model with random coefficients for linear trend between `Reaction` and `Days`.
+- Extract individual slopes for the relation from the model with random effects. Present summary statistics of these slopes (1Q, median, 3Q).
+
+
