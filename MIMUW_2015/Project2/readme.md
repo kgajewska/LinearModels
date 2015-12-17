@@ -52,9 +52,9 @@ Verify what if the covariance structure in the model. Consider all three studies
 
 Criteria:
 
-*	How you model the effect of Animal?
-*	How you model the effect of Photo?
-*	How you model efects of mouse and treatment?
+*	How do you model the effect of Animal?
+*	How do you model the effect of Photo (nested or crossed)?
+*	How do you model efects of mouse and treatment (not binary variables)?
 
 
 ## Goal for phase 3:
