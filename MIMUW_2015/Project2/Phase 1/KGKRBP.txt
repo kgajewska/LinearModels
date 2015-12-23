@@ -1,0 +1,23 @@
+1. Is there a model validation?
+
+Three plots, zero tests.
+Moreover there are serious problems with distribution of residuals (visible with naked eye) but they were ignored.
+
+
+2. Have you tested an effect of an interaction?
+
+There is a test, but you tried only Wald test.
+There is no p-value, not test statistic. Just information: TRUE/FALSE for significance level 0.05. It is much better to show p-value or test statistic rater just binary decision.
+
+
+3. Have you explained the effect of interaction properly (in figure or in table)?
+
+Boxplots and interaction diagrams are good and easy to read.
+The model is correct.
+But for boxplots you shall try some variable length transformation. The presented distribution is skewed and shall be corrected. 
+
+
+Points
+3/5 + 3/5 + 4/5  = 10
+
+

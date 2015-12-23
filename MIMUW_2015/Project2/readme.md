@@ -41,9 +41,9 @@ Extract data from a single study (each group should use different study). Test i
 
 Criteria:
 
-*	Is there model validation?
-*	Have you tested effect of an interaction?
-*	Have you explained the effect of interaction properly (in figure or in table)?
+*	Is there a model validation?
+*	Have you tested an effect of an interaction?
+*	Have you explained the effect of interaction properly (as a figure or as a table)?
 
 
 ## Goal for phase 2:
@@ -66,7 +66,7 @@ Support these findings with proper statistical tests.
 Criteria:
 
 *	Which treatments are selected as important?
-*	How effects of these treatments are presented?
+*	How the effects of these treatments are presented?
 *	Do you choose right tests for the task?
 
 

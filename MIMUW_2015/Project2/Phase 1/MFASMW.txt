@@ -1,0 +1,25 @@
+
+1. Is there a model validation?
+
+Yes, in the point 3.
+There are plots, but no p-values.
+
+
+2. Have you tested an effect of an interaction?
+
+Yes,
+but I would expect this test in the point 1 or 2. You have included it into the point 3 'How we got there?'.
+
+
+3. Have you explained the effect of interaction properly (in figure or in table)?
+
+The table and plots in sections 1 and 2 are proper.
+But you shall plot them after variable transformation.
+
+btw: the introduction should contain some overview. Here there is just R code, no explanations.
+
+
+Points
+4/5 + 5/5 + 4/5  = 13
+
+

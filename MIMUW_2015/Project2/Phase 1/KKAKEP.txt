@@ -1,0 +1,22 @@
+1. Is there a model validation?
+
+Yes, very detailed.
+For 'Homogenity of variance for residuals' you may try an F test (variance in groups)
+
+
+2. Have you tested an effect of an interaction?
+
+You have presented results of F-test (and Wald test),
+but you may consider also test based on permutations.
+
+
+3. Have you explained the effect of interaction properly (in figure or in table)?
+
+The fist table (section 'Results') is very good, but you shall consider adding p-values (are presented in the text below).
+The interaction plot is also informative.
+
+
+Points
+5/5 + 4/5 + 5/5  = 14
+
+

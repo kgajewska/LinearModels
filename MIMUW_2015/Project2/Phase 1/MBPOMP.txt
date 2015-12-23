@@ -1,0 +1,22 @@
+1. Is there a model validation?
+
+Yes, very good validation.
+You have considered both logtrans and boxcox – very good idea.
+
+
+2. Have you tested an effect of an interaction?
+
+You have presented results of F-test (and Wald test),
+but you may consider also test based on permutations.
+
+
+3. Have you explained the effect of interaction properly (in figure or in table)?
+
+There is an interaction plot and there are averages.
+But it will be a good idea to put these averages into a table to make it easier to compare.
+
+
+Points
+5/5 + 4/5 + 4/5  = 13
+
+
