@@ -1,0 +1,58 @@
+---
+title: "Project 2"
+author: "Emilia Pompe"
+date: "December 17, 2015"
+output: 
+  html_document:
+    toc: TRUE
+---
+### Emilia Pompe
+### December 17, 2015
+## Try a post-hoc test for effect of ICD10 to find out which diseases are more likely to produce psychotic behaviours
+
+I will use 3 additional libraries.
+```{r, warning=FALSE, message=FALSE}
+library(PBImisc)
+library(lme4)
+library(agricolae)
+```
+
+Let us have a look at the eunomia dataset.
+```{r}
+head(eunomia)
+summary(eunomia)
+nlevels(factor(eunomia$ICD10))
+```
+
+There are 138 levels of the variable of interest: ICD10. 
+```{r}
+table(eunomia$ICD10)
+```
+
+As group sizes are not equal, I decided to use the LSD test (it does not assume balanced group sizes). The test checks which groups have the same mean (of the variable BPRS.T2) and which groups differ in terms of the average. Let us take a look at the results in our case study:
+
+```{r, warning=FALSE, message=FALSE}
+result <- LSD.test(aov(lm(BPRS.T2~ICD10, data=eunomia)), "ICD10", console=FALSE)
+result$groups
+```
+
+Each level of ICD10 appears in the data frame presented above with its corresponding mean and a letter (or a sequence of letters) denoting its 'cluster'. It turned out that F12.1 and F42.2 have the highest mean (they belong to cluster a), which means that these diseases are more likely to produce psychotic behaviour.
+
+It is worth mentioning that results presented above may be not reliable because of very small sample sizes in some levels of ICD10 (even equal to 1 or 2).
+
+## Is it possible you cluster ICD10 groups depending on average level of psychotic behaviours?
+
+Yes, it is possible, for example by using a posthoc test as the one presented above. Of course some other test may be used, not necessarily LSD, leading to a different clusterization (letter appearing in the third column). The interpretation is that diseases with the same letter come from distribution with the same mean. It is unclear how we should assign to clusters those diseases that have a sequence of letters (e.g. abc) - this means they fit to any of the groups a,b and c. One possibility is to create a number of clusters equal to the number of different sequences. Then, each disease could belong to a cluster defined as its sequence of letters.
+
+## Is it possible to do something similar if ICD10 is coded as random effects?
+
+```{r}
+summary(lmer(BPRS.T2~(1|ICD10), data=eunomia))
+summary(unlist(ranef(lmer(BPRS.T2~(1|ICD10), data=eunomia))))
+```
+
+No, it is not possible. According to the definition, random effects are just realizations of a normally distibuted random variable with mean 0 and some standard deviation (in this case equal to 0.1159). It means in particular, that all random effects (assuming that only one variable in the model is coded as a random effect) come from *the same* distribution with *the same* mean. On the other hand, clustering is useful in situations, when we have data coming from several different distributions and we want to distinguish groups with different distributions. Hence, the difference between this situation and stanard pot-hoc tests is that the latter involves groups of data following different distributions (with different means), as we have done many times, for example in Project 1 with gene expression following different distribution depending on cancer type.
+
+
+
+

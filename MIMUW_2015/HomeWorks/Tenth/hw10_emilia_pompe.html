@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Emilia Pompe</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+<!-- Styles for R syntax highlighter -->
+<style type="text/css">
+   pre .operator,
+   pre .paren {
+     color: rgb(104, 118, 135)
+   }
+
+   pre .literal {
+     color: #990073
+   }
+
+   pre .number {
+     color: #099;
+   }
+
+   pre .comment {
+     color: #998;
+     font-style: italic
+   }
+
+   pre .keyword {
+     color: #900;
+     font-weight: bold
+   }
+
+   pre .identifier {
+     color: rgb(0, 0, 0);
+   }
+
+   pre .string {
+     color: #d14;
+   }
+</style>
+
+<!-- R syntax highlighter -->
+<script type="text/javascript">
+var hljs=new function(){function m(p){return p.replace(/&/gm,"&amp;").replace(/</gm,"&lt;")}function f(r,q,p){return RegExp(q,"m"+(r.cI?"i":"")+(p?"g":""))}function b(r){for(var p=0;p<r.childNodes.length;p++){var q=r.childNodes[p];if(q.nodeName=="CODE"){return q}if(!(q.nodeType==3&&q.nodeValue.match(/\s+/))){break}}}function h(t,s){var p="";for(var r=0;r<t.childNodes.length;r++){if(t.childNodes[r].nodeType==3){var q=t.childNodes[r].nodeValue;if(s){q=q.replace(/\n/g,"")}p+=q}else{if(t.childNodes[r].nodeName=="BR"){p+="\n"}else{p+=h(t.childNodes[r])}}}if(/MSIE [678]/.test(navigator.userAgent)){p=p.replace(/\r/g,"\n")}return p}function a(s){var r=s.className.split(/\s+/);r=r.concat(s.parentNode.className.split(/\s+/));for(var q=0;q<r.length;q++){var p=r[q].replace(/^language-/,"");if(e[p]){return p}}}function c(q){var p=[];(function(s,t){for(var r=0;r<s.childNodes.length;r++){if(s.childNodes[r].nodeType==3){t+=s.childNodes[r].nodeValue.length}else{if(s.childNodes[r].nodeName=="BR"){t+=1}else{if(s.childNodes[r].nodeType==1){p.push({event:"start",offset:t,node:s.childNodes[r]});t=arguments.callee(s.childNodes[r],t);p.push({event:"stop",offset:t,node:s.childNodes[r]})}}}}return t})(q,0);return p}function k(y,w,x){var q=0;var z="";var s=[];function u(){if(y.length&&w.length){if(y[0].offset!=w[0].offset){return(y[0].offset<w[0].offset)?y:w}else{return w[0].event=="start"?y:w}}else{return y.length?y:w}}function t(D){var A="<"+D.nodeName.toLowerCase();for(var B=0;B<D.attributes.length;B++){var C=D.attributes[B];A+=" "+C.nodeName.toLowerCase();if(C.value!==undefined&&C.value!==false&&C.value!==null){A+='="'+m(C.value)+'"'}}return A+">"}while(y.length||w.length){var v=u().splice(0,1)[0];z+=m(x.substr(q,v.offset-q));q=v.offset;if(v.event=="start"){z+=t(v.node);s.push(v.node)}else{if(v.event=="stop"){var p,r=s.length;do{r--;p=s[r];z+=("</"+p.nodeName.toLowerCase()+">")}while(p!=v.node);s.splice(r,1);while(r<s.length){z+=t(s[r]);r++}}}}return z+m(x.substr(q))}function j(){function q(x,y,v){if(x.compiled){return}var u;var s=[];if(x.k){x.lR=f(y,x.l||hljs.IR,true);for(var w in x.k){if(!x.k.hasOwnProperty(w)){continue}if(x.k[w] instanceof Object){u=x.k[w]}else{u=x.k;w="keyword"}for(var r in u){if(!u.hasOwnProperty(r)){continue}x.k[r]=[w,u[r]];s.push(r)}}}if(!v){if(x.bWK){x.b="\\b("+s.join("|")+")\\s"}x.bR=f(y,x.b?x.b:"\\B|\\b");if(!x.e&&!x.eW){x.e="\\B|\\b"}if(x.e){x.eR=f(y,x.e)}}if(x.i){x.iR=f(y,x.i)}if(x.r===undefined){x.r=1}if(!x.c){x.c=[]}x.compiled=true;for(var t=0;t<x.c.length;t++){if(x.c[t]=="self"){x.c[t]=x}q(x.c[t],y,false)}if(x.starts){q(x.starts,y,false)}}for(var p in e){if(!e.hasOwnProperty(p)){continue}q(e[p].dM,e[p],true)}}function d(B,C){if(!j.called){j();j.called=true}function q(r,M){for(var L=0;L<M.c.length;L++){if((M.c[L].bR.exec(r)||[null])[0]==r){return M.c[L]}}}function v(L,r){if(D[L].e&&D[L].eR.test(r)){return 1}if(D[L].eW){var M=v(L-1,r);return M?M+1:0}return 0}function w(r,L){return L.i&&L.iR.test(r)}function K(N,O){var M=[];for(var L=0;L<N.c.length;L++){M.push(N.c[L].b)}var r=D.length-1;do{if(D[r].e){M.push(D[r].e)}r--}while(D[r+1].eW);if(N.i){M.push(N.i)}return f(O,M.join("|"),true)}function p(M,L){var N=D[D.length-1];if(!N.t){N.t=K(N,E)}N.t.lastIndex=L;var r=N.t.exec(M);return r?[M.substr(L,r.index-L),r[0],false]:[M.substr(L),"",true]}function z(N,r){var L=E.cI?r[0].toLowerCase():r[0];var M=N.k[L];if(M&&M instanceof Array){return M}return false}function F(L,P){L=m(L);if(!P.k){return L}var r="";var O=0;P.lR.lastIndex=0;var M=P.lR.exec(L);while(M){r+=L.substr(O,M.index-O);var N=z(P,M);if(N){x+=N[1];r+='<span class="'+N[0]+'">'+M[0]+"</span>"}else{r+=M[0]}O=P.lR.lastIndex;M=P.lR.exec(L)}return r+L.substr(O,L.length-O)}function J(L,M){if(M.sL&&e[M.sL]){var r=d(M.sL,L);x+=r.keyword_count;return r.value}else{return F(L,M)}}function I(M,r){var L=M.cN?'<span class="'+M.cN+'">':"";if(M.rB){y+=L;M.buffer=""}else{if(M.eB){y+=m(r)+L;M.buffer=""}else{y+=L;M.buffer=r}}D.push(M);A+=M.r}function G(N,M,Q){var R=D[D.length-1];if(Q){y+=J(R.buffer+N,R);return false}var P=q(M,R);if(P){y+=J(R.buffer+N,R);I(P,M);return P.rB}var L=v(D.length-1,M);if(L){var O=R.cN?"</span>":"";if(R.rE){y+=J(R.buffer+N,R)+O}else{if(R.eE){y+=J(R.buffer+N,R)+O+m(M)}else{y+=J(R.buffer+N+M,R)+O}}while(L>1){O=D[D.length-2].cN?"</span>":"";y+=O;L--;D.length--}var r=D[D.length-1];D.length--;D[D.length-1].buffer="";if(r.starts){I(r.starts,"")}return R.rE}if(w(M,R)){throw"Illegal"}}var E=e[B];var D=[E.dM];var A=0;var x=0;var y="";try{var s,u=0;E.dM.buffer="";do{s=p(C,u);var t=G(s[0],s[1],s[2]);u+=s[0].length;if(!t){u+=s[1].length}}while(!s[2]);if(D.length>1){throw"Illegal"}return{r:A,keyword_count:x,value:y}}catch(H){if(H=="Illegal"){return{r:0,keyword_count:0,value:m(C)}}else{throw H}}}function g(t){var p={keyword_count:0,r:0,value:m(t)};var r=p;for(var q in e){if(!e.hasOwnProperty(q)){continue}var s=d(q,t);s.language=q;if(s.keyword_count+s.r>r.keyword_count+r.r){r=s}if(s.keyword_count+s.r>p.keyword_count+p.r){r=p;p=s}}if(r.language){p.second_best=r}return p}function i(r,q,p){if(q){r=r.replace(/^((<[^>]+>|\t)+)/gm,function(t,w,v,u){return w.replace(/\t/g,q)})}if(p){r=r.replace(/\n/g,"<br>")}return r}function n(t,w,r){var x=h(t,r);var v=a(t);var y,s;if(v){y=d(v,x)}else{return}var q=c(t);if(q.length){s=document.createElement("pre");s.innerHTML=y.value;y.value=k(q,c(s),x)}y.value=i(y.value,w,r);var u=t.className;if(!u.match("(\\s|^)(language-)?"+v+"(\\s|$)")){u=u?(u+" "+v):v}if(/MSIE [678]/.test(navigator.userAgent)&&t.tagName=="CODE"&&t.parentNode.tagName=="PRE"){s=t.parentNode;var p=document.createElement("div");p.innerHTML="<pre><code>"+y.value+"</code></pre>";t=p.firstChild.firstChild;p.firstChild.cN=s.cN;s.parentNode.replaceChild(p.firstChild,s)}else{t.innerHTML=y.value}t.className=u;t.result={language:v,kw:y.keyword_count,re:y.r};if(y.second_best){t.second_best={language:y.second_best.language,kw:y.second_best.keyword_count,re:y.second_best.r}}}function o(){if(o.called){return}o.called=true;var r=document.getElementsByTagName("pre");for(var p=0;p<r.length;p++){var q=b(r[p]);if(q){n(q,hljs.tabReplace)}}}function l(){if(window.addEventListener){window.addEventListener("DOMContentLoaded",o,false);window.addEventListener("load",o,false)}else{if(window.attachEvent){window.attachEvent("onload",o)}else{window.onload=o}}}var e={};this.LANGUAGES=e;this.highlight=d;this.highlightAuto=g;this.fixMarkup=i;this.highlightBlock=n;this.initHighlighting=o;this.initHighlightingOnLoad=l;this.IR="[a-zA-Z][a-zA-Z0-9_]*";this.UIR="[a-zA-Z_][a-zA-Z0-9_]*";this.NR="\\b\\d+(\\.\\d+)?";this.CNR="\\b(0[xX][a-fA-F0-9]+|(\\d+(\\.\\d*)?|\\.\\d+)([eE][-+]?\\d+)?)";this.BNR="\\b(0b[01]+)";this.RSR="!|!=|!==|%|%=|&|&&|&=|\\*|\\*=|\\+|\\+=|,|\\.|-|-=|/|/=|:|;|<|<<|<<=|<=|=|==|===|>|>=|>>|>>=|>>>|>>>=|\\?|\\[|\\{|\\(|\\^|\\^=|\\||\\|=|\\|\\||~";this.ER="(?![\\s\\S])";this.BE={b:"\\\\.",r:0};this.ASM={cN:"string",b:"'",e:"'",i:"\\n",c:[this.BE],r:0};this.QSM={cN:"string",b:'"',e:'"',i:"\\n",c:[this.BE],r:0};this.CLCM={cN:"comment",b:"//",e:"$"};this.CBLCLM={cN:"comment",b:"/\\*",e:"\\*/"};this.HCM={cN:"comment",b:"#",e:"$"};this.NM={cN:"number",b:this.NR,r:0};this.CNM={cN:"number",b:this.CNR,r:0};this.BNM={cN:"number",b:this.BNR,r:0};this.inherit=function(r,s){var p={};for(var q in r){p[q]=r[q]}if(s){for(var q in s){p[q]=s[q]}}return p}}();hljs.LANGUAGES.cpp=function(){var a={keyword:{"false":1,"int":1,"float":1,"while":1,"private":1,"char":1,"catch":1,"export":1,virtual:1,operator:2,sizeof:2,dynamic_cast:2,typedef:2,const_cast:2,"const":1,struct:1,"for":1,static_cast:2,union:1,namespace:1,unsigned:1,"long":1,"throw":1,"volatile":2,"static":1,"protected":1,bool:1,template:1,mutable:1,"if":1,"public":1,friend:2,"do":1,"return":1,"goto":1,auto:1,"void":2,"enum":1,"else":1,"break":1,"new":1,extern:1,using:1,"true":1,"class":1,asm:1,"case":1,typeid:1,"short":1,reinterpret_cast:2,"default":1,"double":1,register:1,explicit:1,signed:1,typename:1,"try":1,"this":1,"switch":1,"continue":1,wchar_t:1,inline:1,"delete":1,alignof:1,char16_t:1,char32_t:1,constexpr:1,decltype:1,noexcept:1,nullptr:1,static_assert:1,thread_local:1,restrict:1,_Bool:1,complex:1},built_in:{std:1,string:1,cin:1,cout:1,cerr:1,clog:1,stringstream:1,istringstream:1,ostringstream:1,auto_ptr:1,deque:1,list:1,queue:1,stack:1,vector:1,map:1,set:1,bitset:1,multiset:1,multimap:1,unordered_set:1,unordered_map:1,unordered_multiset:1,unordered_multimap:1,array:1,shared_ptr:1}};return{dM:{k:a,i:"</",c:[hljs.CLCM,hljs.CBLCLM,hljs.QSM,{cN:"string",b:"'\\\\?.",e:"'",i:"."},{cN:"number",b:"\\b(\\d+(\\.\\d*)?|\\.\\d+)(u|U|l|L|ul|UL|f|F)"},hljs.CNM,{cN:"preprocessor",b:"#",e:"$"},{cN:"stl_container",b:"\\b(deque|list|queue|stack|vector|map|set|bitset|multiset|multimap|unordered_map|unordered_set|unordered_multiset|unordered_multimap|array)\\s*<",e:">",k:a,r:10,c:["self"]}]}}}();hljs.LANGUAGES.r={dM:{c:[hljs.HCM,{cN:"number",b:"\\b0[xX][0-9a-fA-F]+[Li]?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+(?:[eE][+\\-]?\\d*)?L\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\b\\d+\\.(?!\\d)(?:i\\b)?",e:hljs.IMMEDIATE_RE,r:1},{cN:"number",b:"\\b\\d+(?:\\.\\d*)?(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"number",b:"\\.\\d+(?:[eE][+\\-]?\\d*)?i?\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"keyword",b:"(?:tryCatch|library|setGeneric|setGroupGeneric)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\.",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\.\\.\\d+(?![\\w.])",e:hljs.IMMEDIATE_RE,r:10},{cN:"keyword",b:"\\b(?:function)",e:hljs.IMMEDIATE_RE,r:2},{cN:"keyword",b:"(?:if|in|break|next|repeat|else|for|return|switch|while|try|stop|warning|require|attach|detach|source|setMethod|setClass)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"literal",b:"(?:NA|NA_integer_|NA_real_|NA_character_|NA_complex_)\\b",e:hljs.IMMEDIATE_RE,r:10},{cN:"literal",b:"(?:NULL|TRUE|FALSE|T|F|Inf|NaN)\\b",e:hljs.IMMEDIATE_RE,r:1},{cN:"identifier",b:"[a-zA-Z.][a-zA-Z0-9._]*\\b",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"<\\-(?!\\s*\\d)",e:hljs.IMMEDIATE_RE,r:2},{cN:"operator",b:"\\->|<\\-",e:hljs.IMMEDIATE_RE,r:1},{cN:"operator",b:"%%|~",e:hljs.IMMEDIATE_RE},{cN:"operator",b:">=|<=|==|!=|\\|\\||&&|=|\\+|\\-|\\*|/|\\^|>|<|!|&|\\||\\$|:",e:hljs.IMMEDIATE_RE,r:0},{cN:"operator",b:"%",e:"%",i:"\\n",r:1},{cN:"identifier",b:"`",e:"`",r:0},{cN:"string",b:'"',e:'"',c:[hljs.BE],r:0},{cN:"string",b:"'",e:"'",c:[hljs.BE],r:0},{cN:"paren",b:"[[({\\])}]",e:hljs.IMMEDIATE_RE,r:0}]}};
+hljs.initHighlightingOnLoad();
+</script>
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h3>Emilia Pompe</h3>
+
+<h3>December 17, 2015</h3>
+
+<h2>Try a post-hoc test for effect of ICD10 to find out which diseases are more likely to produce psychotic behaviours</h2>
+
+<p>I will use 3 additional libraries.</p>
+
+<pre><code class="r">library(PBImisc)
+library(lme4)
+library(agricolae)
+</code></pre>
+
+<p>Let us have a look at the eunomia dataset.</p>
+
+<pre><code class="r">head(eunomia)
+</code></pre>
+
+<pre><code>##   CENTRE13 SUBJECT GENDER AGE NUM.HOSP   CAT.T1   CAT.T2   CAT.T3  BPRS.T1
+## 1  Dresden       1 female  47        4 8.571429 9.285714 9.714286 1.708333
+## 2  Dresden       2   male  46        5 4.400000 2.000000 2.428571 1.750000
+## 3  Dresden       3   male  58       11 9.333333 9.142857 9.000000 1.791667
+## 4  Dresden       4   male  23        5 6.000000 5.666667 5.333333 2.000000
+## 5  Dresden       5   male  41       11 5.428571 9.142857 8.000000 3.416667
+## 6  Dresden       6 female  51        8 8.250000 9.285714 9.285714 2.500000
+##    BPRS.T2  BPRS.T3 MANSA.T1 MANSA.T2 MANSA.T3 ICD10
+## 1 1.565217 1.333333 5.545455 4.416667 4.250000 F10.0
+## 2 1.125000 1.291667 3.636364 5.363636 4.166667 F31.1
+## 3 1.458333 1.736842 6.166667 5.666667 5.000000 F10.0
+## 4 1.458333 1.105263 4.833333 5.083333 5.666667 F10.0
+## 5 1.500000 1.333333 5.916667 5.000000 5.500000 F30.2
+## 6 1.666667 1.833333 3.333333 4.416667 4.727273 F31.1
+</code></pre>
+
+<pre><code class="r">summary(eunomia)
+</code></pre>
+
+<pre><code>##        CENTRE13      SUBJECT             GENDER          AGE       
+##  Michalovce:235   Min.   :   1.0   female   : 841   Min.   :18.00  
+##  London    :226   1st Qu.: 502.8   male     :1167   1st Qu.:29.00  
+##  Prague    :203   Median :1004.5   not known:   0   Median :38.00  
+##  Dresden   :186   Mean   :1004.5                    Mean   :38.53  
+##  Wroclaw   :184   3rd Qu.:1506.2                    3rd Qu.:47.00  
+##  Naples    :182   Max.   :2008.0                    Max.   :64.00  
+##  (Other)   :792                                                    
+##     NUM.HOSP          CAT.T1           CAT.T2           CAT.T3      
+##  Min.   : 0.000   Min.   : 0.000   Min.   : 0.000   Min.   : 0.000  
+##  1st Qu.: 4.000   1st Qu.: 4.400   1st Qu.: 5.702   1st Qu.: 6.143  
+##  Median : 5.000   Median : 6.571   Median : 7.571   Median : 7.857  
+##  Mean   : 5.566   Mean   : 6.221   Mean   : 7.060   Mean   : 7.330  
+##  3rd Qu.: 7.000   3rd Qu.: 8.429   3rd Qu.: 9.000   3rd Qu.: 9.000  
+##  Max.   :17.000   Max.   :10.000   Max.   :10.000   Max.   :10.000  
+##                                                                     
+##     BPRS.T1         BPRS.T2         BPRS.T3         MANSA.T1    
+##  Min.   :1.000   Min.   :1.000   Min.   :1.000   Min.   :1.250  
+##  1st Qu.:1.750   1st Qu.:1.333   1st Qu.:1.250   1st Qu.:3.667  
+##  Median :2.125   Median :1.583   Median :1.500   Median :4.417  
+##  Mean   :2.241   Mean   :1.713   Mean   :1.583   Mean   :4.397  
+##  3rd Qu.:2.583   3rd Qu.:1.958   3rd Qu.:1.792   3rd Qu.:5.167  
+##  Max.   :5.375   Max.   :4.208   Max.   :5.083   Max.   :7.000  
+##                                                                 
+##     MANSA.T2        MANSA.T3         ICD10    
+##  Min.   :1.545   Min.   :1.667   F20.0  :649  
+##  1st Qu.:3.917   1st Qu.:3.917   F25.0  :113  
+##  Median :4.667   Median :4.667   F31.2  : 71  
+##  Mean   :4.582   Mean   :4.607   F10.2  : 62  
+##  3rd Qu.:5.333   3rd Qu.:5.333   F23.0  : 59  
+##  Max.   :7.000   Max.   :7.000   F20.5  : 55  
+##                                  (Other):999
+</code></pre>
+
+<pre><code class="r">nlevels(factor(eunomia$ICD10))
+</code></pre>
+
+<pre><code>## [1] 138
+</code></pre>
+
+<p>There are 138 levels of the variable of interest: ICD10. </p>
+
+<pre><code class="r">table(eunomia$ICD10)
+</code></pre>
+
+<pre><code>## 
+## F04.0 F05.0 F05.1 F05.8 F06.0 F06.2 F06.3 F06.8 F07.0 F07.7 F07.8 F07.9 
+##     1     1     2     1     2    17     8     1     4     1     1     2 
+## F10.0 F10.1 F10.2 F10.3 F10.4 F10.5 F10.8 F11.2 F12.0 F12.1 F12.5 F12.8 
+##    26     7    62     7    12     7     2     1     4     1     7     1 
+## F13.3 F13.4 F13.5 F13.9 F14.5 F15.0 F15.5 F16.7 F19.0 F19.1 F19.2 F19.5 
+##     1     1     2     1     1     1     4     1     3     1     5    20 
+## F19.8 F20.0 F20.1 F20.2 F20.3 F20.4 F20.5 F20.6 F20.8 F20.9 F21.0 F22.0 
+##     1   649    17     4    24     2    55     9    13    12    15    43 
+## F22.8 F22.9 F23.  F23.0 F23.1 F23.2 F23.3 F23.8 F23.9 F25.0 F25.1 F25.2 
+##     2     4     1    59    33     9    12     6     9   113    34    48 
+## F25.8 F25.9 F28.0 F29.0 F29.9 F30.0 F30.1 F30.2 F30.3 F30.9 F31.0 F31.1 
+##     1    12     5     7     3     6    10     8     1     2    50    54 
+## F31.2 F31.3 F31.4 F31.5 F31.6 F31.7 F31.8 F31.9 F32.0 F32.1 F32.2 F32.3 
+##    71     9     9     3    16     1     2    12    13    28    24    18 
+## F32.9 F33.0 F33.1 F33.2 F33.3 F33.8 F33.9 F34.0 F34.1 F34.9 F38.0 F38.8 
+##    13     6    12     9     9     1     2     2     7     1     2     1 
+## F41.0 F41.1 F41.2 F41.9 F42.0 F42.1 F42.2 F42.8 F43.0 F43.1 F43.2 F44.5 
+##     1     1     4     2     2     1     1     3     6     2    28     1 
+## F44.9 F45.2 F48.0 F50.2 F53.1 F54.7 F60.0 F60.1 F60.2 F60.3 F60.4 F60.5 
+##     1     1     1     2     2     1    15     4     5    42     7     2 
+## F60.6 F60.8 F60.9 F61.0 F61.3 F63.0 F63.8 F63.9 F69.0 F70.0 F70.1 F71.0 
+##     1     3     3    15     1     1     1     1     2     9     1     2 
+## F72.0 F79.0 F84.5 F89.0 F91.9 F99.0 
+##     1     3     3     1     1     1
+</code></pre>
+
+<p>As group sizes are not equal, I decided to use the LSD test (it does not assume balanced group sizes). The test checks which groups have the same mean (of the variable BPRS.T2) and which groups differ in terms of the average. Let us take a look at the results in our case study:</p>
+
+<pre><code class="r">result &lt;- LSD.test(aov(lm(BPRS.T2~ICD10, data=eunomia)), &quot;ICD10&quot;, console=FALSE)
+result$groups
+</code></pre>
+
+<pre><code>##       trt    means      M
+## 1   F12.1 2.875000      a
+## 2   F42.0 2.812500      a
+## 3   F04.0 2.791667     ab
+## 4   F30.3 2.708333    abc
+## 5   F38.8 2.636364   abcd
+## 6   F89.0 2.541667  abcde
+## 7   F72.0 2.500000  abcde
+## 8   F34.0 2.458333  abcde
+## 9   F71.0 2.342262  abcde
+## 10  F23.  2.291667 abcdef
+## 11  F38.0 2.250000 abcdef
+## 12  F44.9 2.208333 abcdef
+## 13  F60.1 2.187500 abcdef
+## 14  F29.9 2.084064 abcdef
+## 15  F20.8 2.053571 abcdef
+## 16  F13.9 2.041667 abcdef
+## 17  F34.9 2.041667 abcdef
+## 18  F20.2 2.020833 abcdef
+## 19  F63.0 2.000000 abcdef
+## 20  F22.9 1.991613 abcdef
+## 21  F25.9 1.975393 abcdef
+## 22  F20.1 1.971689 abcdef
+## 23  F30.9 1.958333 abcdef
+## 24  F50.2 1.958333 abcdef
+## 25  F63.9 1.956522 abcdef
+## 26  F20.3 1.940728 abcdef
+## 27  F60.2 1.933658 abcdef
+## 28  F21.0 1.914061 abcdef
+## 29  F48.0 1.909091 abcdef
+## 30  F60.9 1.902778 abcdef
+## 31  F20.9 1.895833 abcdef
+## 32  F20.6 1.878205 abcdef
+## 33  F42.1 1.875000 abcdef
+## 34  F20.5 1.866472 abcdef
+## 35  F14.5 1.833333 abcdef
+## 36  F20.0 1.824951  bcdef
+## 37  F25.1 1.818137  bcdef
+## 38  F41.9 1.812500  bcdef
+## 39  F06.2 1.811275  bcdef
+## 40  F19.5 1.808285  bcdef
+## 41  F42.8 1.805556  bcdef
+## 42  F33.3 1.802910  bcdef
+## 43  F41.2 1.802083  bcdef
+## 44  F41.1 1.791667  bcdef
+## 45  F30.2 1.766304  bcdef
+## 46  F60.0 1.765010  bcdef
+## 47  F30.1 1.758333  bcdef
+## 48  F11.2 1.750000  bcdef
+## 49  F22.8 1.750000  bcdef
+## 50  F33.1 1.750000  bcdef
+## 51  F41.0 1.750000  bcdef
+## 52  F70.0 1.729497  bcdef
+## 53  F61.0 1.719769   cdef
+## 54  F13.3 1.708333   cdef
+## 55  F19.1 1.708333   cdef
+## 56  F45.2 1.708333   cdef
+## 57  F61.3 1.708333   cdef
+## 58  F31.9 1.707744   cdef
+## 59  F25.0 1.706090   cdef
+## 60  F53.1 1.705616   cdef
+## 61  F10.1 1.702381   cdef
+## 62  F42.2 1.700000   cdef
+## 63  F60.4 1.695874   cdef
+## 64  F31.4 1.689815   cdef
+## 65  F60.3 1.689084   cdef
+## 66  F31.0 1.680189    def
+## 67  F13.5 1.673913    def
+## 68  F31.2 1.670658    def
+## 69  F32.9 1.670330    def
+## 70  F79.0 1.666667    def
+## 71  F31.8 1.663043    def
+## 72  F22.0 1.656749    def
+## 73  F31.6 1.653051    def
+## 74  F33.0 1.638889    def
+## 75  F43.0 1.637379    def
+## 76  F06.3 1.614583    def
+## 77  F32.0 1.599359    def
+## 78  F10.5 1.595238    def
+## 79  F32.2 1.592659     ef
+## 80  F30.0 1.588889     ef
+## 81  F10.0 1.588464     ef
+## 82  F33.9 1.583333     ef
+## 83  F23.3 1.580548     ef
+## 84  F31.3 1.569997     ef
+## 85  F32.3 1.567520     ef
+## 86  F25.2 1.558656     ef
+## 87  F23.8 1.557540     ef
+## 88  F31.5 1.551329     ef
+## 89  F32.1 1.548275     ef
+## 90  F23.1 1.545501     ef
+## 91  F28.0 1.532124     ef
+## 92  F70.1 1.526316     ef
+## 93  F34.1 1.522240     ef
+## 94  F12.8 1.521739     ef
+## 95  F31.1 1.520803     ef
+## 96  F10.3 1.505952     ef
+## 97  F10.8 1.500000     ef
+## 98  F31.7 1.500000     ef
+## 99  F54.7 1.500000     ef
+## 100 F60.5 1.479167     ef
+## 101 F10.2 1.467053      f
+## 102 F23.0 1.462369      f
+## 103 F07.9 1.461842      f
+## 104 F07.0 1.458333      f
+## 105 F23.9 1.458333      f
+## 106 F84.5 1.444444      f
+## 107 F19.2 1.441667      f
+## 108 F10.4 1.440972      f
+## 109 F19.0 1.438492      f
+## 110 F06.0 1.437500      f
+## 111 F69.0 1.437500      f
+## 112 F33.2 1.436111      f
+## 113 F60.8 1.430556      f
+## 114 F23.2 1.417033      f
+## 115 F63.8 1.416667      f
+## 116 F15.5 1.416667      f
+## 117 F25.8 1.400000      f
+## 118 F12.5 1.392574      f
+## 119 F07.7 1.375000      f
+## 120 F06.8 1.350000      f
+## 121 F12.0 1.342262      f
+## 122 F05.1 1.333333      f
+## 123 F16.7 1.333333      f
+## 124 F43.2 1.325595      f
+## 125 F29.0 1.320578      f
+## 126 F43.1 1.312500      f
+## 127 F33.8 1.250000      f
+## 128 F19.8 1.238095      f
+## 129 F91.9 1.227273      f
+## 130 F05.8 1.208333      f
+## 131 F15.0 1.208333      f
+## 132 F99.0 1.181818      f
+## 133 F20.4 1.166667      f
+## 134 F07.8 1.125000      f
+## 135 F13.4 1.125000      f
+## 136 F60.6 1.125000      f
+## 137 F05.0 1.000000      f
+## 138 F44.5 1.000000      f
+</code></pre>
+
+<p>Each level of ICD10 appears in the data frame presented above with its corresponding mean and a letter (or a sequence of letters) denoting its &#39;cluster&#39;. It turned out that F12.1 and F42.2 have the highest mean (they belong to cluster a), which means that these diseases are more likely to produce psychotic behaviour.</p>
+
+<p>It is worth mentioning that results presented above may be not reliable because of very small sample sizes in some levels of ICD10 (even equal to 1 or 2).</p>
+
+<h2>Is it possible you cluster ICD10 groups depending on average level of psychotic behaviours?</h2>
+
+<p>Yes, it is possible, for example by using a posthoc test as the one presented above. Of course some other test may be used, not necessarily LSD, leading to a different clusterization (letter appearing in the third column). The interpretation is that diseases with the same letter come from distribution with the same mean. It is unclear how we should assign to clusters those diseases that have a sequence of letters (e.g. abc) - this means they fit to any of the groups a,b and c. One possibility is to create a number of clusters equal to the number of different sequences. Then, each disease could belong to a cluster defined as its sequence of letters.</p>
+
+<h2>Is it possible to do something similar if ICD10 is coded as random effects?</h2>
+
+<pre><code class="r">summary(lmer(BPRS.T2~(1|ICD10), data=eunomia))
+</code></pre>
+
+<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
+## Formula: BPRS.T2 ~ (1 | ICD10)
+##    Data: eunomia
+## 
+## REML criterion at convergence: 3086.5
+## 
+## Scaled residuals: 
+##     Min      1Q  Median      3Q     Max 
+## -1.5929 -0.7196 -0.2048  0.4940  4.9100 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  ICD10    (Intercept) 0.01342  0.1159  
+##  Residual             0.26536  0.5151  
+## Number of obs: 2008, groups:  ICD10, 138
+## 
+## Fixed effects:
+##             Estimate Std. Error t value
+## (Intercept)  1.67611    0.02033   82.46
+</code></pre>
+
+<pre><code class="r">summary(unlist(ranef(lmer(BPRS.T2~(1|ICD10), data=eunomia))))
+</code></pre>
+
+<pre><code>##      Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+## -0.205400 -0.027340 -0.001768  0.000000  0.025930  0.149700
+</code></pre>
+
+<p>No, it is not possible. According to the definition, random effects are just realizations of a normally distibuted random variable with mean 0 and some standard deviation (in this case equal to 0.1159). It means in particular, that all random effects (assuming that only one variable in the model is coded as a random effect) come from <em>the same</em> distribution with <em>the same</em> mean. On the other hand, clustering is useful in situations, when we have data coming from several different distributions and we want to distinguish groups with different distributions. Hence, the difference between this situation and stanard pot-hoc tests is that the latter involves groups of data following different distributions (with different means), as we have done many times, for example in Project 1 with gene expression following different distribution depending on cancer type.</p>
+
+</body>
+
+</html>
