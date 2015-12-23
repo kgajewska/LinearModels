@@ -1,0 +1,29 @@
+
+1. What is your justification that these genes are important, are differential across different cancers (what statistical tests/procedures have been used)?
+
+To najsłabszy punkt raportu.
+Brakuje uzasadnienia, jest tylko kod R.
+Poza kodem nie ma wyjaśnienia dlaczego wybrane geny są ważne.
+
+2. How do you present gene profiles for different cancers (is it easy to understood what expression is characteristic for each cancer)?
+
+Przedstawione boxploty sa bardzo dobre, to związła i treściwa formuła. Chyba najtreściwsza ze zgłoszonych propozycji.
+Tabela decyzyjna jest czytelna. 
+Ale nie wiadomo (nie jest opisane) jak te reguły były konstruowane.
+Nie są też walidowane, nie wiadomo wiec na ile można im ufać.
+
+
+3. Is the presentation and description understandable for non-statistician (we will have a molecular biologist to comment your presentations). You should be correct but not lost in details.
+
+Ten raport miał być czytelny i zwięzły.
+Miał być skierowany do biologów a tutaj są duże fragmenty kodu R, zupełnie nie czytelnego.
+Co więcej, sposób konstrukcji miary rozróżnialności jest zupełnie nieopisany. 
+Jedyna szansa by odcyfrować jak liczone były wyniki to analiza kodów R.
+Ale to miały być wyniki czytelne dla biologów.
+
+
+Points
+4/8 + 6/8 + 4/8 + 1 = 15
+
+
+

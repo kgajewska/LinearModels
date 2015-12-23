@@ -1,0 +1,27 @@
+
+1. What is your justification that these genes are important, are differential across different cancers (what statistical tests/procedures have been used)?
+
+Proper approach. Also the plots for different cancers are very informative.
+The only thing that you may consider is using ecdf instead of histograms. 
+Ecdf is much better when it comes to distributions. 
+Even for histograms it would be better to normalized these histograms (now counts are presented instead of proportions)
+
+
+2. How do you present gene profiles for different cancers (is it easy to understood what expression is characteristic for each cancer)?
+
+Table is a good presentation.
+You may consider for example boxplots to compare distributions for selected 10 genes for each cancer.
+It will use similar amount of space but may bring more information 
+(whole distribution instead of cutoff, distributions will show you how good is the separation)
+
+
+3. Is the presentation and description understandable for non-statistician (we will have a molecular biologist to comment your presentations). You should be correct but not lost in details.
+
+It is very good.
+The report is concise and concrete.
+However you may consider adding a point 'Summary of the results from this phase'.
+
+
+Points
+8/8 + 7/8 + 8/8 + 1 = 24
+

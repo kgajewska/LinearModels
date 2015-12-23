@@ -1,0 +1,30 @@
+
+1. What is your justification that these genes are important, are differential across different cancers (what statistical tests/procedures have been used)?
+
+You have used anova to identify genes that have significantly different averages across groups.
+But I do not agree that these genes 'differentiate all cancer types in this study'.
+
+Even the plot for '?|390284' shows that maybe Glioblastoma has different average expression than Leukemia, but it is not like you can differentiate these two cancers based on this single gene. 
+
+
+2. How do you present gene profiles for different cancers (is it easy to understood what expression is characteristic for each cancer)?
+
+The use of boxplot is a very good idea.
+But in some cases I do not understand the colouring. 
+For example for "?|90288" you have highlighted Glioblastoma, but it is in the middle among other cancers. So is it like it is different from all others?
+
+Similar problem with "?|653553".
+
+3. Is the presentation and description understandable for non-statistician (we will have a molecular biologist to comment your presentations). You should be correct but not lost in details.
+
+These boxplots are very informative.
+But I do not agree that three genes are enough (differences in averages is not enough to have good separation of distributions),
+
+The table with characteristic genes for each cancer is a very good idea.
+But some graphical summary of the whole table would be even better.
+
+
+Points
+7/8 + 6/8 + 7/8 + 1 = 21
+
+

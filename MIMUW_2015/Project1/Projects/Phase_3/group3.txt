@@ -1,0 +1,32 @@
+
+1. What is your justification that these genes are important, are differential across different cancers (what statistical tests/procedures have been used)?
+
+The example is good.
+The approach is good.
+
+But in boxplots you may consider some presentation of the range of values for a given cancer. Right now you have only mean + intervals but it is hard to see if these groups are well separated (averages are).
+
+
+2. How do you present gene profiles for different cancers (is it easy to understood what expression is characteristic for each cancer)?
+
+Boxplots are very good, but I do not like your use of colours. Instead of having different colours for each cancer you may consider using different colours for different clusters.
+
+Also it is not clear why the right plot is always wider than the left plot.
+
+Maybe it will be easier to read cancer names if they are on OX axis not on the legend.
+
+Also I think that it will be better to compare caners for a single gene (how cancers are different)
+rather than comparing genes for same cancer (genes may be different but we are going to separate cancers not genes)
+
+
+3. Is the presentation and description understandable for non-statistician (we will have a molecular biologist to comment your presentations). You should be correct but not lost in details.
+
+The example is god.
+The lack of paragraphs and lack formatting is not.
+But I like the ppt presentation as an supplement for the report. In my opinion the presentation is too long.
+
+
+Points
+7/8 + 6/8 + 7/8 + 1 = 21
+
+
