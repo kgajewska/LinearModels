@@ -1,0 +1,62 @@
+---
+title: "Homework 11"
+author: "Ma³gorzata Pujszo"
+date: "Saturday, January 02, 2016"
+output: html_document
+---
+
+I considered data sleepstudy from lme4 package. Firstly, let's see what our data looks like.
+
+
+```{r, message=FALSE, warning=FALSE}
+library(lme4)
+library(lattice)
+library(ggplot2)
+head(sleepstudy)
+nrow(sleepstudy)
+unique(sleepstudy$Subject)
+length(unique(sleepstudy$Subject))
+```
+
+As we can see our data is in a long format - we have information of reaction of a given patient in a given day. As a result, one patient is present in a data frame a couple times.
+
+Now, I plotted the relation between Reaction and Days for each Subject independently.
+
+```{r}
+panel.with.square <- function(...){
+  nx = list(...)$x
+  ny = list(...)$y
+  cc = lm(ny~nx)$coef
+  panel.xyplot(...)
+  panel.curve(x*cc[2]+cc[1], from=min(nx), to=max(nx), col="red")
+}
+
+xyplot(Reaction ~ Days | Subject, sleepstudy, type = c("g","p","r"),
+  xlab = "Days", ylab = "Reaction", pch=19,
+  panel = panel.with.square)
+```
+
+From the plot, one can infer that slopes for each Subject are different. Building a model we should take it into account. Consequently, I modelled the relation between Reaction and Days as linear but I also added random component depending on Subject. 
+
+```{r}
+model <- lmer(Reaction ~ Days + (Days|Subject), data=sleepstudy)
+summary(model)
+```
+
+In the model, I allowed occurence of dependence of random effects. Let's test whether this assumption of dependence is significant.
+
+```{r}
+model1 <- lmer(Reaction ~ Days + (Days-1|Subject) + (1|Subject), data=sleepstudy)
+summary(model1)
+anova(model, model1)
+```
+
+Since the p-value is high, we don't need to assume dependence of random effects. In further analysis I used model1.
+
+The last thing I did was extracting slopes for different patients (there are in vector "slopes") and presenting summary statistics.
+
+```{r}
+slopes <- ranef(model1)$Subject[,1] + fixef(model1)[2]
+summary(slopes)
+```
+
