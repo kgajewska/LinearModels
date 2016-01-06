@@ -1,0 +1,158 @@
+---
+title: "Homework 11"
+author: "Katarzyna Kanska"
+date: "7.01.2016"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Goal
+
+The data `sleepstudy` (lme4) allow to measure the effect of sleep deprivation of reaction time.
+
+*The average reaction time per day for subjects in a sleep deprivation study. On day 0 the subjects had their normal amount of sleep. Starting that night they were restricted to 3 hours of sleep per night. The observations represent the average reaction time on a series of tests given each day to each subject.*
+
+With the use of the `sleepstudy`:
+
+- Plot the relation between `Reaction` and `Days` for each subject independently.
+- Build a model with random coefficients for linear trend between `Reaction` and `Days`.
+- Extract individual slopes for the relation from the model with random effects. Present summary statistics of these slopes (1Q, median, 3Q).
+
+## Relation between `Reaction` and `Days`
+
+Fistly, we load the dataset.
+
+```{r, warning=FALSE, message=FALSE}
+library(lme4)
+head(sleepstudy)
+```
+
+For plotting we use the code from the lecture (and package `lattice`).
+
+```{r, warning=FALSE, message=FALSE}
+library(lattice)
+# panel for lattice package
+panel.with.square <- function(...){
+  nx = list(...)$x
+  ny = list(...)$y
+  cc = lm(ny~nx+I(nx^2))$coef
+  panel.xyplot(...)
+  panel.curve(x^2*cc[3]+x*cc[2]+cc[1], from=min(nx), to=max(nx), col="red")
+}
+# the plot
+xyplot(Reaction ~ Days | Subject, sleepstudy, type = c("g","p","r"),
+  xlab = "Days with restricted sleep", ylab = "Reaction time", pch=19,
+  panel = panel.with.square)
+```
+
+We can see that the second order polynomial does not fit the data. Let us try third order polynomial.
+
+```{r, warning=FALSE, message=FALSE}
+# panel for lattice package (second version)
+panel.with.cube <- function(...){
+  nx = list(...)$x
+  ny = list(...)$y
+  cc = lm(ny~nx+I(nx^2)+I(nx^3))$coef
+  panel.xyplot(...)
+  panel.curve(x^3*cc[4]+x^2*cc[3]+x*cc[2]+cc[1], from=min(nx), to=max(nx), col="red")
+}
+# the plot
+xyplot(Reaction ~ Days | Subject, sleepstudy, type = c("g","p","r"),
+  xlab = "Days with restricted sleep", ylab = "Reaction time", pch=19,
+  panel = panel.with.cube)
+```
+
+This looks better, but still the fitted line does not "cover" all the bumps in the data. It seems that 5th order polynomial may outperform the 3rd order.
+
+```{r, warning=FALSE, message=FALSE}
+# panel for lattice package (second version)
+panel.with.5 <- function(...){
+  nx = list(...)$x
+  ny = list(...)$y
+  cc = lm(ny~nx+I(nx^2)+I(nx^3)+I(nx^4)+I(nx^5))$coef
+  panel.xyplot(...)
+  panel.curve(x^5*cc[6]+x^4*cc[5]+x^3*cc[4]+x^2*cc[3]+x*cc[2]+cc[1], from=min(nx), to=max(nx), col="red")
+}
+# the plot
+xyplot(Reaction ~ Days | Subject, sleepstudy, type = c("g","p","r"),
+  xlab = "Days with restricted sleep", ylab = "Reaction time", pch=19,
+  panel = panel.with.5)
+```
+
+This is stigthly better. For example let us plot only subject 333.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+library(ggplot2)
+
+ggplot(sleepstudy[sleepstudy$Subject=="333",], aes(x=Days, y=Reaction)) +
+  geom_point(size=2) +
+  stat_smooth(aes(colour="linear"), method = "lm", se=FALSE, formula = y ~ x) +
+  stat_smooth(aes(colour="3rd order"), method = "lm", se=FALSE, formula = y ~ x + I(x^2) + I(x^3)) +
+  stat_smooth(aes(colour="5th order"), method = "lm", se=FALSE, formula = y ~ x + I(x^2) + I(x^3) + I(x^4) + I(x^5)) +
+  scale_colour_discrete("") +
+  ggtitle("Polynomial fit") + 
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+## Model with random coefficients for linear trend between `Reaction` and `Days`
+
+We will consider model with one fixed effect (`Days`) and one random effect (`Subject`). We are interested in the precise coefficient for `Days` because we can use it for prediction. The effect of the subject can give us information about how much the change in reaction time may vary among different people.
+
+Let us fit two model with different structure of covariance matrix for random effect.
+
+```{r, warning=FALSE, message=FALSE}
+(model1 <- lmer(Reaction ~ Days + (Days|Subject), data=sleepstudy, REML=FALSE))
+(model2 <- lmer(Reaction ~ Days + (Days-1|Subject) + (1|Subject), data=sleepstudy))
+```
+
+Model 1 assumes that mean and slope for each subject are correlated, while model 2 assumes this correaltion is zero (therefore this model has fewer degrees of freedom).
+
+```{r, warning=FALSE, message=FALSE}
+VarCorr(model1)
+```
+
+We see that estimated correlation between mean and slope is very low.
+
+Let us compare our two models using Log Likelihood test.
+
+```{r, warning=FALSE, message=FALSE}
+anova(model1, model2)
+```
+
+P-value is large, so we can state that there is no significant difference between these models. The BIC criterion is slightly smaller for model 2, so we will focus on this one.
+
+```{r, warning=FALSE, message=FALSE}
+summary(model2)
+```
+
+## Summary statistics of slopes
+
+We start with extracting the coefficients for each Subject.
+
+```{r, warning=FALSE, message=FALSE}
+Coefs <- t(t(ranef(model2)$Subject)[c("(Intercept)","Days"),] + fixef(model2))
+head(Coefs)
+```
+
+Now we calculate the statistics.
+
+```{r, warning=FALSE, message=FALSE}
+quantile(Coefs[,2], c(0.25, 0.5, 0.75))
+```
+
+50% of the slopes are between 7.30 and 13.42.
+
+```{r, warning=FALSE, message=FALSE}
+ggplot(as.data.frame(Coefs), aes(Days)) + geom_histogram(binwidth=3) + ggtitle("Histogram of slopes") + 
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+## Conclusions
+
+* Graphical analysis suggests that the reaction time can be described by number of days with restricted sleep using polynomial relation (probably polynomial of order 5 would fit best).
+* In the **linear** model with `Days` treated as fixed effect and `Subject` as random effect, we see that on average each additional day of sleep deprivation causes an increase in reaction time of about 10.5 milliseconds. This may vary among different people (standard deviation is about 6 milliseconds), but still the relation is positive in most cases.
+
+## Suggestions for further studies
+
+Now, having confirmed that sleep deprivation changes the functioning of the brain, one can wonder how did the Christmas break (during which probably everyone finally got enough sleep) affect the quality of homeworks for the *Linear and mixed models* course. As a measure of quality I would suggest the length of *Conclusions* section (number of used characters, excluding white spaces). Also, effect of student and the effect of each homework should be taken into consideration. It seems to me that these should be treated as random effects, because we are interested in the variation among different students as well as different homeworks (not all of the homeworks were equally inspiring to write long and exhaustive conclusions). :)
