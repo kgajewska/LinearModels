@@ -1,0 +1,83 @@
+---
+title: "Untitled"
+author: "Emilia Pompe"
+date: "Wednesday, December 30, 2015"
+output: html_document
+---
+
+## Emilia Pompe
+## Wednesday, December 30, 2015
+
+Let us take a look at the dataset sleepstudy.
+```{r}, message = FALSE}
+library(ggplot2)
+library(lme4)
+
+head(sleepstudy)
+summary(sleepstudy)
+```
+
+## Plot the relation between Reaction and Days for each subject independently.
+Let us take a look at the relation between reaction time and days for each subject.
+
+```{r, echo=TRUE, fig.width=10, fig.height=10}
+ggplot(sleepstudy, aes(x=Days, y=Reaction)) + geom_point() + 
+  geom_smooth(method="lm", formula=y~x+I(x^2), se=FALSE, col="blue") + 
+  geom_smooth(method="lm", formula=y~x, se=FALSE, col="red") +
+  facet_wrap(~Subject)
+```
+
+I used the here red colour for linear trend and the blue colour for quadratic trend. Let us also see a similar plot, but calculated for all subjects together:
+
+```{r, echo=TRUE, fig.width=6, fig.height=6}
+ggplot(sleepstudy, aes(x=Days, y=Reaction)) + geom_point() + 
+  geom_smooth(method="lm", formula=y~x, se=FALSE, col="red")
+```
+
+Generally speaking, the relation is positive (the more days without sleep, the longer your reaction time is). This might be observed from the second plot. However, it is clear from the first plot that the relationship looks differently for different people. In most cases, it is positive (e.g. subject 337, 372), but the reaction time may decrease and then increase (e.g. 330) or even have an overall decreasing tendency (e.g subject 335). This indicates that it it might be a good idea to introduce 'random slopes' to the model.
+Let me also mention that it can be also observed that in some cases quadratic trend fits better than the linear one.
+
+## Build a model with random coefficients for linear trend between Reaction and Days.
+```{r, echo=TRUE}
+model1 <- lmer(Reaction~Days + (Days|Subject), data=sleepstudy, REML=FALSE)
+summary(model1)
+```
+
+The t value for Days (fixed effect) is high enough to deduce that this variable is significant. Let us test whether the random slopes were significant in the model:
+```{r}
+model2 <- lmer(Reaction~Days + (1|Subject), data=sleepstudy, REML=FALSE)
+anova(model1, model2)
+```
+
+The random slopes turned out to be significant. It confirmed our presumptions based on analysing the first plot. Let us also check whether the 'random effects of intercept' were significant:
+
+```{r}
+model3 <- lmer(Reaction~Days + (Days-1|Subject), data=sleepstudy, REML=FALSE)
+anova(model1, model3)
+```
+
+The low level of p-value indicates that we shouldn't remove the 'random effects of intercept'. 
+I wanted to check whether I should include also a 'quadratic trend' into the model or it is not needed. I compared the first model with a one including a quadratic trend:
+
+```{r}
+model4 <- lmer(Reaction~Days + I(Days^2) + (Days + I(Days^2)|Subject), data=sleepstudy, REML=FALSE)
+anova(model1, model4)
+```
+
+Assuming a significance level 0.001, I decided that there is no need to introduce a quadratic trend. Hence, model1 is the final one here.
+
+## Extract individual slopes for the relation from the model with random effects. Present summary statistics of these slopes
+
+I extracted the individual slopes:
+```{r}
+(slope.model1 <- ranef(model1)$Subject[,2] + fixef(model1)[2])
+```
+
+Let us see basic statitsics of this vector.
+```{r, message=FALSE, warning=FALSE}
+summary(slope.model1)
+sd(slope.model1)
+qplot(slope.model1, geom="histogram")
+```
+
+The summary statistics for individual slopes also confirmed our observations based on the first plot. There is one subject with a slightly negative slope while others have positive slopes. What is more, the standard deviation is high; sleep deprivation affects people's reaction time differently, in some cases the influence is more severe than in others.
