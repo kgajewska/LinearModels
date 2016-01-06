@@ -168,7 +168,8 @@ anova(model1, model2)
 Effect of animal is significant.
 
 Permutation test:
-```{r, message=FALSE, warning=FALSE, eval=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+N = 200
 dataset2 <- dataset
 logs = replicate(N, {
   dataset2$Animal <- sample(dataset2$Animal)
@@ -195,7 +196,7 @@ anova(model1, model3)
 
 As p-value is low we believe that the effect of photo is important. Let us compare the result of likelihood test with permuation test. We permute the values of photo.
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
 dataset2 <- dataset
 logs = replicate(N, {
   dataset2$Photo_ID_abs <- sample(dataset2$Photo_ID_abs)
@@ -225,8 +226,8 @@ anova(addModel, modelMouse)
 P-value from likelihood ratio test is very small suggesting that the type of mouse should be taken into consideration.
 
 We perform also permutation test.
-```{r, message=FALSE, warning=FALSE, eval=FALSE}
-N = 200
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+
 logs = replicate(N, logLik(lmer(log(length) ~ sample(mouse) + treatment +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)))
 mean(logs > logLik(addModel))
 ```
@@ -241,7 +242,7 @@ anova(addModel, modelTreatm)
 
 P-value from likelihood ratio test is very small suggesting that the effect of treatment is important (p-value was equal to 0).
 
-```{r, message=FALSE, warning=FALSE, eval=FALSE}
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
 logs = replicate(N, logLik(lmer(log(length) ~ mouse + sample(treatment) +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)))
 mean(logs > logLik(addModel))
 ```

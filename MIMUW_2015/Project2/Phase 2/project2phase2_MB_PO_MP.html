@@ -306,12 +306,14 @@ model3 &lt;- lmer(log(length) ~ mouse*treatment + (1|Animal), data=dataset, REML
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p>Effect of animal is significant.</p>
 <p>Permutation test:</p>
-<pre class="r"><code>dataset2 &lt;- dataset
+<pre class="r"><code>N = 200
+dataset2 &lt;- dataset
 logs = replicate(N, {
   dataset2$Animal &lt;- sample(dataset2$Animal)
   logLik(lmer(log(length) ~ mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset2, REML=FALSE))
   })
 mean(logs &gt; logLik(model1))</code></pre>
+<pre><code>## [1] 0</code></pre>
 <p>Permutation test also confirmed significance of Animal effect.</p>
 </div>
 <div id="effect-of-photo" class="section level3">
@@ -338,6 +340,7 @@ logs = replicate(N, {
   logLik(lmer(log(length) ~ mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset2, REML=FALSE))
   })
 mean(logs &gt; logLik(model1))</code></pre>
+<pre><code>## [1] 0</code></pre>
 <p>The test confirmed importance of the effect of Photo.</p>
 </div>
 </div>
@@ -361,9 +364,9 @@ modelMouse = update(addModel, .~. -mouse)</code></pre>
 ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</code></pre>
 <p>P-value from likelihood ratio test is very small suggesting that the type of mouse should be taken into consideration.</p>
 <p>We perform also permutation test.</p>
-<pre class="r"><code>N = 200
-logs = replicate(N, logLik(lmer(log(length) ~ sample(mouse) + treatment +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)))
+<pre class="r"><code>logs = replicate(N, logLik(lmer(log(length) ~ sample(mouse) + treatment +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)))
 mean(logs &gt; logLik(addModel))</code></pre>
+<pre><code>## [1] 0.05</code></pre>
 <p>Result of permutation test confirm the statistical significance of variable “mouse” (p-value equal to 0.03).</p>
 </div>
 <div id="effect-of-treatment" class="section level3">
@@ -382,6 +385,7 @@ anova(addModel, modelTreatm)</code></pre>
 <p>P-value from likelihood ratio test is very small suggesting that the effect of treatment is important (p-value was equal to 0).</p>
 <pre class="r"><code>logs = replicate(N, logLik(lmer(log(length) ~ mouse + sample(treatment) +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)))
 mean(logs &gt; logLik(addModel))</code></pre>
+<pre><code>## [1] 0</code></pre>
 <p>Result of permutation test confirm the statistical significance of variable “treatment” (p-value was equal to 0).</p>
 </div>
 <div id="significance-of-interactions" class="section level3">
