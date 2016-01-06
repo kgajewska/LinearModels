@@ -1,0 +1,59 @@
+---
+title: "Praca domowa 11"
+author: "Piotr Obarski"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+  toc: TRUE
+---
+
+## Plot the relation between Reaction and Days for each subject independently.
+
+Firstly, I load the data and libraries which I am going to need. And then, using ggplot I plot relation. I added two lines, one is taken from linear regression, and second from ridge linear regression (I deicided to add this line because relationship clearly is linear, but some observations stand out from the linear trend). Both lines are almost the same and we see that relationship is almost surely linear.
+
+```{r}
+library(lme4)
+head(sleepstudy)
+library(ggplot2)
+library(MASS)
+ggplot(sleepstudy, aes(Days, Reaction)) + geom_point() + 
+  geom_smooth(method="lm", se=FALSE) +
+  geom_smooth(method="rlm", se=FALSE, color="red") +
+  facet_wrap(~Subject)
+
+```
+
+## Build a model with random coefficients for linear trend between Reaction and Days.
+
+I build model with days as fixed effect (because we have only 9 days and we are interested in the effect of days on the reaction) and I also add subject as a random effect. And then I compare different model to find the one which has the least arguments but explains variable reaction as well as the first model.
+
+```{r}
+model<-lmer(Reaction~Days+(Days|Subject), data=sleepstudy, REML=FALSE)
+model1<-lmer(Reaction~Days+(Days-1|Subject)+(1|Subject), data=sleepstudy, REML=FALSE)
+anova(model,model1)
+model2<-lmer(Reaction~Days+(Days-1|Subject), data=sleepstudy, REML=FALSE)
+anova(model1,model2)
+model3<-lmer(Reaction~Days+(1|Subject), data=sleepstudy, REML=FALSE)
+anova(model1,model3)
+
+```
+
+So we see that the model1 is the model which we should choose.
+
+## Extract individual slopes for the relation from the model with random effects. Present summary statistics of these slopes (1Q, median, 3Q).
+
+When we have our model we can extract slopes for each subject and present summary.
+
+```{r}
+
+fixef(model1)
+slopes<-ranef(model1)$Subject[,1] + fixef(model1)[2]
+summary(slopes)
+boxplot(slopes)
+```
+
+## Conclusions
+
+We see that most subjects have worse reaction when they didn't get enough sleep.  We also see that various individuals have different reaction on the sleep deprivation.
+
+
