@@ -1,0 +1,68 @@
+---
+title: "Homework 11"
+author: "Agnieszka Sitko"
+output:
+  html_document:
+    toc: yes
+---
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+library(lattice)
+library(PBImisc)
+library(lme4)
+attach(sleepstudy)
+      
+```
+##Plots
+
+The relation between `Reaction` and `Days` for each subject is plotted below. 
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+
+xyplot(Reaction ~ Days | Subject, type = c("g","p","r"),
+      xlab = "Days", ylab = "Reaction", pch = 19,
+      panel = lattice.getOption("panel.xyplot"), col = "blue3")
+```
+
+For each plot linear trendline is added. Most subjects tend to increase their reaction time with the increase in the number of days with restricted amount of sleep. 
+
+##Model
+
+We will introduce a model which assumes that there is a linear and fixed relation between `Reaction` and `Days` in a population as a whole and there may exist random effect of `Subject`. The results of such a model are listed as follows.
+
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+model <- lmer(Reaction ~ Days + (Days|Subject))
+summary(model)
+```
+
+From this summary we can say that there exists positive relation between the number of days with sleep restriction and reaction time of a subject in a population.
+
+It may be shown that the model is correct (all variables are important, random variables are normally distributed).
+
+SIGNIFICANCE OF THE FIXED EFFECT 
+```{r, warning = FALSE, message = FALSE}
+2 * pnorm(6.77, lower.tail = FALSE)
+```
+
+SIGNIFICANCE OF THE RANDOM EFFECT
+```{r, warning = FALSE, message = FALSE}
+model1 <- lm(Reaction ~ Days)
+anova(model, model1)[[8]][2]
+```
+
+MODEL DIAGNOSTICS
+```{r, warning = FALSE, message = FALSE, echo = FALSE}
+ranEf <- ranef(model, postVar = TRUE)
+qqmath(ranEf)
+qqnorm(fitted.values(model)-Reaction, main = "QQ plot for residuals"); qqline(fitted.values(model)-Reaction)
+```
+
+##Individual slopes
+
+Main statistics of slopes calculated for the model may be find below.
+```{r, warning = FALSE, message = FALSE}
+slopes <- ranEf$Subject[,2] + fixef(model)[2]
+summary(slopes)
+```
+
+As expected most slopes are positive (only one is negative). So, even if we consider the random effect of subjects, the positive relation between `Reaction` and `Days` will be kept.
