@@ -1,0 +1,296 @@
+---
+title: "Project 2, Phase 2"
+author: "Magdalena Bogdañska, Piotr Obarski and Ma³gorzata Pujszo"
+date: "Linear and Mixed Models with Examples for Biological and Medical Data"
+output: 
+  html_document:
+    toc: true
+---
+
+
+## Objective
+In this phase of the project we will use results of all studies included in data "dendriticSpines" in order to find out which variables affect the length of dendritic spine. We will test which variables should be included in the model as random effects. We will also verify which variables that play important role in the analysis should be included as fixed effects.
+
+
+```{r, message=FALSE, warning=FALSE, echo=FALSE}
+library(ggplot2)
+library(car)
+library(lme4)
+library(MASS)
+library(agricolae)
+library(lattice)
+load("dendriticSpines.rda")
+```
+
+##Data transformation
+```{r, message=FALSE, warning=FALSE}
+dataset <- dendriticSpines
+table(dataset$treatment)
+table(dataset$mouse)
+```
+###Transformation of variable animal in some studies
+
+Analysing given dataset, we found out that mice in different studies have the same IDs.
+
+```{r}
+for(i in sort(unique(dataset$Animal))) {
+  print(c(i,unique(dataset$Study[which(dataset$Animal==i)]), "Type_of_mice", unique(dataset$mouse[which(dataset$Animal==i)])))
+}
+```
+
+We believe that different studies contain data on different mice, therefore we would like to distinguish mice in our model. In order to do so we have changed initially Animal's IDs in second study ("gm") from 1:5 to 101:105.  
+
+```{r}
+data.gm <- subset(dataset, Study=="gm")
+
+for (i in sort(unique(data.gm$Animal))) {
+  dataset$Animal[which(dataset$Animal==i & dataset$Study=="gm")] <- 100+i
+}
+
+data.gm <- subset(dataset, Study=="gm")
+unique(data.gm$mouse)
+unique(subset(data.gm, mouse=="TG")$Animal)
+unique(subset(data.gm, mouse=="WT")$Animal)
+```
+
+We assume obviously that one mouse could not have 2 different genotypes, thus we have changed also IDs of mice of type "TG" in "gm" Study into 201:205.
+
+```{r}
+for (i in sort(unique(data.gm$Animal))) {
+  dataset$Animal[which(dataset$Animal==i & dataset$Study=="gm" & dataset$mouse=="TG")] <- 100+i
+}
+```
+
+After the transformation above, the variable "Animal" looks in the following way: 
+
+```{r}
+for(i in sort(unique(dataset$Animal))) {
+  print(c(i,unique(dataset$Study[which(dataset$Animal==i)]), "Type_of_mice", unique(dataset$mouse[which(dataset$Animal==i)])))
+}
+```
+
+We also noticed (material not included) that sometimes one mouse is treated with two different substances. We wondered whether these are really the same mice or just mice named with the same IDs in different studies (as in the case above with genotypes). 
+We suppose that the data has been obtained with the following procedure: the portion of grey substance was taken out of the brain of death mouse and then immersed in the substance selected. Thus it is possible that different samples of mouse brain were used in different studies. As a result we didn't change IDs of mice having two different treatments. However, it can be also done to distinguish such cases.
+
+
+###Transformation of variable length in all studies
+
+We deduce from the first phase that we should transform variable length.
+Hence similarly as in the first phase, we used boxcox and logtrans to transform length variable.
+```{r, fig.height=4, fig.width=6, message=FALSE, warning=FALSE}
+boxcox(length~mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset, lambda=seq(-0.5, 0.5, 1/10))
+
+logtrans(length~mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset, alpha=seq(-min(dataset$length)+0.01,0.2,0.1))
+```
+
+Both methods suggest that parameters of transformation (lambda and alpha respectively) equal approximately to 0, which means that taking logarithm is the best option. Thus we will consider mixed-effects model of a form: 
+
+log(length) ~ mouse*treatment + (1|Animal/Photo_ID_abs).
+
+
+##Significance of all genotypes and types of treatment 
+###Graphical analysis
+Here we show boxplots and distribution functions of length of dendritic spines grouped by only one variable (mouse or treatment).
+```{r, fig.height=4, fig.width=6, message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(aes(y=log(length), x=mouse, fill=mouse), data=dataset) + geom_boxplot() + coord_flip()
+
+ggplot(dataset, aes(x=log(length), color=mouse)) +  stat_ecdf()
+
+ggplot(aes(y=log(length), x=treatment, fill=treatment), data=dataset) + geom_boxplot() + coord_flip()
+
+ggplot(dataset, aes(x=log(length), color=treatment)) +  stat_ecdf()
+```
+
+Based on the boxplots above one can come out with the following hypotheses: 
+
+1) TG and WT mice seems to be similar with respect to the length of dendritic spines, maybe we could join them in one group; 
+
+2) treatment with lithium seems to be similar to no treatment, other treatments are also similar, maybe we can consider only two groups of treatments.
+
+We will have a look also at plots which take into account interactions between variables mouse and treatment.
+
+```{r, fig.height=5, fig.width=7, message=FALSE, warning=FALSE, echo=FALSE}
+ggplot(aes(y=log(length), x=interaction(mouse, treatment)), data=dataset) + geom_boxplot() + coord_flip()
+
+ggplot(data=dataset, aes(x=mouse, y=log(length), group=treatment, colour=treatment)) + stat_summary(fun.y= mean, geom="line") +ggtitle("Interaction of mouse type and treatment")
+```
+
+Interaction plot shows us more specific information, among others that probably results of treatment with chiron aren't similar to the results of treatment with dmso or gm. 
+
+Therefore we test initial hypothesis in order to have reliable results. We perform ANOVA models for both variables and proper post-hoc tests.
+
+
+###Testing with ANOVA and post-hoc test
+####Test for the type of mouse
+```{r, message=FALSE, warning=FALSE}
+model<- aov(log(length)~mouse*treatment+(1|Animal/Photo_ID_abs), dataset)
+LSD.test(model, "mouse", p.adj="holm")$groups
+```
+
+####Test for the type of treatment
+```{r, message=FALSE, warning=FALSE}
+LSD.test(model, "treatment", p.adj="holm")$groups
+```
+
+Results of LSD test show that there are statistically significant differences among all groups of mice. With respect to the treatment type, LSD test show that there aren't any differences between DMSO and GM treatment. It may be a good idea to join these two factors into one as we will have less parameters to estimate subsequently.
+
+But in order to do that we need to test one more thing.
+In fact here we have four groups of mice treated with DMSO or GM i.e. TG:dmso, TG:gm, WT:gm, WT:dmso. Therefore we need to ensure that TG:dmso and TG:gm are the same according to post-hoc test and the same for WT:gm and WT:dmso.
+
+```{r}
+dataset$mouse_treatment <- sapply(1:nrow(dataset), function (x) {
+  paste(as.character(dataset$mouse[x]), as.character(dataset$treatment[x]), sep="_")
+  })
+dataset$mouse_treatment <- factor(dataset$mouse_treatment)
+
+
+model<- aov(log(length)~mouse_treatment+(1|Animal/Photo_ID_abs), dataset)
+LSD.test(model, "mouse_treatment", p.adj="holm")$groups
+LSD.test(model, "mouse_treatment")$groups
+```
+
+We see that we cannot join these two treatments.
+
+##Significance of random effects
+
+Because in the model we included random effects of Animal and Photo, we need to test their significance. We gave explanation why they should be modelled as random in the first phase.
+
+```{r, message=FALSE, warning=FALSE}
+model1 <- lmer(log(length) ~ mouse*treatment + (1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)
+model2 <- lmer(log(length) ~ mouse*treatment + (1|Photo_ID_abs:Animal), data=dataset, REML=FALSE)
+model3 <- lmer(log(length) ~ mouse*treatment + (1|Animal), data=dataset, REML=FALSE)
+```
+
+### Effect of animal
+```{r, message=FALSE, warning=FALSE}
+anova(model1, model2)
+```
+Effect of animal is significant.
+
+Permutation test:
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+N = 200
+dataset2 <- dataset
+logs = replicate(N, {
+  dataset2$Animal <- sample(dataset2$Animal)
+  logLik(lmer(log(length) ~ mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset2, REML=FALSE))
+  })
+mean(logs > logLik(model1))
+```
+
+Permutation test also confirmed significance of Animal effect.
+
+### Effect of photo
+Our hypothesis in the first phase was that photo can be modelled as a nested variable. Can we treat it as a crossed effect?
+
+```{r}
+unique(dataset$Animal[which(dataset$Photo_ID_abs==1)])
+```
+
+We see that there are three different animals which have Photo_ID_abs equal to 1. Hence Photo_ID_abs cannot be treated as crossed effect.
+
+We verify the significance of variable Photo in our model using likelihood ratio test.
+```{r, message=FALSE, warning=FALSE}
+anova(model1, model3)
+```
+
+As p-value is low we believe that the effect of photo is important. Let us compare the result of likelihood test with permuation test. We permute the values of photo.
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+dataset2 <- dataset
+logs = replicate(N, {
+  dataset2$Photo_ID_abs <- sample(dataset2$Photo_ID_abs)
+  logLik(lmer(log(length) ~ mouse*treatment +(1|Animal/Photo_ID_abs), data=dataset2, REML=FALSE))
+  })
+mean(logs > logLik(model1))
+```
+
+The test confirmed importance of the effect of Photo.
+
+##Significance of fixed effects
+
+In this section, we found out which fixed effects seems to be important.
+
+###Effect of mouse
+
+```{r, message=FALSE, warning=FALSE}
+addModel= lmer(log(length) ~ mouse + treatment +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)
+modelMouse = update(addModel, .~. -mouse)
+```
+
+First we use likelihood ratio test.
+```{r, message=FALSE, warning=FALSE}
+anova(addModel, modelMouse)
+```
+
+P-value from likelihood ratio test is very small suggesting that the type of mouse should be taken into consideration.
+
+We perform also permutation test.
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+
+logs = replicate(N, logLik(lmer(log(length) ~ sample(mouse) + treatment +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)))
+mean(logs > logLik(addModel))
+```
+
+Result of permutation test confirm the statistical significance of variable "mouse" (p-value equal to 0.03).
+
+###Effect of treatment
+```{r, message=FALSE, warning=FALSE}
+modelTreatm = update(addModel, .~. -treatment)
+anova(addModel, modelTreatm)
+```
+
+P-value from likelihood ratio test is very small suggesting that the effect of treatment is important (p-value was equal to 0).
+
+```{r, message=FALSE, warning=FALSE, eval=TRUE}
+logs = replicate(N, logLik(lmer(log(length) ~ mouse + sample(treatment) +(1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)))
+mean(logs > logLik(addModel))
+```
+Result of permutation test confirm the statistical significance of variable "treatment" (p-value was equal to 0).
+
+###Significance of interactions
+
+```{r, message=FALSE, warning=FALSE}
+model1 <- lmer(log(length) ~ mouse*treatment + (1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)
+anova(model1, addModel)
+```
+
+Effect of interaction is important.
+
+##Checking assumptions
+
+We need to check whether residuals and random effects have normal distribution.
+
+###Normality of random effects
+```{r, fig.height=4, fig.width=6, message=FALSE, warning=FALSE}
+model1 <- lmer(log(length) ~ mouse*treatment + (1|Animal/Photo_ID_abs), data=dataset, REML=FALSE)
+summary(model1)
+shapiro.test(as.matrix(ranef(model1)$`Photo_ID_abs:Animal`))
+shapiro.test(as.matrix(ranef(model1)$Animal))
+qqmath(ranef(model1, condVar=TRUE))
+```
+
+Effect of Photo seems to be normal based on both graphical analysis and Shapiro test. The effect of Animal is almost normal, we see very poor fitting in tail.
+
+###Normality of standardized residuals
+```{r, fig.height=4, fig.width=6, message=FALSE, warning=FALSE}
+qplot(sample = residuals(model1, scaled=TRUE), stat="qq") + geom_abline(intercept=0, slope=1, colour="red", size=0.75) + ggtitle("Normal Q-Q Plot")
+```
+
+We can assume that residuals follow normal distribution.
+
+##Conclusions
+While considering all studies included in data “dendriticSpines”, we faced the problem with same indexes for different mice, thus we transformed variable Animal. 
+
+As in the first phase we propose to use logarithm of length of dendritic spines in the modelling. 
+
+In the data we have three types of treatments and three genotypes, before modelling we verified whether we can group some types of treatment/mice in order to have less parameters to estimate. Unfortunately all levels of those factors turned out to be statistically significant.
+
+We have checked significance of fixed and random effects and we suggest finally using the full model of a form:
+
+log(length) ~ mouse*treatment + (1|Animal/Photo_ID_abs).
+
+For that model we have also checked assumptions.
+
+
+
