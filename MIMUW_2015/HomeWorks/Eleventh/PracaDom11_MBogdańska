@@ -1,0 +1,86 @@
+---
+title: "PracaDom5_MBogdańska"
+author: "Magdalena Bogdańska"
+date: "Modele liniowe i mieszane"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+## Task
+
+The data sleepstudy (lme4) allow to measure the effect of sleep deprivation on reaction time.
+
+On day 0 people (subjects of the study) had their normal amount of sleep. From that night on, they were restricted to 3 hours of sleep per night. The observations represent the average reaction time on a series of tests done each day by each person (subject).
+
+With the use of the sleepstudy:
+
+- Plot the relation between Reaction and Days for each subject independently.
+- Build a model with random coefficients for linear trend between Reaction and Days.
+- Extract individual slopes for the relation from the model with random effects. Present summary statistics of these slopes (1Q, median, 3Q).
+
+-------------------------------------------------------------------------------------------
+
+## Part 1
+```{r, warning=FALSE, message=FALSE,echo=FALSE}
+library(lme4)
+library(PBImisc)
+library(lattice)
+```
+Data to be considered is of a following form:
+```{r, warning=FALSE, message=FALSE}
+head(sleepstudy)
+```
+
+In order to plot results for patients separatly, first I prepare the panel for lattice package which will contain both linear and quadratic trend lines marked with blue and red lines, respectively. Subsequently with function xyplot I plot reaction times as a function of time of the test for all patients (as during classes).
+
+```{r, message=FALSE, warning=FALSE, fig.width=10, fig.height=5}
+panel.with.square <- function(...){
+  nx = list(...)$x
+  ny = list(...)$y
+  cc = lm(ny~nx+I(nx^2))$coef
+  panel.xyplot(...)
+  panel.curve(x^2*cc[3]+x*cc[2]+cc[1], from=min(nx), to=max(nx), col="red")
+}
+xyplot(Reaction ~ Days | Subject, sleepstudy, type = c("g","p","r"),
+  xlab = "Day of reaction test", ylab = "Reaction time", pch=19,
+  panel = panel.with.square)
+```
+One can see a general increasing trend for reaction time, namely the more time one lacks enough sleep, the longer is the reaction time in proper physical tests. There is only one person which doesn't follow this general rule (with id=335). Moreover slopes of linear trends for each subject are different.
+
+
+## Part 2
+First let me try a model with only one random effect, namely the effect of the indivudual (subject).
+```{r, warning=FALSE, message=FALSE}
+(model0<-lmer(Reaction~Days + (1|Subject), data=sleepstudy))
+```
+
+However in the plot we can see some trend, so I reject this initial model. I will try with a linear relation.
+
+```{r, warning=FALSE, message=FALSE}
+(model1 <- lmer(Reaction ~ Days + (Days|Subject), data=sleepstudy))
+```
+Correlation between Days and Reaction equals 0.08 for each individual.
+
+
+```{r, warning=FALSE, message=FALSE}
+anova(model0,model1)
+```
+Result of Anova confirm previous natural hypothesis (that effect of days is important).
+
+Neglecting existence of dependence, one could consider also the following model:
+```{r, warning=FALSE, message=FALSE}
+(model2 <- lmer(Reaction ~ Days + (Days-1|Subject) + (1|Subject), data=sleepstudy))
+anova(model1,model2)
+```
+As p-value is high, it is not necessary to take into account the correlation. Thus I will consider subsequently model2.
+
+## Part 3
+
+I extract individual slopes with the command below and present values of median, first and third quantile.
+```{r, warning=FALSE, message=FALSE}
+(slopes_model2<- ranef(model2)$Subject[,1] + fixef(model2)[2])
+summary(slopes_model2)[c(2,3,5)]
+```
+
+We can see that only one slope is negative (as seen previously in the plot). For other indivuduals there is an increasing linear trend.
