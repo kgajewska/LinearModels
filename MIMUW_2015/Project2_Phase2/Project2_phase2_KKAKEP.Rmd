@@ -1,0 +1,508 @@
+---
+title: "Project 2 phase 2"
+author: "Katarzyna Kańska, Annanina Koster, Emilia Pompe"
+date: "January 7, 2016"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+# Introduction
+
+The second phase of this project is about improving the model found in phase 1. All three studies will now be used. It will focus on finding out which factors affect the length of dendritic spines of mice and how these factors can best be modeled.
+
+Once again the dataset `dendriticSpines.rda` is used. This time the complete dataset has `38182` observations of `24` mice's dendritic spines lengths divided over 3 different studies, 3 different mouse types and 5 different types of treatment.
+
+```{r, warning=FALSE, message=FALSE, echo=8:9}
+library(lme4)
+library(ggplot2)
+library(lattice)
+library(MASS)
+library(fBasics)
+library(plyr)
+library(corrplot)
+load("dendriticSpines.rda")
+dendritic.data <- dendriticSpines
+```
+
+The available variables (and their summaries) in this dataset are
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+summary(dendritic.data)
+```
+
+The detailed description of mouse types and the way of measuring the dendritic spine lengths is available in the report oo the first phase.
+
+# The research objective
+
+The research objective in phase 2 is to determine which variables influence the length of dendritic spines of mice significantly in all 3 studies. To do so we need to find the best way to model these variables.
+
+# Results
+
+## Fixed effects
+
+Variable name          |     Effect        |   P-value               
+-----------------------+-------------------+--------------------
+`(mouse)TG`            |     0.235978      |   5.742282e-03  `*`
+`(mouse)WT`            |     0.218767      |   7.521950e-03  `*`
+`(treatment)chiron`    |     0.405535      |   6.709482e-11  `***`
+`(treatment)dmso`      |     0.439447      |   5.185581e-16  `***`
+`(treatment)gm`        |     0.497898      |   1.239148e-13  `***`
+`(treatment)li`        |    -0.065248      |   3.394034e-01
+`TG:chiron`            |     0.005939      |   9.121199e-01
+`TG:dmso`              |     0.106325      |   2.015235e-03  `***`
+`WT:li`                |    -0.183960      |   4.137106e-02  `.`
+
+Signif. codes:  0 `***` 0.001 `**` 0.01 `*` 0.05 `.`
+
+## Random effects
+
+Variable name          |     Effect (Std.Dev.)              
+-----------------------+------------------------
+`Study:Photo_ID_abs`   |        0.09939
+`Animal`               |        0.09541
+`Amimal:chiron`        |        0.10739
+`Amimal:dmso`          |        0.08900
+`Amimal:gm`            |        0.12583
+`Amimal:li`            |        0.10311
+
+# Statictical methods
+
+## Basic analysis
+
+### Dependent variable `length`
+
+
+Instead of the variable `length`, we will again use `log(length)` in this phase as the dependent variable. This choice can be justified for example by the histograms below (`log(length)` seems to be closer to the normal distribution).
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+d <- data.frame(length = c(dendritic.data$length, log(dendritic.data$length)),
+                type = c(rep("length",nrow(dendritic.data)), rep("log(length)",nrow(dendritic.data))))
+
+ggplot(d, aes(length)) + geom_histogram(binwidth=0.2,colour="black", fill="orange")  +
+  facet_wrap(~ type) + xlab("") + ggtitle("Histograms of length and log(length)") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+[maybe box-cox transformation would indicate the log transform?]
+
+### Explanatory variables `Study`, `mouse`, `treatment`, `Animal`
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+ggplot(dendritic.data, aes(x = Study, y = log(length))) + geom_boxplot() +
+    coord_flip() + ggtitle("log(length) per Study") +
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+
+ggplot(dendritic.data, aes(x = mouse, y = log(length))) + geom_boxplot() +
+    coord_flip() + ggtitle("log(length) per mouse type") +
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+
+ggplot(dendritic.data, aes(x = treatment, y = log(length))) + geom_boxplot() +
+    coord_flip() + ggtitle("log(length) per treatment") +
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+
+ggplot(dendritic.data, aes(x = factor(Animal), y = log(length))) + geom_boxplot() +
+    coord_flip() + ggtitle("log(length) per treatmen") +
+    theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+The above plots show that all of the variables `Study`, `mouse`, `treatment` and `Animal` may influence the length of spines.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+bwplot(Study:mouse:treatment~log(length), data=dendritic.data, main="log(length) per Study:mouse:treatment")
+```
+
+Here we see that study `ko` seems to make the biggest difference in spine's length. The effects of `mouse` and `treatment` also differ the length of spine's but their effect is much smaller compared to he effect of `ko` study.
+
+### Interactions and correlation
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+par(mfrow=c(1,3))
+par(mar=c(5.1, 4.1, 4.1, 3.1))
+
+UpdateFactorLevels <- function(df){
+  for (i in 1:ncol(df)){
+    if (class(df[,i])=="factor") df[,i]<-factor(df[,i])
+  }
+  
+  return(df)
+}
+
+dt1 <- subset(dendritic.data, Study=="gm")
+dt2 <- subset(dendritic.data, Study=="chiron")
+dt3 <- subset(dendritic.data, Study=="ko")
+
+dt1 <-UpdateFactorLevels(dt1)
+dt2 <-UpdateFactorLevels(dt2)
+dt3 <-UpdateFactorLevels(dt3)
+
+interaction.plot(dt1$mouse, dt1$treatment,
+                 log(dt1$length), 
+                 ylab="log(length)", 
+                 main="gm study")
+interaction.plot(dt2$mouse, dt2$treatment,
+                 log(dt2$length), 
+                 ylab="log(length)", 
+                 main="chiron study")
+interaction.plot(dt3$mouse, dt3$treatment,
+                 log(dt3$length), 
+                 ylab="log(length)", 
+                 main="ko study")
+```
+
+Non of these lines on the interaction plots are parallel, which might suggest that there exists an interaction between `mouse` and `treatment` variables.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+ggplot(dendritic.data, aes(y=log(length), x=mouse)) +
+  geom_boxplot(aes(fill = treatment)) +
+  ggtitle("Boxplots of log(length) for differents types of mouse") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+On the above plot we firstly notice that not every treatment is used for every type of mouse. To further measurement of the interaction between treatment and the type of mouse we plot a slightly different graph.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+ggplot(dendritic.data, aes(y=log(length), x=mouse)) +
+  geom_boxplot(aes(fill = treatment)) +
+  facet_wrap(~Study) +
+  ggtitle("Boxplots of log(length) for differents types of mouse divided by Study") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+Here we see that within `ko` and `gm` studies there is an interaction between mouse type and treatment, which is less visible within `chiron` study.
+
+For better undertanding what is really the `Study` variable and how it is conneted with variables `mouse`, `treatment` and `Animal`, we examine the following tables.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+xtabs(~ Study + mouse, data= dendritic.data)
+xtabs(~ Study + treatment, data= dendritic.data)
+tab1 <- xtabs(~ Study + Animal, data= dendritic.data)
+tab2 <- xtabs(~ mouse + Animal, data= dendritic.data)
+t(rbind(as.data.frame.matrix(tab1),as.data.frame.matrix(tab2)))
+```
+
+We can make the following observations:
+
+* Mice of type `KO` appeared only in `ko` study. In other cases the mouse type does not determine the study it was used in.
+* Only `dmso` treatment was used in two different studies. The other types of treatment determine the study it was used in.
+* Except for the animals 1-5, the animal number determine the study.
+* Each animal can have maximum of two different types. Only `KO` type determines the animal number.
+
+As we can see, connections between these variables are very complex. Therefore we will consider several different ideas for modeling such a structure.
+
+### `Photo_ID_abs` variable
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=10, fig.width=7}
+ggplot(dendritic.data, aes(y=log(length), x=factor(Photo_ID_abs), fill=factor(Animal))) +
+  geom_boxplot() + coord_flip() +  facet_wrap(~Study) +
+  ggtitle("Boxplots of log(length) for differents photos divided by Study") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+Here we see two things. Firstly, median of spines' length vary among different photos. Secondly, numbers of photos are overlapping, which means that we have more than one photo with number 1, 2 and so on. Moreover, animal number in `chiron` and `gm` studies are not overlapping. This leads us to the conclusion that `Photo_ID_abs` should be treated as a **nested effect** (photo no. 1 in `chiron` study is definitely not he same photo which has no.1 in `gm` study because the animal is not the same).
+
+To figure out whether `Photo_ID_abs` is a nested in `Study` or in `Animal` effect, we have to look carefully at photos of animals with number from 1 to 5.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=10, fig.width=7}
+df <- subset(dendritic.data, Animal<6)
+
+ggplot(df, aes(y=log(length), x=factor(Photo_ID_abs), fill=factor(Animal))) +
+  geom_boxplot() + coord_flip() +  facet_wrap(~Study) +
+  ggtitle("Boxplots of log(length) for differents photos divided by Study") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+Is the photo no. 1 the same photo used in two different studies? Let us see the number of spines on each of them.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+df2 <- subset(dendritic.data, Animal<3 & Photo_ID_abs<6)
+df2 <- UpdateFactorLevels(df2)
+xtabs(~ Study + Photo_ID_abs, df2)
+```
+
+These are different photos. Finally, we come up with the conclusion that the effect of `Photo_ID_abs` is nested in the `Study` effect.
+
+## Model Selection
+
+To start with, let us sum up what we know about available variables from basic analysis.
+
+Variable name          |  Observations               
+-----------------------+------------------------------------------------------------------------------
+`length`               |  worth considering a log-transform
+`mouse`                |  3 levels, we are interested in the precise value of the effect
+`treatment`            |  5 levels, we are interested in the precise value of the effect
+`mouse:treatment`      |  worth considering this interaction
+`Study`                |  3 levels, strongly connected with `mouse` and `treatment`, does not provide any information that could be used directly in prediction
+`Animal`               |  25 levels, we are not interested in specific animal, only variation matters
+`Photo_ID_abs`         |  effect nested in `Study` variable, we are not interested in specific photo, only variation matters
+
+### Transformation of dependent variable `length`
+
+We perform the Box-Cox transformation for a very simple linear model considering only `mouse` and `treatment`.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+tmp <- boxcox(length ~ mouse + treatment, data = dendritic.data, lambda=seq(-1, 1, by=.005))
+(lambda <- tmp$x[which.max(tmp$y)])
+```
+
+The optimal parameter is close to zero, so we use the logarithm transformation.
+
+### Checking for interactions between `mouse` and `treatment`
+
+Models 1.0 and 1.1 use `Study` only to distinguish the effect of the photo. This variable is not used on its own as it seems to repeat the information provided by `mouse` and `treatment` variables. Both `Aminal` and `Photo_ID_abs` are modeled as random effects. Variables `mouse` and `treatment` are treated as fixed effects. Model 1.1 additionally consider interaction between these two.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+model1.0 <- lmer(log(length) ~ mouse + treatment + (1|Animal) + (1|Study:Photo_ID_abs), data=dendritic.data)
+model1.1 <- lmer(log(length) ~ mouse * treatment + (1|Animal) + (1|Study:Photo_ID_abs), data=dendritic.data)
+
+anova(model1.0, model1.1)
+```
+
+Model 1.1 seems to be slightly better than model 1.0.
+
+### Modelling the effect of `Animal`
+
+In this section we examine two ideas for modeling the effect of `Animal`: changing it from random to fixed and taking into consideration that different animals may react differently for each treatment (which is often the case with humans).
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=10, fig.width=7}
+ggplot(subset(dendritic.data, Animal<6), aes(y=log(length), x=treatment, fill=treatment)) +
+  geom_boxplot() +  facet_wrap(~Animal) +
+  ggtitle("Boxplots of log(length) for differents treatments divided by Animal") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+
+ggplot(subset(dendritic.data, Animal>15), aes(y=log(length), x=treatment, fill=treatment)) +
+  geom_boxplot() +  facet_wrap(~Animal) +
+  ggtitle("Boxplots of log(length) for differents treatments divided by Animal") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+Firstly, we again check for interactions between `mouse` and `treatment`.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+model2.0 <- lmer(log(length) ~ mouse + treatment + (treatment|Animal) + (1|Study:Photo_ID_abs), data=dendritic.data)
+model2.1 <- lmer(log(length) ~ mouse * treatment + (treatment|Animal) + (1|Study:Photo_ID_abs), data=dendritic.data)
+
+anova(model2.0, model2.1)
+```
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+model3.0 <- lmer(log(length) ~ mouse + treatment + factor(Animal) + (1|Study:Photo_ID_abs), data=dendritic.data)
+model3.1 <- lmer(log(length) ~ mouse * treatment + factor(Animal) + (1|Study:Photo_ID_abs), data=dendritic.data)
+
+anova(model3.0, model3.1)
+```
+
+In both cases still the interaction seems to be significant.
+
+### Comparison of models
+
+Now we compare models with interaction using AIC and BIC criteria.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+criteria <- matrix(nrow=3, ncol=2)
+criteria[1,] <- c(AIC(model1.1),BIC(model1.1))
+criteria[2,] <- c(AIC(model2.1),BIC(model2.1))
+criteria[3,] <- c(AIC(model3.1),BIC(model3.1))
+criteria <- data.frame(criteria)
+rownames(criteria) <- c("model1.1", "model2.1", "model3.1")
+colnames(criteria) <- c("AIC", "BIC")
+criteria
+```
+
+Both BIC and AIC suggest that model1.1 is the best.
+
+To confirm this result we compare the normality of residuals and random effects to check the model assumptions.
+
+Here we present the table with p-values from Jarque-Bera and Shapiro-Wilk test for normality.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+normality <- matrix(nrow=3, ncol=3)
+normality[1,] <- c(jarqueberaTest(residuals(model1.1))@test$p.value,
+                   shapiro.test(ranef(model1.1, condVar=TRUE)$'Study:Photo_ID_abs'[,1])$p.value,
+                   shapiro.test(ranef(model1.1, condVar=TRUE)$'Animal'[,1])$p.value)
+normality[2,] <- c(jarqueberaTest(residuals(model2.1))@test$p.value,
+                   shapiro.test(ranef(model2.1, condVar=TRUE)$'Study:Photo_ID_abs'[,1])$p.value,
+                   shapiro.test(ranef(model2.1, condVar=TRUE)$'Animal'$'(Intercept)')$p.value)
+normality[3,] <- c(jarqueberaTest(residuals(model3.1))@test$p.value,
+                   shapiro.test(ranef(model3.1, condVar=TRUE)$'Study:Photo_ID_abs'[,1])$p.value,
+                   NA)
+normality<- data.frame(normality)
+rownames(normality) <- c("model1.1", "model2.1", "model3.1")
+colnames(normality) <- c("residuals", "Study:Photo_ID_abs", "Animal(mean)")
+normality
+```
+
+Model 1.1 fails to fulfill assumption about normality of `Animal` random effect. So we choose the second best model (considering BIC), that is model 2.1.
+
+## Model validation
+
+### Normality of random effects
+
+There are 4 random effect left to be tested for normality.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+shapiro.test(ranef(model2.1, condVar=TRUE)$'Animal'$'treatmentchiron')
+shapiro.test(ranef(model2.1, condVar=TRUE)$'Animal'$'treatmentdmso')
+shapiro.test(ranef(model2.1, condVar=TRUE)$'Animal'$'treatmentgm')
+shapiro.test(ranef(model2.1, condVar=TRUE)$'Animal'$'treatmentli')
+```
+
+These assumptions are met. To be convinced, let us see the empirical distribution function for `Photo_ID_abs`.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+dotplot(ranef(model2.1, condVar=TRUE),scales=list(y=list(alternating=0)))$'Study:Photo_ID_abs'
+```
+
+The plot for `Photo_ID_abs` is very similar to the normal cumulative distribution function.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+tmp2 <- ranef(model2.1, condVar=TRUE)$'Animal'
+AnimalEff <- data.frame(effect = c(tmp2$'(Intercept)',
+                                       tmp2$'treatmentchiron',
+                                       tmp2$'treatmentdmso',
+                                       tmp2$'treatmentgm',
+                                       tmp2$'treatmentli'),
+                        treatment = factor(rep(c("-", "chiron", "dmso", "gm", "li"), each=24)))
+
+ggplot(AnimalEff, aes(x=treatment, y=effect, color=treatment)) + 
+  geom_violin(trim = FALSE) + coord_flip() +
+  geom_dotplot(binaxis='y', stackdir='center') + 
+  stat_summary(fun.y=median, geom="point", shape=18, size=5, color="red") +
+  ggtitle("Estimates of density fo effect of Animal") +
+  theme(plot.title = element_text(lineheight=.8, face="bold"))
+```
+
+Most of these plots are symmetric.
+
+### Normality of residuals
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=5, fig.width=7}
+y <- quantile(residuals(model2.1), c(0.25, 0.75))
+x <- qnorm(c(0.25, 0.75))
+slope <- diff(y)/diff(x)
+int <- y[1L] - slope * x[1L]
+
+d <- data.frame(resids = residuals(model2.1))
+
+ggplot(d, aes(sample = resids)) + stat_qq() +
+  geom_abline(slope = slope, intercept = int, col="red", size=0.9) + 
+      ggtitle("QQ-plot of residuals (of the mixed model with the interaction)")
+```
+
+The QQ plot indicates that residuals are normally distributed.
+
+### Homogenity of variance for residuals
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+d <- data.frame(residuals = residuals(model2.1), 
+                mouse = dendritic.data$mouse,
+                treatment = dendritic.data$treatment)
+ddply(d, .(mouse, treatment), summarize,
+ var = var(residuals))
+```
+
+The variances calculated for groups seem to be quite similar (vary from 0.19 to 0.26).
+
+### Independence of epsilons and random effects
+
+```{r, warning=FALSE, message=FALSE, fig.height=7, fig.width=7}
+u <- ranef(model2.1, condVar = TRUE)
+e <- residuals(model2.1)
+# v contains  random effects for Animal
+v <- u$Animal[paste0(dendritic.data$Animal),] 
+
+# w contains a 'nested' random effect for Study:Photo
+w <- u$'Study:Photo_ID_abs'[paste0(dendritic.data$Study,":",dendritic.data$Photo_ID_abs),1]
+
+d <- data.frame(model_residuals=c(e,e,e,e,e,e), random_effect=c(v[,1],v[,2],v[,3],v[,4], v[,5],w), 
+                type=rep(c("Animal (intercept)", "Animal (treatment chiron)", 
+                           "Animal (treatment dmso)", "Animal (treatment gm)",
+                           "Animal (treatment li)",
+                           "Study:Study:Photo_ID_abs"), each=nrow(dendritic.data)))
+ggplot(d, aes(x=random_effect, y=model_residuals)) + geom_point() + geom_smooth(method="lm", col="red", size=1)+
+  facet_wrap(~type, ncol=2)
+```
+
+Epsilons and random effects seem to be independent as we cannot see any pattern in these plots.
+
+### Wald test for fixed effects
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+tse <- summary(model2.1)$coefficients[,3]
+2*pnorm(tse[tse<0], lower.tail=T)
+2*pnorm(tse[tse>0], lower.tail=F)
+```
+
+All of the coefficients are significant except the 3 following: treatmentli, mouseWT:treatmentli and mouseTG:treatmentchiron at the significance level 0.01. However we did not remove them from the model, as only some levels of the variable are insignificant. In general, all variables (but not all levels) turned out to be significant.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+'
+We decided to make sure that the interaction  is significant by performing a permutational test.
+'
+N <- 100
+set.seed(7)
+logs <- replicate(N, logLik(lmer(log(length) ~ treatment + mouse + sample(treatment:mouse) + (treatment|Animal) + (1|Study:Photo_ID_abs), data = dendritic.data)))
+mean(logs > logLik(model2.1))
+```
+
+### Significance of mixed effects
+
+We compare Log Likelihoods for models with and without random effects (and with one of the two used random effects).
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+model.try.0 <- lm(log(length) ~ mouse * treatment, data=dendritic.data)
+model.try.1 <- lmer(log(length) ~ mouse * treatment + (treatment|Animal), data=dendritic.data)
+model.try.2 <- lmer(log(length) ~ mouse * treatment + (1|Study:Photo_ID_abs), data=dendritic.data)
+model.try.3 <- lmer(log(length) ~ mouse * treatment + (treatment-1|Animal) + (1|Study:Photo_ID_abs), data=dendritic.data)
+
+lL0 <- logLik(model.try.0)
+lL1 <- logLik(model.try.1)
+lL2 <- logLik(model.try.2)
+lL3 <- logLik(model.try.3)
+lL4 <- logLik(model2.1)
+df0 <- attr(logLik(model.try.0),"df")
+df1 <- attr(logLik(model.try.1),"df")
+df2 <- attr(logLik(model.try.2),"df")
+df3 <- attr(logLik(model.try.3),"df")
+df4 <- attr(logLik(model2.1),"df")
+
+pchisq(-2*as.numeric(lL0-lL4), as.numeric(df4-df0), lower.tail=F)
+pchisq(-2*as.numeric(lL1-lL4), as.numeric(df4-df1), lower.tail=F)
+pchisq(-2*as.numeric(lL2-lL4), as.numeric(df4-df2), lower.tail=F)
+pchisq(-2*as.numeric(lL3-lL4), as.numeric(df4-df3), lower.tail=F)
+```
+
+All the differences turned out to be significant. It means that both of our random effects: treatment|Animal and 1|Study:Photo_ID_abs are significant.
+
+### Correlation structure
+
+**Fixed effects**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=4, fig.width=4}
+wb <- c("white","black")
+M <- as.matrix(cov2cor(vcov(model2.1)))[-1,-1]
+rownames(M) <- gsub("mouse", "", rownames(M))
+colnames(M) <- gsub("mouse", "", colnames(M))
+rownames(M) <- gsub("treatment", "", rownames(M))
+colnames(M) <- gsub("treatment", "", colnames(M))
+
+corrplot(M, order = "hclust", addrect = 2, col = wb, bg = "gold2")
+```
+<img width="250px" src="mouse2.jpg"/>
+
+**Random effects**
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE, fig.height=7, fig.width=7}
+VarCorr(model2.1)
+```
+
+Both fixed and random effects are correlated. This was inevitable knowing the structure of the data.
+
+## Summary
+
+Here we present the final model, which fulfills all assumptions.
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+summary(model2.1)
+```
