@@ -61,6 +61,8 @@ There are many possible parameterisations, let's work with one of them.
 apartments$construction1990 = apartments$construction.date - 1990
 apartments$olderThan1990 = apartments$construction.date > 1990
 
+model <- lm(m2.price ~ construction1990:olderThan1990, data=apartments)
+
 model <- lm(m2.price ~ construction1990+construction1990:olderThan1990, data=apartments)
 
 ggplot(apartments, aes(construction1990, m2.price-7150, group=olderThan1990)) +
@@ -122,7 +124,7 @@ axis(3); mtext("Distance from DownTown [km]", line=2)
 
 So, how to check the significance of this relation?
 
-We can include the distance as an dependent variable.
+We can include the distance as a dependent variable.
 
 ```{r, message=FALSE, warning=FALSE}
 # add information about distances to data frame
@@ -202,7 +204,7 @@ Could you explain what is happening on really small or really large distances?
 
 Ok, plots are nice, but what about tests?
 
-The Mantel test verifies if there is a significatn correlation between two distance matrices.
+The Mantel test verifies if there is a significant correlation between two distance matrices.
 
 As a test statistic the Pearson correlation coefficient is used. Then the distribution of the test statistic is derived with permutations.
 
@@ -260,6 +262,10 @@ summary(model3)
 head(random.effects(model3))
 ```
 
+Other structures
+
+![](struktury.png)
+
 
 # The homework [14 I 2016]
 
@@ -284,8 +290,7 @@ We will work with data about previous homeworks.
 
 For each homework let's count the number of lines in the Rmd file. Then take into account two other variables: the id (number / week) of the homework and the person that is doing the homework.
 
-Create a model that explains the number of lines of a homework. What is the relation between number of lines of the homework and the id / week of the homework?
+Create a model that explains the number of lines of homework. What is the relation between number of lines of the homework and the id / week of the homework?
 
 Should the author/submitter be modelled as a fixed or random effect?
-
 
