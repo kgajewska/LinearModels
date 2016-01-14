@@ -1,0 +1,88 @@
+---
+title: "Homwework 12"
+author: "Karolina Gajewska"
+date: "Linear models with fixed and random effects"
+output: 
+  html_document:
+    toc: TRUE
+---
+
+##Task
+
+Try two models: simple linear regression model with just one dependent variable and a model which takes into account spatial structure of measurements (variables east and north).
+
+Compare these two models and answer the question: is there a significant relation between variables thick (y) and soil (dependent variable)?
+
+## Dataset
+
+```{r}
+spdata <- read.table("http://www.ats.ucla.edu/stat/r/faq/thick.csv", header = T, sep = ",")
+head(spdata)
+
+```
+
+## Model 1 : simple linear regression model
+
+```{r, warning=FALSE}
+library(ggplot2)
+
+ggplot(spdata, aes(x = soil, y = thick)) + 
+      geom_point(shape = 1) +   
+      geom_smooth(method = lm, se = FALSE, color="red", size=2)
+
+```
+
+```{r}
+Regmodel <- lm(thick~ soil, data=spdata)
+summary(Regmodel)
+
+```
+
+## Model 2: from page with hints
+
+```{r}
+ggplot(spdata, aes(soil, thick)) +
+  geom_point() +
+  geom_smooth(se=FALSE, color="red", size=2)
+
+```
+
+
+```{r, warning=FALSE}
+library(nlme)
+soil.model <- lme(fixed = thick ~ soil, data = spdata, random = ~ 1 | dummy, method = "ML")
+summary(soil.model)
+```
+
+Despite the fact, that the relation between thick and soil doesn't seem to be  linear, Model 1 and Model 2 show that the relation between soil and thick is significant.
+
+## Spatial correlation for "thick"
+
+```{r, warning = FALSE}
+library(ade4)
+mantel.rtest(dist(spdata[,2:3]), dist(spdata$thick))
+```
+
+We have p-value = 0.01, so for alpha <0.01, we can assume that  spatial correlation exist. The graph below confirms the truth of this sentence.
+
+```{r, warning = FALSE, echo=FALSE, message = FALSE}
+#library(plotly)
+#plot_ly(spdata, x = east, y = north,  type="scatter", mode = "markers", color = #thick)
+```
+
+![newplot](C:\Users\Karolina_Gajewska\Downloads\newplot.png)
+
+Based on this graph, we can say that the points which are in a similar location, have similar values for thick. 
+
+## Model with spatial correlation structures
+
+```{r}
+soil.gau <- update(soil.model, correlation = corGaus(1, form = ~ east + north), method = "ML")
+summary(soil.gau)
+```
+
+Now we have very high p-value, so soil is not significant. 
+
+##Conclusions
+
+Incorporating the Gaussian correlation structure in model, we can observe that soil is not a statistically significant predictor of thick. Without the spatial structure, this relationship becomes is significant.
